@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../store';
 import { OrderType, Product, PaymentMethod, Order, ShiftTransaction } from '../types';
 import { Button, formatCurrency } from '../components/ui';
@@ -15,6 +15,7 @@ export const POS = ({
 }) => {
     const {
         currentSession,
+        terminals,
         products, cart, cartTotals, currentShift, orders, maxItemsPerOrder, activePaymentMethodsPOS,
         printReceiptEnabled,
         addToCart, removeFromCart, updateCartItem, clearCart, createOrder,
@@ -35,7 +36,23 @@ export const POS = ({
     // Open Shift State
     const [shiftStartAmount, setShiftStartAmount] = useState('150.00');
     const [operatorName, setOperatorName] = useState('Caixa 01');
-    const [terminalId, setTerminalId] = useState('PDV-01');
+    const [terminalId, setTerminalId] = useState('');
+
+    const activeTerminals = useMemo(
+        () =>
+            terminals
+                .filter((terminal) => terminal.is_active)
+                .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')),
+        [terminals]
+    );
+
+    useEffect(() => {
+        if (activeTerminals.length === 0) return;
+        const stillExists = activeTerminals.some((terminal) => terminal.name === terminalId);
+        if (!terminalId || !stillExists) {
+            setTerminalId(activeTerminals[0].name);
+        }
+    }, [activeTerminals, terminalId]);
 
     // Order State
     const [lastOrder, setLastOrder] = useState<Order | null>(null);
@@ -142,13 +159,32 @@ export const POS = ({
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold mb-1 text-gray-600">Terminal (ID)</label>
-                                    <input
-                                        type="text"
-                                        value={terminalId}
-                                        onChange={e => setTerminalId(e.target.value)}
-                                        className="w-full border p-3 rounded-lg bg-gray-50 focus:bg-white transition-colors"
-                                        placeholder="ex: PDV-01"
-                                    />
+                                    {activeTerminals.length > 0 ? (
+                                        <select
+                                            value={terminalId}
+                                            onChange={e => setTerminalId(e.target.value)}
+                                            className="w-full border p-3 rounded-lg bg-gray-50 focus:bg-white transition-colors"
+                                        >
+                                            {activeTerminals.map((terminal) => (
+                                                <option key={terminal.id} value={terminal.name}>
+                                                    {terminal.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        <>
+                                            <input
+                                                type="text"
+                                                value=""
+                                                disabled
+                                                className="w-full border p-3 rounded-lg bg-gray-100 text-gray-400"
+                                                placeholder="Nenhum terminal ativo cadastrado"
+                                            />
+                                            <p className="text-xs text-amber-700 mt-1">
+                                                Cadastre e ative um terminal no Admin para abrir o caixa.
+                                            </p>
+                                        </>
+                                    )}
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold mb-1 text-gray-600">Fundo de Caixa (R$)</label>

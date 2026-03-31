@@ -186,6 +186,25 @@ export interface Scout {
     patrol: string; // Patrulha/Matilha
 }
 
+export interface MenuCatalog {
+    id: string;
+    name: string;
+    observations?: string;
+    // Legacy compatibility with older saves
+    description?: string;
+    is_active: boolean;
+    updated_at: string;
+}
+
+export interface TerminalConfig {
+    id: string;
+    name: string;
+    observations?: string;
+    is_active: boolean;
+    operation_date: string; // YYYY-MM-DD
+    updated_at: string;
+}
+
 // --- Settings Types ---
 
 export interface TaxSettings {

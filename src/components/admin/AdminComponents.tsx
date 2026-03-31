@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../../store';
-import { Ingredient, Product, PromotionType, User, Station, Promotion } from '../../types';
+import { Ingredient, Product, PromotionType, User, Station, Promotion, MenuCatalog } from '../../types';
 import { generateUUID } from '../../utils';
 import { Button, Card, formatCurrency } from '../ui';
 import { Edit2, Trash2, Plus, AlertTriangle, Package, Check, X, Calendar, Clock, Target, Layers, Save, ArrowLeft, Zap, TrendingDown, TrendingUp, History, Upload, Image as ImageIcon, FileText, Wallet, Users, Printer } from 'lucide-react';
@@ -851,6 +851,384 @@ const PromotionBuilder = ({
                     </div>
                 </div>
             </div>
+        </div>
+    );
+};
+
+// --- Menu Catalog Manager ---
+export const MenuCatalogManager = () => {
+    const { menuCatalogs, addMenuCatalog, updateMenuCatalog, deleteMenuCatalog } = useStore();
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [name, setName] = useState('');
+    const [observations, setObservations] = useState('');
+    const [isActive, setIsActive] = useState(true);
+
+    const resetForm = () => {
+        setEditingId(null);
+        setName('');
+        setObservations('');
+        setIsActive(true);
+    };
+
+    const handleOpenAdd = () => {
+        resetForm();
+        setIsModalOpen(true);
+    };
+
+    const handleOpenEdit = (menu: MenuCatalog) => {
+        setEditingId(menu.id);
+        setName(menu.name);
+        setObservations(menu.observations || menu.description || '');
+        setIsActive(menu.is_active);
+        setIsModalOpen(true);
+    };
+
+    const handleSave = () => {
+        if (!name.trim()) {
+            alert('Informe o nome do cardápio.');
+            return;
+        }
+        if (editingId) {
+            updateMenuCatalog(editingId, {
+                name: name.trim(),
+                observations: observations.trim() || undefined,
+                description: observations.trim() || undefined,
+                is_active: isActive
+            });
+        } else {
+            addMenuCatalog({
+                name: name.trim(),
+                observations: observations.trim() || undefined,
+                description: observations.trim() || undefined,
+                is_active: isActive
+            });
+        }
+        setIsModalOpen(false);
+        resetForm();
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                <div>
+                    <h2 className="text-2xl font-bold">Administração de Cardápios</h2>
+                    <p className="text-sm text-gray-500">Crie os nomes de cardápio para uso no fechamento de caixa em "Cardápio do Lanche".</p>
+                </div>
+                <Button onClick={handleOpenAdd}>
+                    <Plus size={16} className="mr-2" /> Novo Cardápio
+                </Button>
+            </div>
+
+            <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
+                <table className="w-full text-left min-w-[700px]">
+                    <thead className="bg-gray-50 border-b">
+                        <tr>
+                            <th className="p-4">Nome</th>
+                            <th className="p-4">Observações</th>
+                            <th className="p-4">Status</th>
+                            <th className="p-4 text-right">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {menuCatalogs.map((menu) => (
+                            <tr key={menu.id} className="border-b last:border-0 hover:bg-gray-50">
+                                <td className="p-4 font-bold text-gray-800">{menu.name}</td>
+                                <td className="p-4 text-gray-500">{menu.observations || menu.description || '-'}</td>
+                                <td className="p-4">
+                                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${menu.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                                        {menu.is_active ? 'Ativo' : 'Inativo'}
+                                    </span>
+                                </td>
+                                <td className="p-4 text-right">
+                                    <div className="flex justify-end gap-2">
+                                        <button
+                                            onClick={() => handleOpenEdit(menu)}
+                                            className="p-2 text-blue-600 hover:bg-blue-50 rounded"
+                                            title="Editar"
+                                        >
+                                            <Edit2 size={16} />
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                if (confirm(`Excluir o cardápio "${menu.name}"?`)) {
+                                                    deleteMenuCatalog(menu.id);
+                                                }
+                                            }}
+                                            className="p-2 text-red-600 hover:bg-red-50 rounded"
+                                            title="Excluir"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                        {menuCatalogs.length === 0 && (
+                            <tr>
+                                <td colSpan={4} className="p-8 text-center text-gray-500">
+                                    Nenhum cardápio cadastrado.
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            {isModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-6 border-b bg-gray-50 flex justify-between items-center">
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-800">{editingId ? 'Editar Cardápio' : 'Novo Cardápio'}</h3>
+                                <p className="text-sm text-gray-500">Esse cadastro será usado no campo "Cardápio do Lanche" do fechamento de caixa.</p>
+                            </div>
+                            <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Nome do Cardápio</label>
+                                    <input
+                                        type="text"
+                                        className="w-full border p-2 rounded"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        placeholder="Ex: Cardápio Festa Junina"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium mb-1">Observações</label>
+                                    <textarea
+                                        className="w-full border p-2 rounded min-h-[100px]"
+                                        value={observations}
+                                        onChange={(e) => setObservations(e.target.value)}
+                                        placeholder="Opcional"
+                                    />
+                                </div>
+
+                                <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+                                    <input
+                                        type="checkbox"
+                                        checked={isActive}
+                                        onChange={(e) => setIsActive(e.target.checked)}
+                                    />
+                                    Cardápio ativo
+                                </label>
+                        </div>
+
+                        <div className="p-4 border-t bg-gray-50 flex gap-3">
+                            <Button variant="secondary" className="flex-1" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
+                            <Button className="flex-1" onClick={handleSave}>
+                                <Save size={16} className="mr-2" /> Salvar Cardápio
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+// --- Terminal Manager ---
+export const TerminalManager = () => {
+    const { terminals, addTerminal, updateTerminal, deleteTerminal } = useStore();
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [name, setName] = useState('');
+    const [observations, setObservations] = useState('');
+    const [isActive, setIsActive] = useState(true);
+    const [operationDate, setOperationDate] = useState('');
+
+    const resetForm = () => {
+        setEditingId(null);
+        setName('');
+        setObservations('');
+        setIsActive(true);
+        setOperationDate('');
+    };
+
+    const handleOpenAdd = () => {
+        resetForm();
+        setIsModalOpen(true);
+    };
+
+    const handleOpenEdit = (terminal: { id: string; name: string; operation_date: string; observations?: string; is_active?: boolean }) => {
+        setEditingId(terminal.id);
+        setName(terminal.name);
+        setObservations(terminal.observations || '');
+        setIsActive(terminal.is_active ?? true);
+        setOperationDate(terminal.operation_date);
+        setIsModalOpen(true);
+    };
+
+    const handleSave = () => {
+        if (!name.trim()) {
+            alert('Informe o nome do terminal.');
+            return;
+        }
+        if (!operationDate) {
+            alert('Informe a data prevista da operação.');
+            return;
+        }
+
+        if (editingId) {
+            updateTerminal(editingId, {
+                name: name.trim(),
+                observations: observations.trim() || undefined,
+                is_active: isActive,
+                operation_date: operationDate
+            });
+        } else {
+            addTerminal({
+                name: name.trim(),
+                observations: observations.trim() || undefined,
+                is_active: isActive,
+                operation_date: operationDate
+            });
+        }
+
+        setIsModalOpen(false);
+        resetForm();
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                <div>
+                    <h2 className="text-2xl font-bold">Cadastro de Terminais (ID)</h2>
+                    <p className="text-sm text-gray-500">Cadastre os terminais com nome de operação e data prevista.</p>
+                </div>
+                <Button onClick={handleOpenAdd}>
+                    <Plus size={16} className="mr-2" /> Novo Terminal
+                </Button>
+            </div>
+
+            <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
+                <table className="w-full text-left min-w-[700px]">
+                    <thead className="bg-gray-50 border-b">
+                        <tr>
+                            <th className="p-4">Nome do Terminal</th>
+                            <th className="p-4">Observações</th>
+                            <th className="p-4">Status</th>
+                            <th className="p-4">Data Prevista da Operação</th>
+                            <th className="p-4">Última Atualização</th>
+                            <th className="p-4 text-right">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {terminals.map((terminal) => (
+                            <tr key={terminal.id} className="border-b last:border-0 hover:bg-gray-50">
+                                <td className="p-4 font-bold text-gray-800">{terminal.name}</td>
+                                <td className="p-4 text-gray-500">{terminal.observations || '-'}</td>
+                                <td className="p-4">
+                                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${terminal.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                                        {terminal.is_active ? 'Ativo' : 'Inativo'}
+                                    </span>
+                                </td>
+                                <td className="p-4 text-gray-700">{new Date(`${terminal.operation_date}T00:00:00`).toLocaleDateString('pt-BR')}</td>
+                                <td className="p-4 text-gray-500 text-sm">{new Date(terminal.updated_at).toLocaleString('pt-BR')}</td>
+                                <td className="p-4 text-right">
+                                    <div className="flex justify-end gap-2">
+                                        <button
+                                            onClick={() => handleOpenEdit(terminal)}
+                                            className="p-2 text-blue-600 hover:bg-blue-50 rounded"
+                                            title="Editar"
+                                        >
+                                            <Edit2 size={16} />
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                if (confirm(`Excluir o terminal "${terminal.name}"?`)) {
+                                                    deleteTerminal(terminal.id);
+                                                }
+                                            }}
+                                            className="p-2 text-red-600 hover:bg-red-50 rounded"
+                                            title="Excluir"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                        {terminals.length === 0 && (
+                            <tr>
+                                <td colSpan={6} className="p-8 text-center text-gray-500">
+                                    Nenhum terminal cadastrado.
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            {isModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-6 border-b bg-gray-50 flex justify-between items-center">
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-800">{editingId ? 'Editar Terminal' : 'Novo Terminal'}</h3>
+                                <p className="text-sm text-gray-500">Informe nome do terminal e data prevista da operação.</p>
+                            </div>
+                            <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Nome do Terminal</label>
+                                <input
+                                    type="text"
+                                    className="w-full border p-2 rounded"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    placeholder="Ex: PDV-01"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Observações</label>
+                                <textarea
+                                    className="w-full border p-2 rounded min-h-[90px]"
+                                    value={observations}
+                                    onChange={(e) => setObservations(e.target.value)}
+                                    placeholder="Opcional"
+                                />
+                            </div>
+                            <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+                                <input
+                                    type="checkbox"
+                                    checked={isActive}
+                                    onChange={(e) => setIsActive(e.target.checked)}
+                                />
+                                Terminal ativo
+                            </label>
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Data prevista da operação</label>
+                                <input
+                                    type="date"
+                                    className="w-full border p-2 rounded"
+                                    value={operationDate}
+                                    onChange={(e) => setOperationDate(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="p-4 border-t bg-gray-50 flex gap-3">
+                            <Button variant="secondary" className="flex-1" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
+                            <Button className="flex-1" onClick={handleSave}>
+                                <Save size={16} className="mr-2" /> Salvar Terminal
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

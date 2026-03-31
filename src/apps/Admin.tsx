@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { useStore } from '../store';
 import { PaymentMethod } from '../types';
 import { Card, Badge, formatCurrency, Button } from '../components/ui';
-import { InventoryManager, ProductManager, PromotionManager, UserManager, ReportsManager } from '../components/admin/AdminComponents';
+import { InventoryManager, ProductManager, PromotionManager, UserManager, ReportsManager, MenuCatalogManager, TerminalManager } from '../components/admin/AdminComponents';
 import { ScoutManager } from '../components/admin/ScoutManager';
 import { OrderManager } from '../components/admin/OrderManager';
 import { StoreControl } from '../components/admin/StoreControl';
 import { BarChart, Users, DollarSign, Activity, Package, ClipboardList, Tag, Settings, LogOut, Percent, ChevronLeft, ChevronRight, Upload, FileText, Trash2, Paperclip, AlertTriangle, Wallet, Save, Building2, FileBarChart, Database, Menu, X, Monitor, Tent } from 'lucide-react';
 
-type AdminTab = 'DASHBOARD' | 'PRODUCTS' | 'INVENTORY' | 'ORDERS' | 'PROMOS' | 'USERS' | 'SETTINGS' | 'REPORTS' | 'SCOUTS';
+type AdminTab = 'DASHBOARD' | 'PRODUCTS' | 'MENUS' | 'TERMINALS' | 'INVENTORY' | 'ORDERS' | 'PROMOS' | 'USERS' | 'SETTINGS' | 'REPORTS' | 'SCOUTS';
 
 export const Admin = ({ onExit, onLogout }: { onExit?: () => void; onLogout?: () => void }) => {
     const [activeTab, setActiveTab] = useState<AdminTab>('DASHBOARD');
@@ -21,6 +21,8 @@ export const Admin = ({ onExit, onLogout }: { onExit?: () => void; onLogout?: ()
         { id: 'REPORTS', label: 'Relatórios', icon: <FileBarChart size={20} /> },
         { id: 'ORDERS', label: 'Pedidos', icon: <ClipboardList size={20} /> },
         { id: 'PRODUCTS', label: 'Produtos', icon: <Tag size={20} /> },
+        { id: 'MENUS', label: 'Cardápios', icon: <FileText size={20} /> },
+        { id: 'TERMINALS', label: 'Terminais', icon: <Monitor size={20} /> },
         { id: 'INVENTORY', label: 'Estoque', icon: <Package size={20} /> },
         { id: 'PROMOS', label: 'Promoções', icon: <Percent size={20} /> },
         { id: 'USERS', label: 'Usuários', icon: <Users size={20} /> },
@@ -31,6 +33,8 @@ export const Admin = ({ onExit, onLogout }: { onExit?: () => void; onLogout?: ()
     const renderContent = () => {
         switch (activeTab) {
             case 'PRODUCTS': return <ProductManager />;
+            case 'MENUS': return <MenuCatalogManager />;
+            case 'TERMINALS': return <TerminalManager />;
             case 'INVENTORY': return <InventoryManager />;
             case 'ORDERS': return <OrderManager />;
             case 'PROMOS': return <PromotionManager />;

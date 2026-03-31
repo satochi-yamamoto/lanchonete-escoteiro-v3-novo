@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { CartItem, Order, OrderStatus, OrderType, Product, Shift, ShiftTransaction, PaymentMethod, Ingredient, StockLog, User, Promotion, ShiftTransactionExtras, TaxSettings, StoreSession, Scout } from './types';
+import { CartItem, Order, OrderStatus, OrderType, Product, Shift, ShiftTransaction, PaymentMethod, Ingredient, StockLog, User, Promotion, ShiftTransactionExtras, TaxSettings, StoreSession, Scout, MenuCatalog, TerminalConfig } from './types';
 import { calculateCartTotals, MOCK_PROMOTIONS } from './services/promotionEngine';
 import { backend, BackendInterface } from './services/backend/backend';
 import { MOCK_INGREDIENTS, MOCK_PRODUCTS, MOCK_USERS, MOCK_SCOUTS } from './services/mockData';
@@ -48,6 +48,18 @@ interface AppState {
   addPromotion: (p: Promotion) => void;
   updatePromotion: (id: string, p: Partial<Promotion>) => void;
   deletePromotion: (id: string) => void;
+
+  // Menus
+  menuCatalogs: MenuCatalog[];
+  addMenuCatalog: (menu: Omit<MenuCatalog, 'id' | 'updated_at'>) => void;
+  updateMenuCatalog: (id: string, updates: Partial<MenuCatalog>) => void;
+  deleteMenuCatalog: (id: string) => void;
+
+  // Terminals
+  terminals: TerminalConfig[];
+  addTerminal: (terminal: Omit<TerminalConfig, 'id' | 'updated_at'>) => void;
+  updateTerminal: (id: string, updates: Partial<TerminalConfig>) => void;
+  deleteTerminal: (id: string) => void;
 
   // POS/Kiosk State
   cart: CartItem[];
@@ -209,6 +221,8 @@ export const useStore = create<AppState>((set, get) => ({
         ...data,
         dbUsers: data.users, // Store DB users separately
         users: sanitizeUsersForLogin(data.users),
+        menuCatalogs: data.menuCatalogs || [],
+        terminals: data.terminals || [],
         activePaymentMethodsPOS: (data as any).paymentSettings?.pos || get().activePaymentMethodsPOS,
         activePaymentMethodsKiosk: (data as any).paymentSettings?.kiosk || get().activePaymentMethodsKiosk,
         printReceiptEnabled: (data as any).printSettings?.enabled ?? get().printReceiptEnabled,
@@ -287,6 +301,8 @@ export const useStore = create<AppState>((set, get) => ({
   dbUsers: [],
   scouts: backend.kind === 'supabase' ? [] : MOCK_SCOUTS,
   promotions: backend.kind === 'supabase' ? [] : MOCK_PROMOTIONS,
+  menuCatalogs: [],
+  terminals: [],
 
   addScout: (s) => {
     set(state => ({ scouts: [...state.scouts, s] }));
@@ -423,6 +439,74 @@ export const useStore = create<AppState>((set, get) => ({
     console.log("Deletando promoção:", id);
     set(s => ({ promotions: s.promotions.filter(x => x.id !== id) }));
     void backend.deletePromotion(id).catch((e) => console.error("Falha ao excluir promoção:", e));
+  },
+
+  addMenuCatalog: (menuInput) => {
+    const menu: MenuCatalog = {
+      id: newId(),
+      name: menuInput.name,
+      observations: menuInput.observations,
+      description: menuInput.description,
+      is_active: menuInput.is_active ?? true,
+      updated_at: new Date().toISOString()
+    };
+    set((s) => {
+      const nextMenus = [...s.menuCatalogs, menu];
+      void backend.upsertMenuCatalogs(nextMenus).catch((e) => console.error("Falha ao salvar cardápios:", e));
+      return { menuCatalogs: nextMenus };
+    });
+  },
+
+  updateMenuCatalog: (id, updates) => {
+    set((s) => {
+      const nextMenus = s.menuCatalogs.map((menu) =>
+        menu.id === id ? { ...menu, ...updates, updated_at: new Date().toISOString() } : menu
+      );
+      void backend.upsertMenuCatalogs(nextMenus).catch((e) => console.error("Falha ao atualizar cardápio:", e));
+      return { menuCatalogs: nextMenus };
+    });
+  },
+
+  deleteMenuCatalog: (id) => {
+    set((s) => {
+      const nextMenus = s.menuCatalogs.filter((menu) => menu.id !== id);
+      void backend.upsertMenuCatalogs(nextMenus).catch((e) => console.error("Falha ao remover cardápio:", e));
+      return { menuCatalogs: nextMenus };
+    });
+  },
+
+  addTerminal: (terminalInput) => {
+    const terminal: TerminalConfig = {
+      id: newId(),
+      name: terminalInput.name,
+      observations: terminalInput.observations,
+      is_active: terminalInput.is_active ?? true,
+      operation_date: terminalInput.operation_date,
+      updated_at: new Date().toISOString()
+    };
+    set((s) => {
+      const nextTerminals = [...s.terminals, terminal];
+      void backend.upsertTerminals(nextTerminals).catch((e) => console.error("Falha ao salvar terminais:", e));
+      return { terminals: nextTerminals };
+    });
+  },
+
+  updateTerminal: (id, updates) => {
+    set((s) => {
+      const nextTerminals = s.terminals.map((terminal) =>
+        terminal.id === id ? { ...terminal, ...updates, updated_at: new Date().toISOString() } : terminal
+      );
+      void backend.upsertTerminals(nextTerminals).catch((e) => console.error("Falha ao atualizar terminal:", e));
+      return { terminals: nextTerminals };
+    });
+  },
+
+  deleteTerminal: (id) => {
+    set((s) => {
+      const nextTerminals = s.terminals.filter((terminal) => terminal.id !== id);
+      void backend.upsertTerminals(nextTerminals).catch((e) => console.error("Falha ao remover terminal:", e));
+      return { terminals: nextTerminals };
+    });
   },
 
   cart: [],
@@ -779,6 +863,8 @@ export const useStore = create<AppState>((set, get) => ({
         products: keepCatalog ? get().products : [],
         ingredients: keepCatalog ? get().ingredients : [],
         promotions: keepCatalog ? get().promotions : [],
+        menuCatalogs: keepCatalog ? get().menuCatalogs : [],
+        terminals: keepCatalog ? get().terminals : [],
         users: keepCatalog ? get().users : [],
       });
 

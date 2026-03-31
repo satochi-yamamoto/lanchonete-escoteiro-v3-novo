@@ -1,4 +1,4 @@
-import { Ingredient, Order, Product, Promotion, Shift, StockLog, StoreSession, TaxSettings, User, Scout, PaymentMethod } from '../../types';
+import { Ingredient, Order, Product, Promotion, Shift, StockLog, StoreSession, TaxSettings, User, Scout, PaymentMethod, MenuCatalog, TerminalConfig } from '../../types';
 import { isSupabaseConfigured, supabase, ensureAuth } from './supabaseClient';
 import { MOCK_INGREDIENTS, MOCK_PRODUCTS, MOCK_USERS, MOCK_SCOUTS } from '../mockData';
 import { MOCK_PROMOTIONS } from '../promotionEngine';
@@ -17,6 +17,8 @@ export interface BackendInitialState {
   stockLogs: StockLog[];
   promotions: Promotion[];
   users: User[];
+  menuCatalogs: MenuCatalog[];
+  terminals: TerminalConfig[];
   scouts: Scout[];
   orders: Order[];
   currentShift: Shift | null;
@@ -39,6 +41,9 @@ const defaultPaymentSettings = {
   pos: [PaymentMethod.CASH, PaymentMethod.CREDIT_CARD, PaymentMethod.DEBIT_CARD, PaymentMethod.PIX],
   kiosk: [PaymentMethod.CREDIT_CARD, PaymentMethod.DEBIT_CARD, PaymentMethod.PIX]
 };
+
+const defaultMenuCatalogs: MenuCatalog[] = [];
+const defaultTerminals: TerminalConfig[] = [];
 
 const requireSupabase = () => {
   if (!supabase) throw new Error('Supabase não configurado (VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY).');
@@ -139,6 +144,36 @@ const seedIfEmpty = async () => {
   if (!businessRulesRow) {
     await upsertBusinessRules({ maxItemsPerOrder: 3 });
   }
+
+  // Non-blocking settings bootstrap for optional modules.
+  // If these writes fail due to RLS/policy differences, app initialization should continue.
+  try {
+    const { data: menuCatalogsRow, error: menuCatalogsError } = await sb
+      .from('settings')
+      .select('id')
+      .eq('id', 'menu_catalogs')
+      .maybeSingle();
+    if (menuCatalogsError) throw menuCatalogsError;
+    if (!menuCatalogsRow) {
+      await upsertMenuCatalogs(defaultMenuCatalogs);
+    }
+  } catch (e) {
+    console.warn('[Settings] Could not bootstrap menu_catalogs. Continuing with defaults.', e);
+  }
+
+  try {
+    const { data: terminalsRow, error: terminalsError } = await sb
+      .from('settings')
+      .select('id')
+      .eq('id', 'terminals')
+      .maybeSingle();
+    if (terminalsError) throw terminalsError;
+    if (!terminalsRow) {
+      await upsertTerminals(defaultTerminals);
+    }
+  } catch (e) {
+    console.warn('[Settings] Could not bootstrap terminals. Continuing with defaults.', e);
+  }
 };
 
 const loadTaxSettings = async () => {
@@ -169,6 +204,40 @@ const loadBusinessRules = async () => {
   return (data?.value as { maxItemsPerOrder: number } | undefined) ?? { maxItemsPerOrder: 3 };
 };
 
+const loadMenuCatalogs = async () => {
+  const sb = requireSupabase();
+  try {
+    const { data, error } = await sb.from('settings').select('value').eq('id', 'menu_catalogs').maybeSingle();
+    if (error) throw error;
+    const raw = (data?.value as MenuCatalog[] | undefined) ?? defaultMenuCatalogs;
+    return raw.map((menu) => ({
+      ...menu,
+      observations: menu.observations ?? menu.description ?? undefined,
+      is_active: menu.is_active ?? true
+    }));
+  } catch (e) {
+    console.warn('[Settings] Failed to load menu_catalogs. Using defaults.', e);
+    return defaultMenuCatalogs;
+  }
+};
+
+const loadTerminals = async () => {
+  const sb = requireSupabase();
+  try {
+    const { data, error } = await sb.from('settings').select('value').eq('id', 'terminals').maybeSingle();
+    if (error) throw error;
+    const raw = (data?.value as TerminalConfig[] | undefined) ?? defaultTerminals;
+    return raw.map((terminal) => ({
+      ...terminal,
+      observations: terminal.observations ?? undefined,
+      is_active: terminal.is_active ?? true
+    }));
+  } catch (e) {
+    console.warn('[Settings] Failed to load terminals. Using defaults.', e);
+    return defaultTerminals;
+  }
+};
+
 const upsertTaxSettings = async (settings: TaxSettings) => {
   const sb = requireSupabase();
   const { error } = await sb.from('settings').upsert([{ id: 'tax_settings', value: settings }], { onConflict: 'id' });
@@ -193,6 +262,18 @@ const upsertBusinessRules = async (rules: { maxItemsPerOrder: number }) => {
   if (error) throw error;
 };
 
+const upsertMenuCatalogs = async (menus: MenuCatalog[]) => {
+  const sb = requireSupabase();
+  const { error } = await sb.from('settings').upsert([{ id: 'menu_catalogs', value: menus }], { onConflict: 'id' });
+  if (error) throw error;
+};
+
+const upsertTerminals = async (terminals: TerminalConfig[]) => {
+  const sb = requireSupabase();
+  const { error } = await sb.from('settings').upsert([{ id: 'terminals', value: terminals }], { onConflict: 'id' });
+  if (error) throw error;
+};
+
 export interface BackendInterface {
   kind: BackendKind;
   loadInitialState: () => Promise<BackendInitialState | null>;
@@ -211,6 +292,8 @@ export interface BackendInterface {
   upsertPaymentSettings: (settings: { pos: PaymentMethod[], kiosk: PaymentMethod[] }) => Promise<void>;
   upsertPrintSettings: (settings: { enabled: boolean }) => Promise<void>;
   upsertBusinessRules: (rules: { maxItemsPerOrder: number }) => Promise<void>;
+  upsertMenuCatalogs: (menus: MenuCatalog[]) => Promise<void>;
+  upsertTerminals: (terminals: TerminalConfig[]) => Promise<void>;
   subscribeToChanges: (
     onOrdersChange: (payload: any) => void,
     onSessionsChange: (payload: any) => void,
@@ -348,6 +431,8 @@ export const backend: BackendInterface = {
         stockLogs: [],
         promotions: MOCK_PROMOTIONS,
         users: MOCK_USERS,
+        menuCatalogs: defaultMenuCatalogs,
+        terminals: defaultTerminals,
         scouts: MOCK_SCOUTS,
         orders: [],
         currentShift: null,
@@ -370,7 +455,7 @@ export const backend: BackendInterface = {
 
     await seedIfEmpty();
 
-    const [productsRes, ingredientsRes, promotionsRes, usersRes, ordersRes, shiftRes, sessionRes, taxSettings, stockLogsRes, paymentSettings, printSettings, businessRules] = await Promise.all([
+    const [productsRes, ingredientsRes, promotionsRes, usersRes, ordersRes, shiftRes, sessionRes, taxSettings, stockLogsRes, paymentSettings, printSettings, businessRules, menuCatalogs, terminals] = await Promise.all([
       sb.from('products').select('*').order('name', { ascending: true }),
       sb.from('ingredients').select('*').order('name', { ascending: true }),
       sb.from('promotions').select('*').order('priority', { ascending: false }),
@@ -383,7 +468,9 @@ export const backend: BackendInterface = {
       sb.from('stock_logs').select('*').order('date', { ascending: false }).limit(50),
       loadPaymentSettings(),
       loadPrintSettings(),
-      loadBusinessRules()
+      loadBusinessRules(),
+      loadMenuCatalogs(),
+      loadTerminals()
     ]);
 
     if (productsRes.error) throw productsRes.error;
@@ -407,6 +494,8 @@ export const backend: BackendInterface = {
       stockLogs: (stockLogsRes.data ?? []) as unknown as StockLog[],
       promotions: (promotionsRes.data ?? []) as unknown as Promotion[],
       users: (usersRes.data ?? []) as unknown as User[],
+      menuCatalogs,
+      terminals,
       scouts: (scoutsData ?? []) as unknown as Scout[],
       orders: (ordersRes.data ?? []) as unknown as Order[],
       currentShift,
@@ -522,6 +611,8 @@ export const backend: BackendInterface = {
   upsertPaymentSettings,
   upsertPrintSettings,
   upsertBusinessRules,
+  upsertMenuCatalogs,
+  upsertTerminals,
 
   // Realtime Subscriptions
   subscribeToChanges: (

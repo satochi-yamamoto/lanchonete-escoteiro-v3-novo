@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Product, CartItem, ModifierGroup, Shift, Order, ShiftTransaction, PaymentMethod, Station } from '../../types';
+import { useStore } from '../../store';
 import { Button, Card, formatCurrency } from '../ui';
 import { X, ChevronLeft, Check, Plus, Minus, Trash2, Edit2, Banknote, CreditCard, Tag, Filter, QrCode, Printer, FileText, ArrowRight, Ban, Eye, EyeOff, Paperclip, Upload, Info, AlertTriangle, Calculator, Lock, DollarSign, Wallet, Coins, ArrowLeft, Save, Hash, Ticket, Globe } from 'lucide-react';
 
@@ -1188,6 +1189,14 @@ export const CashClosingReportModal = ({ shift, orders, onClose }: any) => {
 
 // --- ZReport Modal ---
 export const ZReportModal = ({ shift, orders, onClose, onConfirmClose }: any) => {
+    const menuCatalogs = useStore((s) => s.menuCatalogs);
+    const activeMenuCatalogs = useMemo(
+        () =>
+            [...menuCatalogs]
+                .filter((menu) => menu.is_active)
+                .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')),
+        [menuCatalogs]
+    );
     const [metrics, setMetrics] = useState({
         drinks_liters: '',
         burger_cost: '',
@@ -1371,13 +1380,23 @@ export const ZReportModal = ({ shift, orders, onClose, onConfirmClose }: any) =>
                             </div>
                             <div className="md:col-span-2">
                                 <label className="block text-sm font-medium text-blue-800 mb-1">Cardápio do Lanche</label>
-                                <input 
-                                    type="text"
-                                    className="w-full border p-2 rounded-lg"
+                                <select
+                                    className="w-full border p-2 rounded-lg bg-white"
                                     value={metrics.menu_name}
                                     onChange={e => setMetrics({...metrics, menu_name: e.target.value})}
-                                    placeholder="Ex: Hambúrguer Artesanal e Refrigerante"
-                                />
+                                >
+                                    <option value="">Selecione o cardápio</option>
+                                    {activeMenuCatalogs.map((menu) => (
+                                        <option key={menu.id} value={menu.name}>
+                                            {menu.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                {activeMenuCatalogs.length === 0 && (
+                                    <p className="text-xs text-amber-700 mt-1">
+                                        Nenhum cardápio ativo cadastrado no Admin.
+                                    </p>
+                                )}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-blue-800 mb-1">Quantos litros de bebida?</label>
