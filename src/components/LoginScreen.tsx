@@ -1,72 +1,97 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { User } from '../types';
 import { useStore } from '../store';
-import { User as UserIcon, Lock, ChevronRight, Delete } from 'lucide-react';
+import { User as UserIcon, Lock, ChevronRight, Delete, Loader2 } from 'lucide-react';
 
 interface LoginScreenProps {
     onLogin: (user: User) => void;
 }
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
-    const { users } = useStore();
+    const { users, authenticateUserByPin } = useStore();
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [pin, setPin] = useState('');
-    const [error, setError] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+    const [isAuthenticating, setIsAuthenticating] = useState(false);
 
     const handleUserSelect = (user: User) => {
         setSelectedUser(user);
         setPin('');
-        setError(false);
+        setErrorMessage('');
     };
 
+    const authenticate = useCallback(async (pinToValidate: string) => {
+        if (!selectedUser || pinToValidate.length !== 4 || isAuthenticating) return;
+        setIsAuthenticating(true);
+        setErrorMessage('');
+        const authenticatedUser = await authenticateUserByPin(selectedUser.id, pinToValidate);
+        if (authenticatedUser) {
+            onLogin(authenticatedUser);
+            return;
+        }
+        setErrorMessage('PIN inválido');
+        setPin('');
+        setIsAuthenticating(false);
+    }, [authenticateUserByPin, isAuthenticating, onLogin, selectedUser]);
+
     const handlePinInput = (num: string) => {
-        if (pin.length < 4) {
-            const newPin = pin + num;
-            setPin(newPin);
-            setError(false);
-
-            // TC001 FIX: Debug logging for PIN validation
-            console.log('[PIN Input]', { digit: num, newPin, pinLength: newPin.length, selectedUser: selectedUser?.name });
-
-            // Auto submit if 4 digits
-            if (newPin.length === 4) {
-                console.log('[PIN Validation]', { enteredPin: newPin, expectedPin: selectedUser?.pin, match: newPin === selectedUser?.pin });
-                if (selectedUser && newPin === selectedUser.pin) {
-                    console.log('[LOGIN SUCCESS]', selectedUser.name);
-                    onLogin(selectedUser);
-                } else {
-                    console.log('[LOGIN FAILED] PIN mismatch');
-                    setError(true);
-                    setTimeout(() => setPin(''), 500);
-                }
-            }
+        if (isAuthenticating || !selectedUser) return;
+        if (pin.length >= 4) return;
+        const newPin = `${pin}${num}`;
+        setPin(newPin);
+        setErrorMessage('');
+        if (newPin.length === 4) {
+            void authenticate(newPin);
         }
     };
 
     const handleBackspace = () => {
+        if (isAuthenticating) return;
         setPin(prev => prev.slice(0, -1));
-        setError(false);
+        setErrorMessage('');
     };
 
+    useEffect(() => {
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (!selectedUser) return;
+            if (event.key >= '0' && event.key <= '9') {
+                handlePinInput(event.key);
+            }
+            if (event.key === 'Backspace') {
+                handleBackspace();
+            }
+            if (event.key === 'Enter' && pin.length === 4) {
+                void authenticate(pin);
+            }
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [authenticate, pin, selectedUser]);
+
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white p-4 md:p-6 font-sans">
-            <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 bg-gray-800 rounded-3xl overflow-hidden shadow-2xl border border-gray-700">
+        <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4 md:p-6 font-sans">
+            <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-slate-700">
 
                 {/* Left Side: User Selection */}
-                <div className="p-6 md:p-8 border-r-0 md:border-r border-b md:border-b-0 border-gray-700 flex flex-col h-[400px] md:h-auto">
+                <div className="p-6 md:p-8 border-r-0 md:border-r border-b md:border-b-0 border-slate-700 flex flex-col h-[440px] md:h-auto">
                     <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                        <UserIcon className="text-blue-500" />
+                        <UserIcon className="text-emerald-400" />
                         Selecione o Usuário
                     </h2>
 
                     <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-                        {users.map(user => (
+                        {users.length === 0 && (
+                            <div className="rounded-xl border border-slate-700 bg-slate-800 p-4 text-sm text-slate-300">
+                                Nenhum usuário encontrado no backend. Verifique a tabela <code>users</code> no Supabase.
+                            </div>
+                        )}
+                        {users.map((user) => (
                             <button
                                 key={user.id}
                                 onClick={() => handleUserSelect(user)}
                                 className={`w-full p-4 rounded-xl flex items-center justify-between transition-all duration-200 ${selectedUser?.id === user.id
-                                    ? 'bg-blue-600 text-white shadow-lg scale-[1.02]'
-                                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                                    ? 'bg-emerald-600 text-white shadow-lg scale-[1.02]'
+                                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
                                     }`}
                             >
                                 <div className="flex items-center gap-4">
@@ -86,7 +111,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                 </div>
 
                 {/* Right Side: PIN Pad */}
-                <div className="p-6 md:p-8 flex flex-col items-center justify-center bg-gray-800/50 relative h-[400px] md:h-auto">
+                <div className="p-6 md:p-8 flex flex-col items-center justify-center bg-slate-900/50 relative h-[440px] md:h-auto">
                     {!selectedUser ? (
                         <div className="text-center opacity-30">
                             <Lock size={64} className="mx-auto mb-4" />
@@ -95,7 +120,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                     ) : (
                         <div className="w-full max-w-[280px] animate-in fade-in slide-in-from-right duration-300">
                             <div className="text-center mb-8">
-                                <h3 className="text-xl font-medium mb-2">Olá, <span className="font-bold text-blue-400">{selectedUser.name}</span></h3>
+                                <h3 className="text-xl font-medium mb-2">Olá, <span className="font-bold text-emerald-400">{selectedUser.name}</span></h3>
                                 <p className="text-sm text-gray-400">Digite seu PIN de acesso</p>
                             </div>
 
@@ -105,16 +130,23 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                                     <div
                                         key={i}
                                         className={`w-4 h-4 rounded-full transition-all duration-200 ${pin.length > i
-                                            ? error ? 'bg-red-500 scale-110' : 'bg-blue-500 scale-110'
-                                            : 'bg-gray-600'
+                                            ? errorMessage ? 'bg-red-500 scale-110' : 'bg-emerald-500 scale-110'
+                                            : 'bg-slate-600'
                                             }`}
                                     />
                                 ))}
                             </div>
 
-                            {error && (
-                                <div className="absolute top-4 right-0 left-0 text-center text-red-500 text-sm font-bold animate-pulse">
-                                    PIN Incorreto
+                            {errorMessage && (
+                                <div className="absolute top-4 right-0 left-0 text-center text-red-400 text-sm font-bold animate-pulse">
+                                    {errorMessage}
+                                </div>
+                            )}
+
+                            {isAuthenticating && (
+                                <div className="mb-3 text-center text-xs text-slate-300 flex items-center justify-center gap-2">
+                                    <Loader2 size={14} className="animate-spin" />
+                                    Validando credenciais...
                                 </div>
                             )}
 
@@ -124,7 +156,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                                     <button
                                         key={num}
                                         onClick={() => handlePinInput(num.toString())}
-                                        className="h-16 rounded-xl bg-gray-700 hover:bg-gray-600 active:bg-gray-500 text-2xl font-bold transition-all shadow-md active:scale-95"
+                                        disabled={isAuthenticating}
+                                        className="h-16 rounded-xl bg-slate-700 hover:bg-slate-600 disabled:opacity-50 active:bg-slate-500 text-2xl font-bold transition-all shadow-md active:scale-95"
                                     >
                                         {num}
                                     </button>
@@ -132,18 +165,28 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                                 <div className="col-start-2">
                                     <button
                                         onClick={() => handlePinInput('0')}
-                                        className="w-full h-16 rounded-xl bg-gray-700 hover:bg-gray-600 active:bg-gray-500 text-2xl font-bold transition-all shadow-md active:scale-95"
+                                        disabled={isAuthenticating}
+                                        className="w-full h-16 rounded-xl bg-slate-700 hover:bg-slate-600 disabled:opacity-50 active:bg-slate-500 text-2xl font-bold transition-all shadow-md active:scale-95"
                                     >
                                         0
                                     </button>
                                 </div>
                                 <button
                                     onClick={handleBackspace}
-                                    className="h-16 rounded-xl bg-gray-700/50 hover:bg-red-900/30 text-red-400 flex items-center justify-center transition-all active:scale-95"
+                                    disabled={isAuthenticating}
+                                    className="h-16 rounded-xl bg-slate-700/50 hover:bg-red-900/30 disabled:opacity-50 text-red-400 flex items-center justify-center transition-all active:scale-95"
                                 >
                                     <Delete size={24} />
                                 </button>
                             </div>
+
+                            <button
+                                disabled={pin.length !== 4 || isAuthenticating}
+                                onClick={() => void authenticate(pin)}
+                                className="mt-4 w-full rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-400 py-3 font-semibold transition-colors"
+                            >
+                                Entrar
+                            </button>
                         </div>
                     )}
                 </div>

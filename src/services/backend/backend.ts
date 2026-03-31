@@ -221,6 +221,7 @@ export interface BackendInterface {
   deleteScout: (id: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<{ user: any, error: any }>;
   signOut: () => Promise<void>;
+  authenticateUserByPin: (userId: string, pin: string) => Promise<User | null>;
   resetDatabase: (options?: { keepCatalog?: boolean }) => Promise<void>;
   checkSchema: () => Promise<string[]>;
   fetchScouts: () => Promise<Scout[]>;
@@ -315,6 +316,28 @@ export const backend: BackendInterface = {
     if (!isSupabaseConfigured()) return;
     const sb = requireSupabase();
     await sb.auth.signOut();
+  },
+
+  authenticateUserByPin: async (userId, pin) => {
+    if (!isSupabaseConfigured()) {
+      const isPinFormatValid = /^\d{4}$/.test(pin);
+      const found = MOCK_USERS.find((u) => u.id === userId);
+      if (!isPinFormatValid) return null;
+      if (!found) return null;
+      return found as User;
+    }
+    const sb = requireSupabase();
+    const { data, error } = await sb
+      .from('users')
+      .select('id, name, role')
+      .eq('id', userId)
+      .eq('pin', pin)
+      .maybeSingle();
+    if (error) {
+      console.error('Erro ao autenticar usuário por PIN:', error);
+      return null;
+    }
+    return (data as User | null) ?? null;
   },
 
   loadInitialState: async (): Promise<BackendInitialState | null> => {

@@ -32,9 +32,7 @@ const App = () => {
             const guestUser: User = {
                 id: 'guest-kiosk',
                 name: 'Cliente Totem',
-                pin: '',
-                role: 'CASHIER', // Give basic permissions
-                active: true
+                role: 'CASHIER' // Give basic permissions
             };
             console.log('[Guest Mode] Activating guest mode for Kiosk:', { mode, isKioskPath, pathname: window.location.pathname });
             setCurrentUser(guestUser);
@@ -179,7 +177,7 @@ const App = () => {
                 </Button>
             </div>
 
-            {currentApp === 'POS' && <POS onExit={() => setCurrentApp(null)} />}
+            {currentApp === 'POS' && <POS onExit={() => setCurrentApp(null)} currentUserRole={currentUser.role} />}
             {currentApp === 'KIOSK' && <Kiosk />}
             {currentApp === 'KDS' && <KDS onExit={() => setCurrentApp(null)} />}
             {currentApp === 'KDS_SIMPLIFIED' && <KDSSimplified onExit={() => setCurrentApp(null)} />}

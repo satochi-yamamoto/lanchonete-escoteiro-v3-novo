@@ -1002,7 +1002,7 @@ export const UserManager = () => {
         setEditingId(u.id);
         setName(u.name);
         setRole(u.role);
-        setPin(u.pin);
+        setPin(u.pin || '');
         setIsModalOpen(true);
     };
 
@@ -1069,7 +1069,7 @@ export const UserManager = () => {
                                     {u.role === 'KITCHEN' && 'Apenas KDS'}
                                 </td>
                                 <td className="p-4 font-mono text-gray-400 group-hover:text-gray-800 transition-colors">
-                                    {u.role === 'ADMIN' ? '****' : u.pin}
+                                    {u.role === 'ADMIN' ? '****' : (u.pin || '----')}
                                 </td>
                                 <td className="p-4 text-right">
                                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">

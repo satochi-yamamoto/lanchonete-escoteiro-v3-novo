@@ -24,6 +24,7 @@ interface AppState {
 
   // Users & Auth (Login)
   users: User[];
+  authenticateUserByPin: (userId: string, pin: string) => Promise<User | null>;
   addUser: (u: User) => void;
   updateUser: (id: string, u: Partial<User>) => void;
   deleteUser: (id: string) => void;
@@ -90,6 +91,8 @@ interface AppState {
 }
 
 const newId = () => generateUUID();
+const sanitizeUsersForLogin = (users: User[]): User[] =>
+  users.map(({ pin, ...user }) => user as User);
 
 const PAYMENT_SETTINGS_STORAGE_KEY = 'omni_payment_settings';
 
@@ -205,7 +208,7 @@ export const useStore = create<AppState>((set, get) => ({
       set({
         ...data,
         dbUsers: data.users, // Store DB users separately
-        users: MOCK_USERS, // Keep login users as static mock users
+        users: sanitizeUsersForLogin(data.users),
         activePaymentMethodsPOS: (data as any).paymentSettings?.pos || get().activePaymentMethodsPOS,
         activePaymentMethodsKiosk: (data as any).paymentSettings?.kiosk || get().activePaymentMethodsKiosk,
         printReceiptEnabled: (data as any).printSettings?.enabled ?? get().printReceiptEnabled,
@@ -280,7 +283,7 @@ export const useStore = create<AppState>((set, get) => ({
   products: backend.kind === 'supabase' ? [] : MOCK_PRODUCTS,
   ingredients: backend.kind === 'supabase' ? [] : MOCK_INGREDIENTS,
   stockLogs: [],
-  users: MOCK_USERS,
+  users: sanitizeUsersForLogin(MOCK_USERS),
   dbUsers: [],
   scouts: backend.kind === 'supabase' ? [] : MOCK_SCOUTS,
   promotions: backend.kind === 'supabase' ? [] : MOCK_PROMOTIONS,
@@ -350,6 +353,15 @@ export const useStore = create<AppState>((set, get) => ({
     }));
     void backend.upsertIngredient(updatedIngredient).catch(() => { });
     void backend.insertStockLog(log).catch(() => { });
+  },
+
+  authenticateUserByPin: async (userId, pin) => {
+    try {
+      return await backend.authenticateUserByPin(userId, pin);
+    } catch (e) {
+      console.error('Falha ao autenticar por PIN:', e);
+      return null;
+    }
   },
 
   addUser: (u) => {

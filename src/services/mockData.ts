@@ -52,10 +52,10 @@ export const MOCK_PRODUCTS: Product[] = [
 ];
 
 export const MOCK_USERS: User[] = [
-  { id: 'u1', name: 'Admin', role: 'ADMIN', pin: '0000' },
-  { id: 'u2', name: 'Gerente João', role: 'MANAGER', pin: '0000' },
-  { id: 'u3', name: 'Caixa 01', role: 'CASHIER', pin: '0000' },
-  { id: 'u4', name: 'Cozinha', role: 'KITCHEN', pin: '0000' }
+  { id: 'u1', name: 'Admin', role: 'ADMIN' },
+  { id: 'u2', name: 'Gerente João', role: 'MANAGER' },
+  { id: 'u3', name: 'Caixa 01', role: 'CASHIER' },
+  { id: 'u4', name: 'Cozinha', role: 'KITCHEN' }
 ];
 
 export const MOCK_SCOUTS: Scout[] = [

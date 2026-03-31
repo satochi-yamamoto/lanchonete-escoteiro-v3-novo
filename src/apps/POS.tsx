@@ -6,7 +6,13 @@ import { ProductGrid, CartPanel, PaymentModal, ShiftPanel, SuccessModal, ZReport
 import { Settings, LogOut, User, Lock, Monitor, Power, ShoppingCart, X, BarChart2, FileText, ChevronRight } from 'lucide-react';
 import { printReceipt } from '../utils';
 
-export const POS = ({ onExit }: { onExit: () => void }) => {
+export const POS = ({
+    onExit,
+    currentUserRole
+}: {
+    onExit: () => void;
+    currentUserRole: 'ADMIN' | 'MANAGER' | 'CASHIER' | 'KITCHEN';
+}) => {
     const {
         currentSession,
         products, cart, cartTotals, currentShift, orders, maxItemsPerOrder, activePaymentMethodsPOS,
@@ -65,11 +71,11 @@ export const POS = ({ onExit }: { onExit: () => void }) => {
         const finalAmount = parseFloat(amountStr);
         const finalReason = prompt("Motivo (opcional):") || "";
 
-        // Auth simulation
+        // Permission-based authorization (no hardcoded PIN)
         if (type === 'DROP') {
-            const pin = prompt("SENHA DO GERENTE:");
-            if (pin !== '1234') {
-                alert("Senha Inválida");
+            const canAuthorizeDrop = currentUserRole === 'ADMIN' || currentUserRole === 'MANAGER';
+            if (!canAuthorizeDrop) {
+                alert("Apenas Admin/Gerente pode autorizar sangria.");
                 return;
             }
         }

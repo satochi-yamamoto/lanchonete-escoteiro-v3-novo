@@ -176,7 +176,7 @@ export interface User {
     id: string;
     name: string;
     role: 'ADMIN' | 'MANAGER' | 'CASHIER' | 'KITCHEN';
-    pin: string; // Simplified auth
+    pin?: string; // Optional on login list; required for admin/user management
 }
 
 export interface Scout {
