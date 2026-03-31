@@ -1,0 +1,116 @@
+version: "2"
+type: frontend
+tech_stack:
+  - TypeScript
+  - React
+  - Vite
+  - Tailwind CSS
+  - Zustand
+  - Supabase
+routes:
+  - path: /
+    file: src/App.tsx
+    auth_required: false
+    description: Login screen (user selection + PIN) and module launcher after authentication.
+  - path: /pos
+    file: src/apps/POS.tsx
+    auth_required: true
+    description: Cashier terminal for shift handling, cart, checkout, and order creation.
+  - path: /kiosk
+    file: src/apps/Kiosk.tsx
+    auth_required: true
+    description: Self-service ordering flow for customers.
+  - path: /kds
+    file: src/apps/KDS.tsx
+    auth_required: true
+    description: Kitchen Display System for order production status.
+  - path: /tv
+    file: src/apps/TV.tsx
+    auth_required: true
+    description: Public order status board for customers.
+  - path: /admin
+    file: src/apps/Admin.tsx
+    auth_required: true
+    description: Backoffice administration for store settings, users, and management tools.
+features:
+  - name: PIN Login
+    description: Operator chooses a user and authenticates by entering a 4-digit PIN.
+    files:
+      - src/components/LoginScreen.tsx
+      - src/App.tsx
+      - src/store.ts
+    entry_route: /
+    user_interactions:
+      - Select a user from the user list.
+      - Type four PIN digits using the on-screen keypad.
+      - See successful login and module selection menu.
+      - See invalid PIN feedback and PIN reset on incorrect entry.
+    api_calls: []
+    auth_required: false
+  - name: Module Selection
+    description: Logged-in user selects which operational module to open, with role-based access.
+    files:
+      - src/App.tsx
+      - src/types.ts
+    entry_route: /
+    user_interactions:
+      - Tap module cards such as POS, Kiosk, KDS, TV, or Admin.
+      - Use "Trocar Módulo" to return to launcher.
+      - Use logout button to end current session.
+    api_calls: []
+    auth_required: true
+  - name: POS Sales Flow
+    description: Cashier opens shift, adds items to cart, confirms payment, and creates order.
+    files:
+      - src/apps/POS.tsx
+      - src/components/pos/PosComponents.tsx
+      - src/store.ts
+    entry_route: /pos
+    user_interactions:
+      - Open cashier shift with operator and terminal details.
+      - Add products to cart and adjust item quantities.
+      - Open payment modal and confirm payment method/amount.
+      - View success modal and continue next sale.
+    api_calls:
+      - method: POST/UPSERT
+        endpoint: Supabase tables (orders, shifts, store_sessions) via backend adapter
+    auth_required: true
+  - name: Kitchen Display Operations
+    description: Kitchen staff monitors incoming orders and updates production status.
+    files:
+      - src/apps/KDS.tsx
+      - src/components/kds/KdsComponents.tsx
+      - src/store.ts
+    entry_route: /kds
+    user_interactions:
+      - View pending/in-progress/completed orders.
+      - Advance order status based on preparation step.
+      - Monitor real-time updates from order stream.
+    api_calls:
+      - method: SUBSCRIBE/UPSERT
+        endpoint: Supabase realtime/orders through backend subscription
+    auth_required: true
+  - name: Backoffice Administration
+    description: Admin manages store controls, order operations, and scout/user management.
+    files:
+      - src/apps/Admin.tsx
+      - src/components/admin/AdminComponents.tsx
+      - src/components/admin/OrderManager.tsx
+      - src/components/admin/ScoutManager.tsx
+      - src/components/admin/StoreControl.tsx
+    entry_route: /admin
+    user_interactions:
+      - Navigate admin sections and manage business data.
+      - Create/update records such as users/scouts/catalog items.
+      - Trigger operational actions like session/shift controls.
+    api_calls:
+      - method: UPSERT/DELETE
+        endpoint: Supabase tables (products, users, scouts, promotions, settings)
+    auth_required: true
+known_limitations:
+  - issue: Route navigation is implemented as in-memory component state (no URL-based router), so module deep-linking and browser history are limited.
+    location: src/App.tsx
+    impact: Automated navigation must interact through the launcher UI instead of direct URL routes.
+  - issue: If Supabase environment variables are missing, app falls back to local mock backend mode.
+    location: src/services/backend/backend.ts
+    impact: End-to-end persistence/realtime behavior differs from production backend.

@@ -1,0 +1,2284 @@
+[
+  {
+    "id": "TC001",
+    "title": "Successful PIN login shows module launcher menu",
+    "description": "Verifies that selecting a user and entering a correct 4-digit PIN logs in and displays the module selection menu.",
+    "category": "PIN Login",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Select User\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first user in the user list"
+      },
+      {
+        "type": "action",
+        "description": "Click the on-screen keypad digit \"1\""
+      },
+      {
+        "type": "action",
+        "description": "Click the on-screen keypad digit \"2\""
+      },
+      {
+        "type": "action",
+        "description": "Click the on-screen keypad digit \"3\""
+      },
+      {
+        "type": "action",
+        "description": "Click the on-screen keypad digit \"4\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Modules\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "Incorrect PIN shows invalid feedback and resets PIN entry",
+    "description": "Verifies that entering an incorrect 4-digit PIN shows an invalid PIN message and clears the PIN input for retry.",
+    "category": "PIN Login",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first user in the user list"
+      },
+      {
+        "type": "action",
+        "description": "Click the on-screen keypad digit \"9\""
+      },
+      {
+        "type": "action",
+        "description": "Click the on-screen keypad digit \"9\""
+      },
+      {
+        "type": "action",
+        "description": "Click the on-screen keypad digit \"9\""
+      },
+      {
+        "type": "action",
+        "description": "Click the on-screen keypad digit \"9\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Invalid PIN\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Enter PIN\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "PIN entry blocks access until 4 digits are entered",
+    "description": "Verifies that the module selection menu does not appear after fewer than 4 PIN digits are entered.",
+    "category": "PIN Login",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first user in the user list"
+      },
+      {
+        "type": "action",
+        "description": "Click the on-screen keypad digit \"1\""
+      },
+      {
+        "type": "action",
+        "description": "Click the on-screen keypad digit \"2\""
+      },
+      {
+        "type": "action",
+        "description": "Click the on-screen keypad digit \"3\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Modules\" is not visible"
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Switching selected user clears any in-progress PIN entry",
+    "description": "Verifies that changing the selected user resets the PIN entry state so digits from a previous selection are not carried over.",
+    "category": "PIN Login",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first user in the user list"
+      },
+      {
+        "type": "action",
+        "description": "Click the on-screen keypad digit \"1\""
+      },
+      {
+        "type": "action",
+        "description": "Click the on-screen keypad digit \"2\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the second user in the user list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Enter PIN\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the on-screen keypad digit \"3\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Modules\" is not visible"
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Invalid PIN feedback disappears after retrying PIN entry",
+    "description": "Verifies that after an invalid PIN attempt, starting a new PIN entry removes/does not persist the invalid feedback while retrying.",
+    "category": "PIN Login",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first user in the user list"
+      },
+      {
+        "type": "action",
+        "description": "Click the on-screen keypad digit \"9\""
+      },
+      {
+        "type": "action",
+        "description": "Click the on-screen keypad digit \"9\""
+      },
+      {
+        "type": "action",
+        "description": "Click the on-screen keypad digit \"9\""
+      },
+      {
+        "type": "action",
+        "description": "Click the on-screen keypad digit \"9\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Invalid PIN\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the on-screen keypad digit \"1\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Invalid PIN\" is not visible"
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "PIN keypad input is visible as masked PIN indicators",
+    "description": "Verifies that each keypad press updates visible PIN indicators (masked) to reflect the number of digits entered.",
+    "category": "PIN Login",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first user in the user list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"PIN indicator\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the on-screen keypad digit \"1\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"•\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the on-screen keypad digit \"2\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"••\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Open POS module from launcher after successful PIN login",
+    "description": "Verifies that an authenticated operator can see module cards and open the POS module from the launcher.",
+    "category": "Module Selection (Launcher)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click on an available user profile on the login screen"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the PIN field"
+      },
+      {
+        "type": "action",
+        "description": "Press Enter"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"POS\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"POS\" module card"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Trocar Módulo\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Module cards are visible on launcher after authentication",
+    "description": "Verifies the launcher lists all expected module cards after the operator authenticates.",
+    "category": "Module Selection (Launcher)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click on an available user profile on the login screen"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the PIN field"
+      },
+      {
+        "type": "action",
+        "description": "Press Enter"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"POS\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Kiosk\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"KDS\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"TV\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Admin access denied for non-admin user from launcher",
+    "description": "Verifies that a non-admin operator cannot open the Admin module and stays on the launcher with an access denied message.",
+    "category": "Module Selection (Launcher)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click on a non-admin user profile on the login screen"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the PIN field"
+      },
+      {
+        "type": "action",
+        "description": "Press Enter"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Admin\" module card"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Acesso negado\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"POS\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Return to launcher from POS using 'Trocar Módulo'",
+    "description": "Verifies the operator can return from the POS module back to the launcher using the module switch control.",
+    "category": "Module Selection (Launcher)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click on an available user profile on the login screen"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the PIN field"
+      },
+      {
+        "type": "action",
+        "description": "Press Enter"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"POS\" module card"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Trocar Módulo\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"POS\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Admin\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Logout from launcher returns to login screen",
+    "description": "Verifies that logging out from the launcher returns the user to the login screen.",
+    "category": "Module Selection (Launcher)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click on an available user profile on the login screen"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the PIN field"
+      },
+      {
+        "type": "action",
+        "description": "Press Enter"
+      },
+      {
+        "type": "action",
+        "description": "Click on the logout button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"PIN\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"user selection\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Invalid PIN does not allow access to launcher",
+    "description": "Verifies that entering an incorrect PIN keeps the operator on the login screen and shows an error message.",
+    "category": "Module Selection (Launcher)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click on an available user profile on the login screen"
+      },
+      {
+        "type": "action",
+        "description": "Type \"0000\" into the PIN field"
+      },
+      {
+        "type": "action",
+        "description": "Press Enter"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"PIN inválido\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"POS\" is not visible"
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "Attempt to open multiple modules sequentially via launcher (POS -> back -> KDS)",
+    "description": "Verifies module switching works repeatedly by opening POS, returning to launcher, then opening KDS.",
+    "category": "Module Selection (Launcher)",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click on an available user profile on the login screen"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the PIN field"
+      },
+      {
+        "type": "action",
+        "description": "Press Enter"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"POS\" module card"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Trocar Módulo\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"KDS\" module card"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"KDS\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "Launcher remains usable after admin access denial",
+    "description": "Verifies that after an access denied attempt on Admin, the operator can still open an allowed module (POS).",
+    "category": "Module Selection (Launcher)",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click on a non-admin user profile on the login screen"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the PIN field"
+      },
+      {
+        "type": "action",
+        "description": "Press Enter"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Admin\" module card"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Acesso negado\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"POS\" module card"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Trocar Módulo\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "Complete POS sale with cash payment and success confirmation",
+    "description": "Verifies a cashier can open a shift, add an item to cart, take a cash payment, and see an order success confirmation.",
+    "category": "POS Sales Flow",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"POS\" module from the launcher"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"POS\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Open Shift\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Open cashier shift\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Test Operator\" into the operator name field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Terminal 1\" into the terminal field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Confirm\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Shift open\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on a product from the product list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Cart\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the selected product name is visible in the cart"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Checkout\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Payment\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Select \"Cash\" from the payment method dropdown"
+      },
+      {
+        "type": "action",
+        "description": "Type \"20\" into the amount field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Confirm Payment\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Payment successful\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Order created\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC016",
+    "title": "Search or filter products and add to cart",
+    "description": "Verifies product search/filter narrows results and cashier can add a searched item to the cart.",
+    "category": "POS Sales Flow",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"POS\" module from the launcher"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Open Shift\" button"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Test Operator\" into the operator name field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Terminal 1\" into the terminal field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Confirm\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Shift open\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click into the product search field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Burger\" into the product search field"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Burger\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click a visible product result that matches the search"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the selected product name is visible in the cart"
+      }
+    ]
+  },
+  {
+    "id": "TC017",
+    "title": "Adjust item quantity in cart before checkout",
+    "description": "Verifies cashier can increase an item quantity in the cart and see the quantity update before paying.",
+    "category": "POS Sales Flow",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"POS\" module from the launcher"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Open Shift\" button"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Test Operator\" into the operator name field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Terminal 1\" into the terminal field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Confirm\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Shift open\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on a product from the product list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the product name is visible in the cart"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"+\" (increase quantity) control for the cart item"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Qty 2\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Checkout\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Payment\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC018",
+    "title": "Add modifiers to a cart item and verify they appear in cart",
+    "description": "Verifies cashier can open item details/modifiers, select a modifier, and see the modifier reflected in the cart.",
+    "category": "POS Sales Flow",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"POS\" module from the launcher"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Open Shift\" button"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Test Operator\" into the operator name field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Terminal 1\" into the terminal field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Confirm\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Shift open\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on a product from the product list"
+      },
+      {
+        "type": "action",
+        "description": "Click the cart item to open item details/modifiers"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Modifiers\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click a modifier option (for example, \"Add Cheese\")"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Save\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the chosen modifier text is visible under the cart item"
+      }
+    ]
+  },
+  {
+    "id": "TC019",
+    "title": "Validation error when attempting checkout without an open shift, then open shift and retry",
+    "description": "Verifies POS blocks checkout without an open shift, shows the expected validation message, then allows checkout after opening a shift.",
+    "category": "POS Sales Flow",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"POS\" module from the launcher"
+      },
+      {
+        "type": "action",
+        "description": "Click on a product from the product list"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Checkout\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Open a shift first\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Open Shift\" button"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Test Operator\" into the operator name field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Terminal 1\" into the terminal field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Confirm\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Shift open\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Checkout\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Payment\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC020",
+    "title": "Card payment declined shows error and allows retry",
+    "description": "Verifies a declined card payment displays a visible error and cashier can return to payment to retry.",
+    "category": "POS Sales Flow",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"POS\" module from the launcher"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Open Shift\" button"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Test Operator\" into the operator name field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Terminal 1\" into the terminal field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Confirm\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Shift open\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on a product from the product list"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Checkout\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Payment\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Select \"Card\" from the payment method dropdown"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Confirm Payment\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Payment declined\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Try again\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Payment\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC021",
+    "title": "Cancel payment modal returns to cart without placing order",
+    "description": "Verifies cashier can open the payment modal then cancel/close it and remain on the cart screen with items intact.",
+    "category": "POS Sales Flow",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"POS\" module from the launcher"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Open Shift\" button"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Test Operator\" into the operator name field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Terminal 1\" into the terminal field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Confirm\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Shift open\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on a product from the product list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the product name is visible in the cart"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Checkout\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Payment\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Cancel\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Cart\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the product name is visible in the cart"
+      }
+    ]
+  },
+  {
+    "id": "TC022",
+    "title": "After successful sale, continue next sale resets cart",
+    "description": "Verifies that after a successful payment, cashier can continue to next sale and the cart is cleared for a new order.",
+    "category": "POS Sales Flow",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify URL contains \"/\""
+      },
+      {
+        "type": "action",
+        "description": "Click the \"POS\" module from the launcher"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Open Shift\" button"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Test Operator\" into the operator name field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Terminal 1\" into the terminal field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Confirm\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Shift open\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on a product from the product list"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Checkout\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Payment\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Select \"Cash\" from the payment method dropdown"
+      },
+      {
+        "type": "action",
+        "description": "Type \"10\" into the amount field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Confirm Payment\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Payment successful\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Continue\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Cart\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Cart is empty\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC023",
+    "title": "KDS: Advance an order from PAID to PREPARING to READY",
+    "description": "Verifies a kitchen user can select a paid/pending order and bump it through PREPARING to READY with visible status updates.",
+    "category": "Kitchen Display Operations (KDS)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"KDS\" in the module launcher"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Kitchen Display\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a list of orders is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first order in the list that shows status \"PAID\" or \"PENDING\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Bump\" to move the order to \"PREPARING\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"PREPARING\" is visible for the selected order"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Bump\" to move the order to \"READY\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"READY\" is visible for the selected order"
+      }
+    ]
+  },
+  {
+    "id": "TC024",
+    "title": "KDS: Verify realtime UI update occurs after bumping an order status",
+    "description": "Verifies that after changing an order status, the KDS order list reflects the new status without a manual refresh action.",
+    "category": "Kitchen Display Operations (KDS)",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"KDS\" in the module launcher"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a list of orders is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first order in the list that shows status \"PAID\" or \"PENDING\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Bump\" to move the order to \"PREPARING\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the selected order shows status \"PREPARING\" in the order list"
+      },
+      {
+        "type": "action",
+        "description": "Click on the KDS header area or an empty area of the page"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the order still shows status \"PREPARING\" in the order list"
+      }
+    ]
+  },
+  {
+    "id": "TC025",
+    "title": "KDS: View PREPARING orders with visible SLA timers",
+    "description": "Verifies that PREPARING orders display an SLA timer/age indicator that is visible in the KDS list.",
+    "category": "Kitchen Display Operations (KDS)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"KDS\" in the module launcher"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a list of orders is visible"
+      },
+      {
+        "type": "action",
+        "description": "Scroll to the section that contains orders with status \"PREPARING\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify at least one \"PREPARING\" status label is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an SLA timer or time indicator is visible near a \"PREPARING\" order"
+      }
+    ]
+  },
+  {
+    "id": "TC026",
+    "title": "KDS: Mark an order item as PARTIAL for partial delivery",
+    "description": "Verifies a kitchen user can mark part of an order as PARTIAL and see the partial state reflected visually on the order.",
+    "category": "Kitchen Display Operations (KDS)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"KDS\" in the module launcher"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a list of orders is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first order in the list that shows status \"PREPARING\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the order details panel is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first order item in the order details list"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Partial\" or \"Mark Partial\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"PARTIAL\" is visible for the selected item or order"
+      }
+    ]
+  },
+  {
+    "id": "TC027",
+    "title": "KDS: PARTIAL state is visible on downstream modules (TV board) via realtime update",
+    "description": "Verifies that after setting PARTIAL on KDS, the TV module reflects the updated state without relying on direct URL deep-linking.",
+    "category": "Kitchen Display Operations (KDS)",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"KDS\" in the module launcher"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a list of orders is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first order in the list that shows status \"PREPARING\""
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Partial\" or \"Mark Partial\" in the order details"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"PARTIAL\" is visible for the order"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Home\" or \"Launcher\" to return to the module launcher"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"TV\" in the module launcher"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"TV\" or \"Status Board\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"PARTIAL\" is visible for the same order number (or the most recently updated order)"
+      }
+    ]
+  },
+  {
+    "id": "TC028",
+    "title": "KDS: Recall a bumped order back to a previous state (if supported)",
+    "description": "Verifies that an order can be recalled (un-bumped) and the UI reflects the prior status after the recall action.",
+    "category": "Kitchen Display Operations (KDS)",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"KDS\" in the module launcher"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a list of orders is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first order in the list that shows status \"READY\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the order details panel is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Recall\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"PREPARING\" or \"PAID\" is visible for the selected order"
+      }
+    ]
+  },
+  {
+    "id": "TC029",
+    "title": "Complete kiosk order from splash to receipt with customization and payment",
+    "description": "Verifies a customer can start the kiosk, add a customized item to the cart, complete payment selection/confirmation, and see a success or receipt screen.",
+    "category": "Kiosk Self-Service Flow",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /kiosk"
+      },
+      {
+        "type": "action",
+        "description": "Click on the Splash screen start button (or the main Splash screen area) to begin ordering"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Categories\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on a category in the category list"
+      },
+      {
+        "type": "action",
+        "description": "Click on a product tile in the product grid"
+      },
+      {
+        "type": "action",
+        "description": "Type \"No onions\" into the notes field"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Add to cart\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the cart button to open the cart"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Cart\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Proceed to payment\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Payment\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on a visible payment method option"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Confirm payment\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Receipt\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC030",
+    "title": "Start ordering flow and verify category browsing updates product grid",
+    "description": "Verifies that selecting categories after starting the kiosk updates the visible menu browsing state.",
+    "category": "Kiosk Self-Service Flow",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /kiosk"
+      },
+      {
+        "type": "action",
+        "description": "Click on the Splash screen start button (or the main Splash screen area) to begin ordering"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Categories\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on a first category in the category list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Product grid\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on a different category in the category list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Product grid\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC031",
+    "title": "Add multiple items to cart and verify cart summary reflects additions",
+    "description": "Verifies that multiple items can be added and the cart view reflects the added line items before payment.",
+    "category": "Kiosk Self-Service Flow",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /kiosk"
+      },
+      {
+        "type": "action",
+        "description": "Click on the Splash screen start button (or the main Splash screen area) to begin ordering"
+      },
+      {
+        "type": "action",
+        "description": "Click on a product tile in the product grid"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Add to cart\""
+      },
+      {
+        "type": "action",
+        "description": "Click on another product tile in the product grid"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Add to cart\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the cart button to open the cart"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Cart\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC032",
+    "title": "Payment method selection is required before confirming payment",
+    "description": "Verifies the kiosk prevents confirming payment without selecting a payment method (when multiple methods are presented).",
+    "category": "Kiosk Self-Service Flow",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /kiosk"
+      },
+      {
+        "type": "action",
+        "description": "Click on the Splash screen start button (or the main Splash screen area) to begin ordering"
+      },
+      {
+        "type": "action",
+        "description": "Click on a product tile in the product grid"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Add to cart\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the cart button to open the cart"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Proceed to payment\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Payment\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Confirm payment\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Select payment method\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC033",
+    "title": "Back out from cart to menu and continue shopping",
+    "description": "Verifies the customer can open the cart, return to menu browsing, and add another item without losing the session state.",
+    "category": "Kiosk Self-Service Flow",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /kiosk"
+      },
+      {
+        "type": "action",
+        "description": "Click on the Splash screen start button (or the main Splash screen area) to begin ordering"
+      },
+      {
+        "type": "action",
+        "description": "Click on a product tile in the product grid"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Add to cart\""
+      },
+      {
+        "type": "action",
+        "description": "Click on the cart button to open the cart"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Cart\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Continue shopping\""
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Product grid\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on another product tile in the product grid"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Add to cart\""
+      }
+    ]
+  },
+  {
+    "id": "TC034",
+    "title": "Start kiosk, open a product, and verify customization controls are available",
+    "description": "Verifies that opening a product presents modifier selection and a notes input before adding to cart.",
+    "category": "Kiosk Self-Service Flow",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /kiosk"
+      },
+      {
+        "type": "action",
+        "description": "Click on the Splash screen start button (or the main Splash screen area) to begin ordering"
+      },
+      {
+        "type": "action",
+        "description": "Click on a product tile in the product grid"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Modifiers\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Notes field\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on a modifier option (if visible) to toggle/select it"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Extra spicy\" into the notes field"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Add to cart\""
+      }
+    ]
+  },
+  {
+    "id": "TC035",
+    "title": "TV board shows expected sections with populated orders",
+    "description": "Verifies the TV status board renders the two main sections and displays at least one order card when orders exist.",
+    "category": "Status TV (Public Order Board)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /tv"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Prontos\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Em Preparo\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"an order card in the 'Prontos' section\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"an order card in the 'Em Preparo' section\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC036",
+    "title": "TV board shows empty state when there are no orders",
+    "description": "Verifies the TV status board displays the empty-state message when no orders are available.",
+    "category": "Status TV (Public Order Board)",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /tv"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Nenhum pedido no momento\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Prontos\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Em Preparo\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"any order card\" is not visible"
+      }
+    ]
+  },
+  {
+    "id": "TC037",
+    "title": "Overdue/SLA-breached orders are highlighted",
+    "description": "Verifies the board visually highlights overdue orders to draw attention to SLA breaches.",
+    "category": "Status TV (Public Order Board)",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /tv"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"an order card marked as overdue (SLA breach highlight)\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"a visible overdue indicator (e.g., warning label/priority highlight) on that order\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Prontos\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC038",
+    "title": "Empty state persists and does not crash while waiting for updates",
+    "description": "Verifies the screen remains stable on the empty state while waiting for polling/realtime updates.",
+    "category": "Status TV (Public Order Board)",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /tv"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Nenhum pedido no momento\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Wait for 15 seconds"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Nenhum pedido no momento\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Prontos\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Em Preparo\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC039",
+    "title": "Create a new user (or scout) record from Admin and verify it appears in the list",
+    "description": "Verifies an admin can create a new record with a role and see it persisted in the Admin list with a success confirmation.",
+    "category": "Backoffice Administration",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password/PIN field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" or \"Login\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Admin\" in the module launcher"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Users\" section (or \"Scouts\" section if Users is not available)"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create\" button"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Auto User A\" into the name field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"auto.user.a@example.test\" into the email/identifier field (if present)"
+      },
+      {
+        "type": "action",
+        "description": "Select \"Admin\" (or any available non-empty role) from the Role dropdown"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Save\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Success\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Auto User A\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC040",
+    "title": "Validation when creating a user/scout with missing required fields",
+    "description": "Verifies required-field validation prevents saving and shows a visible error message.",
+    "category": "Backoffice Administration",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password/PIN field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" or \"Login\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Admin\" in the module launcher"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Users\" section (or \"Scouts\" section if Users is not available)"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Save\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Required\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC041",
+    "title": "Close store session is blocked when a shift is open (shows validation error)",
+    "description": "Verifies the Admin store session control prevents closing a session when at least one shift is open and displays the expected validation message.",
+    "category": "Backoffice Administration",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password/PIN field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" or \"Login\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Admin\" in the module launcher"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Store Control\" or \"Store Session\" section"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Close Session\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Cannot close session with open shifts\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC042",
+    "title": "Resolve open shifts from Admin and close store session successfully",
+    "description": "Verifies an admin can resolve open shifts and then successfully close the store session with a visible success confirmation.",
+    "category": "Backoffice Administration",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password/PIN field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" or \"Login\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Admin\" in the module launcher"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Store Control\" or \"Store Session\" section"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Resolve Open Shifts\" button (or \"Close Shift\" for the listed open shift)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"No open shifts\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Close Session\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Session closed\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC043",
+    "title": "Edit product availability in Admin and verify it updates visibly in POS",
+    "description": "Verifies a product availability change saved in Admin is reflected in the POS UI when viewing the product list.",
+    "category": "Backoffice Administration",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password/PIN field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" or \"Login\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Admin\" in the module launcher"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Products\" section"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first product in the list to open its details editor"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Availability\" toggle (or similar in-stock/available control) to change its state"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Save\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Success\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"POS\" in the module launcher"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify element \"Product list\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Unavailable\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC044",
+    "title": "Edit promotion validity dates in Admin and verify it appears updated in Kiosk promotions view",
+    "description": "Verifies a promotion validity change saved in Admin is visible in the Kiosk UI (as available/unavailable or updated label).",
+    "category": "Backoffice Administration",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password/PIN field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" or \"Login\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Admin\" in the module launcher"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Promotions\" section"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first promotion in the list to open its editor"
+      },
+      {
+        "type": "action",
+        "description": "Type \"2099-12-31\" into the promotion \"Valid until\" field (or equivalent end date field)"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Save\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Success\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Kiosk\" in the module launcher"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Promotions\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Valid\" is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC045",
+    "title": "Cancel out of an edit form without saving does not persist changes",
+    "description": "Verifies that leaving an edit/create screen via Cancel/Back does not apply changes to the list view.",
+    "category": "Backoffice Administration",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password/PIN field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" or \"Login\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Admin\" in the module launcher"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Products\" section"
+      },
+      {
+        "type": "action",
+        "description": "Click on the first product in the list to open its details editor"
+      },
+      {
+        "type": "action",
+        "description": "Type \"TEMP NAME CHANGE\" into the product name field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Cancel\" or \"Back\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"TEMP NAME CHANGE\" is not visible"
+      }
+    ]
+  },
+  {
+    "id": "TC046",
+    "title": "Delete a record from Admin and verify it is removed from the list",
+    "description": "Verifies an admin can delete a manageable record (product/promotion/scout/user) and sees confirmation and list removal.",
+    "category": "Backoffice Administration",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_USER}}\" into the username/email field"
+      },
+      {
+        "type": "action",
+        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password/PIN field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Sign in\" or \"Login\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Admin\" in the module launcher"
+      },
+      {
+        "type": "action",
+        "description": "Click on the \"Promotions\" section (or \"Products\" if Promotions is not available)"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Create\" button"
+      },
+      {
+        "type": "action",
+        "description": "Type \"Auto Promo To Delete\" into the promotion name field"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Save\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Auto Promo To Delete\" is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on \"Auto Promo To Delete\" in the list to open details"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Delete\" button"
+      },
+      {
+        "type": "action",
+        "description": "Click the \"Confirm\" button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Deleted\" is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text \"Auto Promo To Delete\" is not visible"
+      }
+    ]
+  }
+]

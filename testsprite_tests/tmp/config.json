@@ -1,0 +1,20 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:5173",
+  "loginUser": "admin",
+  "loginPassword": "0000",
+  "executionArgs": {
+    "projectName": "OmniBurger-POS-Suite-v2",
+    "projectPath": "c:\\Projetos\\OmniBurger-POS-Suite-v2",
+    "testIds": [],
+    "additionalInstruction": "Execute full frontend suite in production mode and prioritize validation of recent fixes: login PIN flow, admin logout, kiosk guest mode, and payment method persistence after reload.",
+    "serverMode": "production",
+    "envs": {
+      "API_KEY": "sk-user-wzXbbCK7yHP9QDXDU83VCkHC5gEeRW2gEvWZP1oUm9bDW1k8771dWYyzThNuvKc-2w1sYjDtMF9Zf2R59ZYkptKsCHLx--Rq6462IGKJFbpngt2Ro6xO-PwL-aKbeJt2qUc"
+    }
+  },
+  "serverPort": 65456,
+  "proxy": "http://6ff1c5df-c7cb-4087-a6f9-5f70184b3c31:ooveVvTOwr50hDiuA5D8W7NLikEymRiv@tun.testsprite.com:8080"
+}

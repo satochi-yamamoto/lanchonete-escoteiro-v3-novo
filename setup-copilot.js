@@ -1,0 +1,129 @@
+import { mkdirSync, writeFileSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const dir = join(__dirname, '.github');
+mkdirSync(dir, { recursive: true });
+
+const content = `# Copilot Instructions — OmniBurger POS Suite v2
+
+## Commands
+
+\`\`\`bash
+npm run dev        # Dev server on http://localhost:3000
+npm run build      # Production build
+npm run test       # Run all tests with Vitest
+
+# Run a single test file
+npx vitest run src/basic.test.ts
+
+# Run tests matching a description
+npx vitest run --reporter=verbose -t "nome do teste"
+\`\`\`
+
+> Vitest's \`jsdom\` environment is currently disabled in \`vite.config.ts\`. Check that config before writing DOM/component tests.
+
+---
+
+## Architecture
+
+This is a **single-page, multi-app** React 19 + Vite + TypeScript SPA. All modules (POS, KDS, Kiosk, TV, Admin) live in one bundle and are switched via React state — **there is no URL router**.
+
+### App flow (\`src/App.tsx\`)
+
+\`\`\`
+!currentUser              → <LoginScreen> (PIN-based auth)
+currentUser, !currentApp  → Module selection grid (RBAC-filtered)
+currentUser, currentApp   → One of: <POS> | <KDS> | <Kiosk> | <TV> | <Admin>
+\`\`\`
+
+Each module is a file in \`src/apps/\`. The top-level entry is \`src/index.tsx\` → \`src/App.tsx\`.
+
+### Backend abstraction (\`src/services/backend/backend.ts\`)
+
+\`BackendInterface\` is a Strategy pattern with two implementations:
+
+- **Supabase** — active when \`VITE_SUPABASE_URL\` + \`VITE_SUPABASE_ANON_KEY\` exist in \`.env.local\`
+- **Mock/Local** — fallback; in-memory no-ops seeded from \`src/services/mockData.ts\`
+
+The store **never imports Supabase directly** — always calls \`backend.*\` methods.
+
+### State management (\`src/store.ts\`)
+
+Zustand is the single source of truth. Three key patterns:
+
+1. **Optimistic updates**: \`set(...)\` fires immediately; backend call is async and failures are silently discarded:
+   \`\`\`ts
+   set(s => ({ products: [...s.products, p] }));
+   void backend.upsertProduct(p).catch(() => {});
+   \`\`\`
+
+2. **Realtime sync**: \`initializeBackend()\` subscribes to Supabase Realtime on \`orders\` and \`store_sessions\`. Changes from other terminals arrive through these subscriptions.
+
+3. **Two-layer users**: \`users[]\` = static mock logins for the login screen; \`dbUsers[]\` = DB-persisted records managed in Admin. They are separate arrays with separate CRUD actions.
+
+### Promotion engine (\`src/services/promotionEngine.ts\`)
+
+\`calculateCartTotals(items, promotions)\` handles discount logic. **Only \`FIXED_PRICE_BUNDLE\` is currently implemented.** \`BOGO\` and \`PERCENTAGE_OFF\` types are defined in \`src/types.ts\` but their calculation is not yet coded.
+
+---
+
+## Key Conventions
+
+### Types first
+All data models and enums live in \`src/types.ts\`. Define or extend interfaces there before implementing logic elsewhere.
+
+### Path alias
+Use \`@/\` for all imports from \`src/\`:
+\`\`\`ts
+import { useStore } from '@/store';
+import { Button, formatCurrency } from '@/components/ui';
+\`\`\`
+
+### Reuse UI primitives (\`src/components/ui.tsx\`)
+Before creating new components, check for existing ones:
+- \`<Button variant="primary|secondary|success|danger|warning">\` — always use these variants; don't hardcode Tailwind color classes in call sites
+- \`<Card>\` — white container with border shadow
+- \`<Badge>\` — status-aware; driven by \`OrderStatus\` enum values
+- \`formatCurrency(value)\` — **always** use for BRL amounts (pt-BR locale, R$ symbol)
+- \`playSound('new_order' | 'warning')\` — procedural Web Audio API; no audio files needed
+
+### Order status lifecycle
+\`PENDING → PAID → PREPARING → READY → PARTIAL → DELIVERED | CANCELLED\`
+
+The \`OrderStatus\` enum in \`src/types.ts\` is canonical. Badge colors in \`ui.tsx\` follow this flow exactly.
+
+### Store session vs. Shift
+- **StoreSession**: represents a business day — must be \`OPEN\` before any shift can be created.
+- **Shift**: per-cashier session within an open store session. \`openShift()\` in the store validates this.
+
+Don't conflate the two: sessions are business-level, shifts are operator-level.
+
+### RBAC
+\`ADMIN > MANAGER > CASHIER > KITCHEN\`. Access control is enforced by conditionally not rendering module buttons in \`src/App.tsx\`. There is no middleware or route guard — if you add a new module, add the role check there.
+
+### Stock deduction
+On \`createOrder()\`, the store deducts ingredients from inventory using each product's \`recipe[]\` (bill of materials). This happens **client-side** — a known limitation vs. a server-side approach.
+
+---
+
+## Database (Supabase)
+
+Run SQL scripts in this order from the Supabase SQL Editor:
+1. \`supabase/schema.clean.sql\` — table definitions
+2. \`supabase/schema.rls.sql\` — Row Level Security policies
+3. \`supabase/schema.realtime.sql\` — enables Realtime on \`orders\`
+
+Key tables: \`products\`, \`ingredients\`, \`orders\`, \`shifts\`, \`store_sessions\`, \`users\`, \`scouts\`, \`promotions\`, \`settings\` (JSONB), \`stock_logs\`.
+
+\`.env.local\` (not committed):
+\`\`\`
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
+\`\`\`
+Missing variables → app silently runs in Mock Mode.
+`;
+
+writeFileSync(join(dir, 'copilot-instructions.md'), content, 'utf8');
+console.log('✅ Created .github/copilot-instructions.md');
