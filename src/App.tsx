@@ -1,10 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { POS } from './apps/POS';
-import { Kiosk } from './apps/Kiosk';
-import { KDS } from './apps/KDS';
-import { TV } from './apps/TV';
 import { Admin } from './apps/Admin';
-import { KDSSimplified } from './apps/KDSSimplified';
 import { Button } from './components/ui';
 import { useStore } from './store';
 import { LoginScreen } from './components/LoginScreen';
@@ -19,26 +15,6 @@ const App = () => {
     const backend = useStore(s => s.backend);
     const realtimeStatus = useStore(s => s.realtimeStatus);
     const didInit = useRef(false);
-
-    // Check for guest mode (for Kiosk direct access)
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const mode = params.get('mode');
-        const isKioskPath = window.location.pathname === '/kiosk' || window.location.pathname.endsWith('/kiosk');
-
-        // TC029 FIX: Support both ?mode=kiosk query param AND /kiosk pathname
-        if ((mode === 'kiosk' || isKioskPath) && !currentUser) {
-            // Create a virtual guest user for Kiosk
-            const guestUser: User = {
-                id: 'guest-kiosk',
-                name: 'Cliente Totem',
-                role: 'CASHIER' // Give basic permissions
-            };
-            console.log('[Guest Mode] Activating guest mode for Kiosk:', { mode, isKioskPath, pathname: window.location.pathname });
-            setCurrentUser(guestUser);
-            setCurrentApp('KIOSK');
-        }
-    }, [currentUser]);
 
     useEffect(() => {
         if (didInit.current) return;
@@ -60,8 +36,6 @@ const App = () => {
         const role = currentUser.role;
         const canAccessAdmin = role === 'ADMIN';
         const canAccessPOS = role === 'ADMIN' || role === 'MANAGER' || role === 'CASHIER';
-        const canAccessKitchen = role === 'ADMIN' || role === 'KITCHEN';
-        const canAccessTV = true; // All profiles can access TV
 
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white p-4 relative">
@@ -109,49 +83,13 @@ const App = () => {
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl w-full">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl w-full">
                     {canAccessPOS && (
                         <MenuButton
                             title="Terminal PDV"
                             desc="Interface do caixa para pedidos."
                             onClick={() => setCurrentApp('POS')}
                             color="bg-blue-600"
-                        />
-                    )}
-
-                    {canAccessPOS && (
-                        <MenuButton
-                            title="Totem Autoatendimento"
-                            desc="Interface touch para clientes."
-                            onClick={() => setCurrentApp('KIOSK')}
-                            color="bg-red-600"
-                        />
-                    )}
-
-                    {canAccessKitchen && (
-                        <MenuButton
-                            title="KDS (Completo)"
-                            desc="Display de produção (3 etapas)."
-                            onClick={() => setCurrentApp('KDS')}
-                            color="bg-orange-600"
-                        />
-                    )}
-
-                    {canAccessKitchen && (
-                        <MenuButton
-                            title="KDS (Simplificado)"
-                            desc="Apenas entrega rápida (1 etapa)."
-                            onClick={() => setCurrentApp('KDS_SIMPLIFIED')}
-                            color="bg-amber-500 text-gray-900"
-                        />
-                    )}
-
-                    {canAccessTV && (
-                        <MenuButton
-                            title="Status TV"
-                            desc="Painel público de senhas."
-                            onClick={() => setCurrentApp('TV')}
-                            color="bg-green-600"
                         />
                     )}
 
@@ -178,10 +116,6 @@ const App = () => {
             </div>
 
             {currentApp === 'POS' && <POS onExit={() => setCurrentApp(null)} currentUserRole={currentUser.role} />}
-            {currentApp === 'KIOSK' && <Kiosk />}
-            {currentApp === 'KDS' && <KDS onExit={() => setCurrentApp(null)} />}
-            {currentApp === 'KDS_SIMPLIFIED' && <KDSSimplified onExit={() => setCurrentApp(null)} />}
-            {currentApp === 'TV' && <TV onExit={() => setCurrentApp(null)} />}
             {currentApp === 'ADMIN' && <Admin onExit={() => setCurrentApp(null)} onLogout={handleLogout} />}
         </div>
     );

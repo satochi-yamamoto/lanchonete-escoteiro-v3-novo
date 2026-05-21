@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { CartItem, Order, OrderStatus, OrderType, Product, Shift, ShiftTransaction, PaymentMethod, Ingredient, StockLog, User, Promotion, ShiftTransactionExtras, TaxSettings, StoreSession, Scout, MenuCatalog, TerminalConfig } from './types';
+import { CartItem, Order, OrderStatus, OrderType, Product, Shift, ShiftTransaction, PaymentMethod, Ingredient, StockLog, User, Promotion, ShiftTransactionExtras, ShiftOpeningData, TaxSettings, StoreSession, Scout, MenuCatalog, TerminalConfig } from './types';
 import { calculateCartTotals, MOCK_PROMOTIONS } from './services/promotionEngine';
 import { backend, BackendInterface } from './services/backend/backend';
 import { MOCK_INGREDIENTS, MOCK_PRODUCTS, MOCK_USERS, MOCK_SCOUTS } from './services/mockData';
@@ -79,7 +79,7 @@ interface AppState {
 
   // Shift Management
   currentShift: Shift | null;
-  openShift: (staffName: string, startCash: number, terminalId: string) => void;
+  openShift: (staffName: string, startCash: number, terminalId: string, openingData: ShiftOpeningData) => void;
   closeShift: (metrics?: { drinks_liters?: number, burger_cost?: number, burgers_produced?: number, burgers_unsold?: number, menu_name?: string, closer_name?: string, feedback?: string }) => void;
   addShiftTransaction: (type: ShiftTransaction['type'], amount: number, reason: string, extras?: ShiftTransactionExtras) => void;
 
@@ -610,13 +610,15 @@ export const useStore = create<AppState>((set, get) => ({
     }
 
     // 3. Create Order
+    const now = new Date().toISOString();
     const newOrder: Order = {
       id: newId(),
       // Use custom alphanumeric ID if provided, otherwise generate random
       order_number: customId || Math.floor(Math.random() * 1000).toString().padStart(3, '0'),
-      created_at: new Date().toISOString(),
-      paid_at: new Date().toISOString(),
-      status: OrderStatus.PAID,
+      created_at: now,
+      paid_at: now,
+      delivered_at: now,
+      status: OrderStatus.DELIVERED,
       type,
       items: [...cart],
       ...cartTotals,
@@ -718,7 +720,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   // --- Shift Actions ---
-  openShift: (staffName, startCash, terminalId) => {
+  openShift: (staffName, startCash, terminalId, openingData) => {
     const { currentSession } = get();
     // Validate: Cannot open shift if store is closed
     if (!currentSession || currentSession.status !== 'OPEN') {
@@ -735,6 +737,7 @@ export const useStore = create<AppState>((set, get) => ({
       start_cash: startCash,
       current_cash: startCash,
       status: 'OPEN',
+      ...openingData,
       transactions: [{
         id: 'init', time: new Date().toISOString(), type: 'OPENING', amount: startCash, user_id: staffName
       }]

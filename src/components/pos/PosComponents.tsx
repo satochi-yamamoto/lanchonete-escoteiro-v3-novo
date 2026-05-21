@@ -1237,9 +1237,17 @@ export const ZReportModal = ({ shift, orders, onClose, onConfirmClose }: any) =>
             "      RELATÓRIO DE FECHAMENTO   ",
             "             REDUÇÃO Z          ",
             "================================",
-            `LOJA: MATRIZ - TERM: ${shift.terminal_id}`,
+            `LOJA: MATRIZ - GRUPO: ${shift.terminal_id}`,
             `DATA: ${new Date().toLocaleString()}`,
             `OPERADOR: ${shift.staff_name}`,
+            shift.daily_menu_name ? `LANCHE DO DIA: ${shift.daily_menu_name}` : null,
+            "--------------------------------",
+            "PLANEJAMENTO DA ABERTURA:",
+            shift.opening_product_cost_total !== undefined ? `CUSTO INSUMOS:   ${formatCurrency(shift.opening_product_cost_total)}` : null,
+            shift.planned_normal_burgers !== undefined ? `LANCHE NORMAL:   ${shift.planned_normal_burgers} un` : null,
+            shift.planned_vegan_burgers !== undefined ? `LANCHE VEGANO:   ${shift.planned_vegan_burgers} un` : null,
+            shift.opening_unit_cost_suggested !== undefined ? `UNIT. SUGERIDO:  ${formatCurrency(shift.opening_unit_cost_suggested)}` : null,
+            shift.opening_unit_cost !== undefined ? `UNIT. FINAL:     ${formatCurrency(shift.opening_unit_cost)}` : null,
             "--------------------------------",
             `VENDAS TOTAIS:    ${formatCurrency(totalSales)}`,
             `QTD PEDIDOS:      ${orderCount}`,
@@ -1259,7 +1267,7 @@ export const ZReportModal = ({ shift, orders, onClose, onConfirmClose }: any) =>
             `CAIXA TEÓRICO:    ${formatCurrency(shift.current_cash)}`,
             "================================",
             "        FIM DO RELATÓRIO        "
-        ];
+        ].filter((line): line is string => Boolean(line));
     };
 
     const handlePrint = () => {

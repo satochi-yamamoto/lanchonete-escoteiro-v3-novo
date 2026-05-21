@@ -1573,7 +1573,7 @@ export const ReportsManager = () => {
                     <thead className="bg-gray-50 border-b">
                         <tr>
                             <th className="p-4">Data/Hora</th>
-                            <th className="p-4">Operador / Terminal (ID)</th>
+                            <th className="p-4">Operador / Grupo Responsável</th>
                             <th className="p-4 text-center">Itens Vendidos</th>
                             <th className="p-4 text-center">Qtd Pedidos</th>
                             <th className="p-4 text-right">Fundo Abertura</th>
@@ -1793,7 +1793,7 @@ export const ReportsManager = () => {
                             {/* Cabeçalho do Relatório */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-5 rounded-lg border shadow-sm">
                                 <div>
-                                    <p className="text-sm text-gray-500 font-bold uppercase mb-1">Operador / Terminal (ID)</p>
+                                    <p className="text-sm text-gray-500 font-bold uppercase mb-1">Operador / Grupo Responsável</p>
                                     <p className="text-lg font-bold text-gray-800">
                                         {selectedShift.shift.staff_name} / {selectedShift.shift.terminal_id || 'Não informado'}
                                     </p>
@@ -1806,6 +1806,9 @@ export const ReportsManager = () => {
                                     <p className="text-lg font-bold text-gray-800">{new Date(selectedShift.shift.opened_at).toLocaleString()}</p>
                                     {selectedShift.shift.menu_name && (
                                         <p className="text-xs text-gray-500 mt-1">Cardápio: <span className="font-semibold text-blue-600">{selectedShift.shift.menu_name}</span></p>
+                                    )}
+                                    {selectedShift.shift.daily_menu_name && (
+                                        <p className="text-xs text-gray-500 mt-1">Lanche do dia: <span className="font-semibold text-blue-600">{selectedShift.shift.daily_menu_name}</span></p>
                                     )}
                                 </div>
                             </div>
@@ -1888,6 +1891,44 @@ export const ReportsManager = () => {
 
                                 {/* Coluna Direita: Produção e Estoque */}
                                 <div className="space-y-6">
+                                    <div className="bg-white p-5 rounded-lg border shadow-sm">
+                                        <h3 className="font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
+                                            <Layers size={18} className="text-blue-500"/> Planejamento da Abertura
+                                        </h3>
+                                        <div className="space-y-3 text-sm">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-gray-600">Lanche do Dia</span>
+                                                <span className="font-bold">{selectedShift.shift.daily_menu_name || '-'}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-gray-600">Custo Produtos/Ingredientes</span>
+                                                <span className="font-bold">
+                                                    {selectedShift.shift.opening_product_cost_total !== undefined ? formatCurrency(selectedShift.shift.opening_product_cost_total) : '-'}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-gray-600">Lanches Planejados</span>
+                                                <span className="font-bold">
+                                                    {selectedShift.shift.planned_normal_burgers !== undefined || selectedShift.shift.planned_vegan_burgers !== undefined
+                                                        ? `${selectedShift.shift.planned_normal_burgers ?? 0} normal / ${selectedShift.shift.planned_vegan_burgers ?? 0} vegano`
+                                                        : '-'}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-gray-600">Valor Unitário Sugerido</span>
+                                                <span className="font-bold">
+                                                    {selectedShift.shift.opening_unit_cost_suggested !== undefined ? formatCurrency(selectedShift.shift.opening_unit_cost_suggested) : '-'}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center bg-blue-50 p-2 rounded text-blue-800">
+                                                <span className="font-bold">Valor Unitário Final</span>
+                                                <span className="font-bold">
+                                                    {selectedShift.shift.opening_unit_cost !== undefined ? formatCurrency(selectedShift.shift.opening_unit_cost) : '-'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div className="bg-white p-5 rounded-lg border shadow-sm">
                                         <h3 className="font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
                                             <Layers size={18} className="text-orange-500"/> Produção e Estoque
@@ -1976,11 +2017,19 @@ export const ReportsManager = () => {
                                         "      RELATÓRIO DE FECHAMENTO   ",
                                         "             REDUÇÃO Z          ",
                                         "================================",
-                                        `LOJA: MATRIZ - TERM: ${selectedShift.shift.terminal_id || 'N/A'}`,
+                                        `LOJA: MATRIZ - GRUPO: ${selectedShift.shift.terminal_id || 'N/A'}`,
                                         `DATA ABERTURA: ${new Date(selectedShift.shift.opened_at).toLocaleString()}`,
                                         `OPERADOR: ${selectedShift.shift.staff_name}`,
                                         selectedShift.shift.closer_name ? `FECHADO POR: ${selectedShift.shift.closer_name}` : null,
                                         selectedShift.shift.menu_name ? `CARDAPIO: ${selectedShift.shift.menu_name}` : null,
+                                        selectedShift.shift.daily_menu_name ? `LANCHE DO DIA: ${selectedShift.shift.daily_menu_name}` : null,
+                                        "--------------------------------",
+                                        "PLANEJAMENTO DA ABERTURA:",
+                                        selectedShift.shift.opening_product_cost_total !== undefined ? `CUSTO INSUMOS:   ${formatCurrency(selectedShift.shift.opening_product_cost_total)}` : null,
+                                        selectedShift.shift.planned_normal_burgers !== undefined ? `LANCHE NORMAL:   ${selectedShift.shift.planned_normal_burgers} un` : null,
+                                        selectedShift.shift.planned_vegan_burgers !== undefined ? `LANCHE VEGANO:   ${selectedShift.shift.planned_vegan_burgers} un` : null,
+                                        selectedShift.shift.opening_unit_cost_suggested !== undefined ? `UNIT. SUGERIDO:  ${formatCurrency(selectedShift.shift.opening_unit_cost_suggested)}` : null,
+                                        selectedShift.shift.opening_unit_cost !== undefined ? `UNIT. FINAL:     ${formatCurrency(selectedShift.shift.opening_unit_cost)}` : null,
                                         "--------------------------------",
                                         "RESUMO FINANCEIRO:",
                                         `VENDAS PIX:       ${formatCurrency(selectedShift.paymentStats['PIX']?.total || 0)}`,

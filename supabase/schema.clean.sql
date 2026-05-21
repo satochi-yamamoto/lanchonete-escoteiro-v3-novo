@@ -100,6 +100,19 @@ create table if not exists public.shifts (
   current_cash numeric(10, 2) not null,
   status text not null,
   transactions jsonb not null default '[]'::jsonb,
+  opening_product_cost_total numeric(10, 2),
+  planned_normal_burgers integer,
+  planned_vegan_burgers integer,
+  opening_unit_cost_suggested numeric(10, 2),
+  opening_unit_cost numeric(10, 2),
+  daily_menu_name text,
+  drinks_liters numeric(10, 2),
+  burger_cost numeric(10, 2),
+  burgers_produced integer,
+  burgers_unsold integer,
+  menu_name text,
+  closer_name text,
+  feedback text,
   updated_at timestamptz not null default now()
 );
 

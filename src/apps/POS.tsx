@@ -6,6 +6,49 @@ import { ProductGrid, CartPanel, PaymentModal, ShiftPanel, SuccessModal, ZReport
 import { Settings, LogOut, User, Lock, Monitor, Power, ShoppingCart, X, BarChart2, FileText, ChevronRight } from 'lucide-react';
 import { printReceipt } from '../utils';
 
+export const calculateOpeningUnitCost = (totalCost: number, normalBurgers: number, veganBurgers: number) => {
+    const totalBurgers = normalBurgers + veganBurgers;
+    if (totalBurgers <= 0) return 0;
+    return totalCost / totalBurgers;
+};
+
+export const isOpeningShiftInputValid = ({
+    startCash,
+    operatorName,
+    terminalId,
+    dailyMenuName,
+    totalCost,
+    normalQty,
+    veganQty,
+    finalUnitCost
+}: {
+    startCash: number;
+    operatorName: string;
+    terminalId: string;
+    dailyMenuName: string;
+    totalCost: number;
+    normalQty: number;
+    veganQty: number;
+    finalUnitCost: number;
+}) => {
+    const totalPlanned = normalQty + veganQty;
+    return (
+        startCash >= 0 &&
+        Boolean(operatorName.trim()) &&
+        Boolean(terminalId) &&
+        Boolean(dailyMenuName.trim()) &&
+        Number.isFinite(totalCost) &&
+        totalCost >= 0 &&
+        Number.isFinite(normalQty) &&
+        normalQty >= 0 &&
+        Number.isFinite(veganQty) &&
+        veganQty >= 0 &&
+        totalPlanned > 0 &&
+        Number.isFinite(finalUnitCost) &&
+        finalUnitCost >= 0
+    );
+};
+
 export const POS = ({
     onExit,
     currentUserRole
@@ -37,6 +80,12 @@ export const POS = ({
     const [shiftStartAmount, setShiftStartAmount] = useState('150.00');
     const [operatorName, setOperatorName] = useState('Caixa 01');
     const [terminalId, setTerminalId] = useState('');
+    const [dailyMenuName, setDailyMenuName] = useState('');
+    const [openingProductCostTotal, setOpeningProductCostTotal] = useState('');
+    const [plannedNormalBurgers, setPlannedNormalBurgers] = useState('');
+    const [plannedVeganBurgers, setPlannedVeganBurgers] = useState('');
+    const [openingUnitCost, setOpeningUnitCost] = useState('');
+    const [openingUnitCostEdited, setOpeningUnitCostEdited] = useState(false);
 
     const activeTerminals = useMemo(
         () =>
@@ -54,6 +103,21 @@ export const POS = ({
         }
     }, [activeTerminals, terminalId]);
 
+    const parsedOpeningCost = parseFloat(openingProductCostTotal || '0');
+    const parsedNormalBurgers = parseInt(plannedNormalBurgers || '0', 10);
+    const parsedVeganBurgers = parseInt(plannedVeganBurgers || '0', 10);
+    const openingUnitCostSuggested = calculateOpeningUnitCost(
+        Number.isFinite(parsedOpeningCost) ? parsedOpeningCost : 0,
+        Number.isFinite(parsedNormalBurgers) ? parsedNormalBurgers : 0,
+        Number.isFinite(parsedVeganBurgers) ? parsedVeganBurgers : 0
+    );
+
+    useEffect(() => {
+        if (!openingUnitCostEdited) {
+            setOpeningUnitCost(openingUnitCostSuggested > 0 ? openingUnitCostSuggested.toFixed(2) : '');
+        }
+    }, [openingUnitCostEdited, openingUnitCostSuggested]);
+
     // Order State
     const [lastOrder, setLastOrder] = useState<Order | null>(null);
     const [lastPaidAmount, setLastPaidAmount] = useState<number>(0);
@@ -62,8 +126,29 @@ export const POS = ({
 
     const handleOpenShift = () => {
         const amount = parseFloat(shiftStartAmount);
-        if (amount >= 0 && operatorName && terminalId) {
-            openShift(operatorName, amount, terminalId);
+        const totalCost = parseFloat(openingProductCostTotal);
+        const normalQty = parseInt(plannedNormalBurgers, 10);
+        const veganQty = parseInt(plannedVeganBurgers, 10);
+        const finalUnitCost = parseFloat(openingUnitCost);
+
+        if (isOpeningShiftInputValid({
+            startCash: amount,
+            operatorName,
+            terminalId,
+            dailyMenuName,
+            totalCost,
+            normalQty,
+            veganQty,
+            finalUnitCost
+        })) {
+            openShift(operatorName.trim(), amount, terminalId, {
+                opening_product_cost_total: totalCost,
+                planned_normal_burgers: normalQty,
+                planned_vegan_burgers: veganQty,
+                opening_unit_cost_suggested: openingUnitCostSuggested,
+                opening_unit_cost: finalUnitCost,
+                daily_menu_name: dailyMenuName.trim()
+            });
         } else {
             alert("Preencha todos os campos corretamente.");
         }
@@ -128,7 +213,7 @@ export const POS = ({
     if (!currentShift || currentShift.status === 'CLOSED') {
         return (
             <div className="h-screen bg-gray-100 flex items-center justify-center">
-                <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full relative">
+                <div className="bg-white p-8 rounded-xl shadow-lg max-w-3xl w-full relative max-h-[92vh] overflow-y-auto">
                     <button onClick={onExit} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
                         <LogOut size={20} />
                     </button>
@@ -146,8 +231,8 @@ export const POS = ({
                     ) : (
                         <>
                             <p className="text-gray-500 text-center mb-6">Inicie o turno para começar a vender.</p>
-                            <div className="space-y-4 mb-6">
-                                <div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <div className="md:col-span-2">
                                     <label className="block text-sm font-bold mb-1 text-gray-600">Operador</label>
                                     <input
                                         type="text"
@@ -158,7 +243,7 @@ export const POS = ({
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-bold mb-1 text-gray-600">Terminal (ID)</label>
+                                    <label className="block text-sm font-bold mb-1 text-gray-600">Grupo Responsável pelo Caixa</label>
                                     {activeTerminals.length > 0 ? (
                                         <select
                                             value={terminalId}
@@ -194,6 +279,79 @@ export const POS = ({
                                         value={shiftStartAmount}
                                         onChange={e => setShiftStartAmount(e.target.value)}
                                         className="w-full border p-3 rounded-lg text-lg font-bold text-green-700"
+                                    />
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-bold mb-1 text-gray-600">Nome do Lanche do Dia</label>
+                                    <input
+                                        type="text"
+                                        value={dailyMenuName}
+                                        onChange={e => setDailyMenuName(e.target.value)}
+                                        className="w-full border p-3 rounded-lg bg-gray-50 focus:bg-white transition-colors"
+                                        placeholder="Ex: Lanche Escoteiro"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold mb-1 text-gray-600">Custo dos Produtos/Ingredientes (R$)</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={openingProductCostTotal}
+                                        onChange={e => {
+                                            setOpeningProductCostTotal(e.target.value);
+                                            setOpeningUnitCostEdited(false);
+                                        }}
+                                        className="w-full border p-3 rounded-lg"
+                                        placeholder="Ex: 450.00"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold mb-1 text-gray-600">Valor Unitário Sugerido/Editável (R$)</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={openingUnitCost}
+                                        onChange={e => {
+                                            setOpeningUnitCost(e.target.value);
+                                            setOpeningUnitCostEdited(true);
+                                        }}
+                                        className="w-full border p-3 rounded-lg text-lg font-bold text-blue-700"
+                                        placeholder="Calculado automaticamente"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Referência calculada: {openingUnitCostSuggested > 0 ? formatCurrency(openingUnitCostSuggested) : formatCurrency(0)}
+                                    </p>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold mb-1 text-gray-600">Quantidade de Lanche Normal</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="1"
+                                        value={plannedNormalBurgers}
+                                        onChange={e => {
+                                            setPlannedNormalBurgers(e.target.value);
+                                            setOpeningUnitCostEdited(false);
+                                        }}
+                                        className="w-full border p-3 rounded-lg"
+                                        placeholder="Ex: 80"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold mb-1 text-gray-600">Quantidade de Lanche Vegano</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="1"
+                                        value={plannedVeganBurgers}
+                                        onChange={e => {
+                                            setPlannedVeganBurgers(e.target.value);
+                                            setOpeningUnitCostEdited(false);
+                                        }}
+                                        className="w-full border p-3 rounded-lg"
+                                        placeholder="Ex: 20"
                                     />
                                 </div>
                             </div>

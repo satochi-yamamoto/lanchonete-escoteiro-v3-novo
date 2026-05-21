@@ -85,6 +85,15 @@ export interface Order {
   terminal_id?: string; // ID of the POS station
 }
 
+export interface ShiftOpeningData {
+  opening_product_cost_total: number;
+  planned_normal_burgers: number;
+  planned_vegan_burgers: number;
+  opening_unit_cost_suggested: number;
+  opening_unit_cost: number;
+  daily_menu_name: string;
+}
+
 // Shift Management
 export interface Shift {
   id: string;
@@ -97,6 +106,13 @@ export interface Shift {
   current_cash: number; // Theoretical cash
   status: 'OPEN' | 'CLOSED';
   transactions: ShiftTransaction[];
+  // Opening operational planning
+  opening_product_cost_total?: number;
+  planned_normal_burgers?: number;
+  planned_vegan_burgers?: number;
+  opening_unit_cost_suggested?: number;
+  opening_unit_cost?: number;
+  daily_menu_name?: string;
   // End of shift metrics
   drinks_liters?: number;
   burger_cost?: number;
