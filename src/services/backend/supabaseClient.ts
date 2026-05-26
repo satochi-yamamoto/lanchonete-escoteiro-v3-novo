@@ -20,7 +20,9 @@ export const ensureAuth = async () => {
   if (!session) {
     console.log('[Auth] Signing in anonymously...');
     const { error } = await supabase.auth.signInAnonymously();
-    if (error) console.error('[Auth] Anonymous sign-in failed:', error);
+    if (error) {
+      console.warn('[Auth] Anonymous sign-in unavailable. Continuing with public anon key access:', error.message);
+    }
   }
 };
 

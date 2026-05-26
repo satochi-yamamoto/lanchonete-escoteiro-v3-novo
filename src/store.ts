@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import { CartItem, Order, OrderStatus, OrderType, Product, Shift, ShiftTransaction, PaymentMethod, Ingredient, StockLog, User, Promotion, ShiftTransactionExtras, ShiftOpeningData, TaxSettings, StoreSession, Scout, MenuCatalog, TerminalConfig } from './types';
 import { calculateCartTotals, MOCK_PROMOTIONS } from './services/promotionEngine';
-import { backend, BackendInterface } from './services/backend/backend';
+import { backend, BackendInterface, BackendStatus } from './services/backend/backend';
 import { MOCK_INGREDIENTS, MOCK_PRODUCTS, MOCK_USERS, MOCK_SCOUTS } from './services/mockData';
 import { generateUUID } from './utils';
 
 interface AppState {
   backend: BackendInterface;
+  backendStatus: BackendStatus;
   realtimeStatus: string; // 'CONNECTING' | 'SUBSCRIBED' | 'CHANNEL_ERROR' | 'CLOSED'
   initializeBackend: () => Promise<void>;
 
@@ -187,6 +188,7 @@ const writeBusinessRulesToStorage = (rules: { maxItemsPerOrder: number }) => {
 
 export const useStore = create<AppState>((set, get) => ({
   backend: backend,
+  backendStatus: { kind: backend.kind, status: backend.kind === 'supabase' ? 'idle' : 'ready' },
   realtimeStatus: 'IDLE',
 
   initializeBackend: async () => {
@@ -206,14 +208,13 @@ export const useStore = create<AppState>((set, get) => ({
     }
 
     if (backend.kind !== 'supabase') return;
-    // We don't change the backend object structure anymore, just load data
-    // set({ backend: { kind: 'supabase', status: 'loading' } }); 
-    // ^ This was replacing the object with a plain status object, removing methods!
+    set({ backendStatus: { kind: 'supabase', status: 'loading' }, realtimeStatus: 'CONNECTING' });
 
     try {
       const data = await backend.loadInitialState();
       if (!data) {
         // Fallback to local is handled by initial state check in backend
+        set({ backendStatus: { kind: 'supabase', status: 'ready' } });
         return;
       }
       // Spread data into store, but keep backend methods intact
@@ -228,6 +229,7 @@ export const useStore = create<AppState>((set, get) => ({
         printReceiptEnabled: (data as any).printSettings?.enabled ?? get().printReceiptEnabled,
         maxItemsPerOrder: (data as any).businessRules?.maxItemsPerOrder ?? get().maxItemsPerOrder
       });
+      set({ backendStatus: { kind: 'supabase', status: 'ready' } });
 
       writePaymentSettingsToStorage({
         pos: (data as any).paymentSettings?.pos || get().activePaymentMethodsPOS,
@@ -290,7 +292,7 @@ export const useStore = create<AppState>((set, get) => ({
     } catch (e: any) {
       const message = e instanceof Error ? e.message : (e?.message || JSON.stringify(e));
       console.error("Backend init error:", message);
-      // set({ backend: { kind: 'supabase', status: 'error', error: message } });
+      set({ backendStatus: { kind: 'supabase', status: 'error', error: message } });
     }
   },
 
