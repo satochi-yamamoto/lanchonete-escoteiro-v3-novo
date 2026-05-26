@@ -230,12 +230,12 @@ export const ProductGrid = ({ products, onAdd, onCreateProduct }: { products: Pr
     };
 
     return (
-        <div className="flex flex-col h-full bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="flex flex-col h-full bg-cooper-surface rounded-lg shadow-soft border border-cooper-line">
             <div className="flex flex-col border-b">
                 {/* Station Filter */}
-                <div className="px-3 py-2 bg-gray-50 border-b flex flex-col md:flex-row gap-2 items-start md:items-center justify-between">
+                <div className="px-3 py-2 bg-cooper-panel border-b border-cooper-line flex flex-col md:flex-row gap-2 items-start md:items-center justify-between">
                     <div className="flex items-center gap-2 overflow-x-auto no-scrollbar flex-1 w-full">
-                        <div className="flex items-center text-gray-400 mr-1">
+                        <div className="flex items-center text-cooper-muted mr-1">
                             <Filter size={14} />
                         </div>
                         {stations.map(s => (
@@ -244,8 +244,8 @@ export const ProductGrid = ({ products, onAdd, onCreateProduct }: { products: Pr
                                 onClick={() => setStationFilter(s)}
                                 className={`px-3 py-1 rounded text-xs font-bold transition-all whitespace-nowrap ${
                                     stationFilter === s
-                                    ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-300'
-                                    : 'bg-white border text-gray-600 hover:bg-gray-100'
+                                    ? 'bg-cooper-leaf text-white ring-1 ring-cooper-leaf'
+                                    : 'bg-cooper-surface border border-cooper-line text-cooper-muted hover:bg-white'
                                 }`}
                             >
                                 {s === 'ALL' ? 'TODAS' : s}
@@ -258,7 +258,7 @@ export const ProductGrid = ({ products, onAdd, onCreateProduct }: { products: Pr
                         {onCreateProduct && (
                             <button
                                 onClick={() => setIsAdding(true)}
-                                className="p-1.5 px-3 rounded-md transition-colors flex items-center gap-1.5 text-xs font-bold border bg-blue-600 text-white border-blue-600 hover:bg-blue-700 shadow-sm"
+                                className="p-1.5 px-3 rounded-md transition-colors flex items-center gap-1.5 text-xs font-bold border bg-cooper-leaf text-white border-cooper-leaf hover:bg-cooper-leafDark shadow-sm"
                                 title="Adicionar Novo Produto"
                             >
                                 <Plus size={14} />
@@ -270,8 +270,8 @@ export const ProductGrid = ({ products, onAdd, onCreateProduct }: { products: Pr
                             onClick={() => setShowUnavailable(!showUnavailable)}
                             className={`p-1.5 px-3 rounded-md transition-colors flex items-center gap-1.5 text-xs font-bold border ${
                                 showUnavailable 
-                                ? 'bg-gray-800 text-white border-gray-800' 
-                                : 'bg-white text-gray-500 border-gray-200 hover:text-gray-700'
+                                ? 'bg-cooper-ink text-white border-cooper-ink' 
+                                : 'bg-cooper-surface text-cooper-muted border-cooper-line hover:text-cooper-ink'
                             }`}
                             title={showUnavailable ? "Ocultar produtos esgotados" : "Mostrar produtos esgotados"}
                         >
@@ -288,7 +288,7 @@ export const ProductGrid = ({ products, onAdd, onCreateProduct }: { products: Pr
                             key={c} 
                             onClick={() => setCategory(c)}
                             className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
-                                category === c ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                category === c ? 'bg-cooper-ink text-white' : 'bg-cooper-panel text-cooper-muted hover:bg-cooper-surface border border-cooper-line'
                             }`}
                         >
                             {c}
@@ -303,9 +303,9 @@ export const ProductGrid = ({ products, onAdd, onCreateProduct }: { products: Pr
                     {onCreateProduct && (
                         <div 
                             onClick={() => setIsAdding(true)}
-                            className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg h-32 hover:bg-gray-50 cursor-pointer transition-colors text-gray-400 hover:text-gray-600 group bg-gray-50/50"
+                            className="flex flex-col items-center justify-center border-2 border-dashed border-cooper-line rounded-lg h-32 hover:bg-cooper-panel cursor-pointer transition-colors text-cooper-muted hover:text-cooper-ink group bg-cooper-panel/50"
                         >
-                            <Plus size={32} className="mb-2 group-hover:scale-110 transition-transform text-blue-500 opacity-50 group-hover:opacity-100"/>
+                            <Plus size={32} className="mb-2 group-hover:scale-110 transition-transform text-cooper-leaf opacity-60 group-hover:opacity-100"/>
                             <span className="font-bold text-sm">Novo Produto</span>
                         </div>
                     )}
@@ -323,7 +323,7 @@ export const ProductGrid = ({ products, onAdd, onCreateProduct }: { products: Pr
                                     ? 'border-gray-200 opacity-60 bg-gray-50 grayscale-[0.8] cursor-not-allowed' // Stronger visual cue for unavailable
                                     : isAnimating 
                                         ? 'ring-4 ring-green-500 border-green-500 shadow-green-200/50 shadow-xl scale-[0.98] bg-green-50 z-20 cursor-pointer' // Pronounced active state
-                                        : 'border-gray-100 hover:shadow-lg hover:-translate-y-1 active:scale-95 bg-white cursor-pointer'
+                                        : 'border-cooper-line hover:shadow-lift hover:-translate-y-0.5 active:scale-[0.98] bg-cooper-surface cursor-pointer'
                                 }`}
                             >
                                 {/* Enhanced "Added" Feedback Overlay */}
@@ -336,7 +336,7 @@ export const ProductGrid = ({ products, onAdd, onCreateProduct }: { products: Pr
                                     </div>
                                 </div>
                                 
-                                <div className="h-24 bg-gray-100 w-full overflow-hidden relative">
+                                <div className="h-24 bg-cooper-panel w-full overflow-hidden relative">
                                     {p.image && <img src={p.image} className={`w-full h-full object-cover ${isUnavailable ? 'grayscale opacity-50' : ''}`} alt={p.name} />}
                                     
                                     {isUnavailable && (
@@ -347,7 +347,7 @@ export const ProductGrid = ({ products, onAdd, onCreateProduct }: { products: Pr
                                         </div>
                                     )}
 
-                                    <div className="absolute bottom-0 right-0 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-tl-lg font-bold backdrop-blur-sm">
+                                    <div className="absolute bottom-0 right-0 bg-cooper-ink/75 text-white text-[10px] px-2 py-0.5 rounded-tl-lg font-bold backdrop-blur-sm">
                                         {p.station}
                                     </div>
 
@@ -364,8 +364,8 @@ export const ProductGrid = ({ products, onAdd, onCreateProduct }: { products: Pr
                                     </button>
                                 </div>
                                 <div className="p-2 relative">
-                                    <h4 className={`font-bold text-sm line-clamp-1 ${isUnavailable ? 'text-gray-400 line-through decoration-gray-400/50' : 'text-gray-800'}`}>{p.name}</h4>
-                                    <div className={`font-bold text-sm ${isUnavailable ? 'text-gray-400' : 'text-red-600'}`}>{formatCurrency(p.price)}</div>
+                                    <h4 className={`font-bold text-sm line-clamp-1 ${isUnavailable ? 'text-gray-400 line-through decoration-gray-400/50' : 'text-cooper-ink'}`}>{p.name}</h4>
+                                    <div className={`font-bold text-sm ${isUnavailable ? 'text-gray-400' : 'text-cooper-leaf'}`}>{formatCurrency(p.price)}</div>
                                     {/* Transparent Overlay for text area if unavailable */}
                                     {isUnavailable && <div className="absolute inset-0 bg-gray-100/30 pointer-events-none" />}
                                 </div>

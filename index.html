@@ -5,9 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Lanchonete Escoteiros Cooper PDV</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              cooper: {
+                canvas: 'oklch(0.975 0.009 93)',
+                surface: 'oklch(0.994 0.006 93)',
+                panel: 'oklch(0.948 0.012 93)',
+                ink: 'oklch(0.245 0.019 130)',
+                muted: 'oklch(0.48 0.026 115)',
+                line: 'oklch(0.875 0.018 95)',
+                leaf: 'oklch(0.46 0.115 145)',
+                leafDark: 'oklch(0.33 0.09 145)',
+                moss: 'oklch(0.63 0.105 128)',
+                ember: 'oklch(0.58 0.14 42)',
+                warning: 'oklch(0.67 0.145 67)',
+                danger: 'oklch(0.55 0.17 28)'
+              }
+            },
+            boxShadow: {
+              soft: '0 18px 45px -28px oklch(0.245 0.019 130 / 0.45)',
+              lift: '0 14px 30px -22px oklch(0.245 0.019 130 / 0.5)'
+            }
+          }
+        }
+      }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-      body { font-family: 'Inter', sans-serif; }
+      :root {
+        color-scheme: light;
+        background: oklch(0.975 0.009 93);
+      }
+      * {
+        -webkit-tap-highlight-color: transparent;
+      }
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        background:
+          radial-gradient(circle at 12% 8%, oklch(0.93 0.035 128 / 0.72), transparent 28rem),
+          linear-gradient(135deg, oklch(0.982 0.008 93), oklch(0.945 0.014 112));
+        color: oklch(0.245 0.019 130);
+      }
+      button, input, select, textarea {
+        font: inherit;
+      }
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible,
+      textarea:focus-visible {
+        outline: 3px solid oklch(0.63 0.105 128 / 0.36);
+        outline-offset: 2px;
+      }
       /* Hide scrollbar for Kiosk/TV feel */
       .no-scrollbar::-webkit-scrollbar {
           display: none;
@@ -15,6 +66,12 @@
       .no-scrollbar {
           -ms-overflow-style: none;
           scrollbar-width: none;
+      }
+      .cooper-subtle-grid {
+        background-image:
+          linear-gradient(oklch(0.875 0.018 95 / 0.52) 1px, transparent 1px),
+          linear-gradient(90deg, oklch(0.875 0.018 95 / 0.52) 1px, transparent 1px);
+        background-size: 28px 28px;
       }
     </style>
   <script type="importmap">

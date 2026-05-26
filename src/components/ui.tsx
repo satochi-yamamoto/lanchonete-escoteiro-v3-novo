@@ -4,13 +4,13 @@ import React from 'react';
 let audioCtx: AudioContext | null = null;
 
 export const Button = ({ children, onClick, variant = 'primary', className = '', disabled = false }: any) => {
-  const baseStyle = "px-4 py-3 rounded-lg font-semibold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed";
+  const baseStyle = "inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed";
   const variants = {
-    primary: "bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-200",
-    secondary: "bg-white text-gray-800 border border-gray-200 hover:bg-gray-50",
-    success: "bg-green-600 text-white hover:bg-green-700 shadow-lg shadow-green-200",
-    danger: "bg-red-100 text-red-600 hover:bg-red-200",
-    warning: "bg-orange-100 text-orange-700 hover:bg-orange-200 border border-orange-200"
+    primary: "bg-cooper-leaf text-white hover:bg-cooper-leafDark shadow-lift",
+    secondary: "bg-cooper-surface text-cooper-ink border border-cooper-line hover:bg-cooper-panel",
+    success: "bg-cooper-moss text-white hover:bg-cooper-leaf shadow-lift",
+    danger: "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100",
+    warning: "bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200"
   };
   
   return (
@@ -25,7 +25,7 @@ export const Button = ({ children, onClick, variant = 'primary', className = '',
 };
 
 export const Card = ({ children, className = '' }: any) => (
-  <div className={`bg-white rounded-xl border border-gray-100 shadow-sm p-4 ${className}`}>
+  <div className={`bg-cooper-surface rounded-lg border border-cooper-line shadow-soft p-4 ${className}`}>
     {children}
   </div>
 );
@@ -33,11 +33,11 @@ export const Card = ({ children, className = '' }: any) => (
 export const Badge = ({ status }: { status: string }) => {
   const colors: Record<string, string> = {
     PENDING: "bg-gray-100 text-gray-600",
-    PAID: "bg-blue-100 text-blue-600",
-    PREPARING: "bg-yellow-100 text-yellow-700",
-    READY: "bg-green-100 text-green-700",
-    PARTIAL: "bg-orange-100 text-orange-700 border border-orange-200",
-    DELIVERED: "bg-gray-800 text-white",
+    PAID: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+    PREPARING: "bg-amber-50 text-amber-800 border border-amber-200",
+    READY: "bg-green-50 text-green-800 border border-green-200",
+    PARTIAL: "bg-orange-50 text-orange-800 border border-orange-200",
+    DELIVERED: "bg-cooper-ink text-white",
     CANCELLED: "bg-red-100 text-red-600",
   };
 
