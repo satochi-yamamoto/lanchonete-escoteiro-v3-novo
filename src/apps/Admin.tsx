@@ -48,10 +48,10 @@ export const Admin = ({ onExit, onLogout }: { onExit?: () => void; onLogout?: ()
     };
 
     return (
-        <div className="flex flex-col md:flex-row h-screen bg-gray-100 font-sans overflow-hidden">
+        <div className="flex flex-col md:flex-row h-screen bg-cooper-canvas font-sans overflow-hidden text-cooper-ink">
             {/* Mobile Header */}
-            <div className="md:hidden bg-gray-900 text-white p-4 flex justify-between items-center z-30 shrink-0">
-                <h1 className="text-lg font-bold">Lanchonete <span className="text-red-500">Escoteiros</span></h1>
+            <div className="md:hidden bg-cooper-ink text-white p-4 flex justify-between items-center z-30 shrink-0">
+                <h1 className="text-lg font-bold">Cooper <span className="text-cooper-moss">Escoteiros</span></h1>
                 <button onClick={() => setIsMobileMenuOpen(true)} className="p-2">
                     <Menu size={24} />
                 </button>
@@ -67,7 +67,7 @@ export const Admin = ({ onExit, onLogout }: { onExit?: () => void; onLogout?: ()
 
             {/* Sidebar */}
             <div className={`
-            fixed md:relative inset-y-0 left-0 z-50 bg-gray-900 text-gray-300 flex flex-col shrink-0 transition-transform duration-300
+            fixed md:relative inset-y-0 left-0 z-50 bg-cooper-ink text-gray-200 flex flex-col shrink-0 transition-transform duration-300
             ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
             ${isCollapsed ? 'md:w-20' : 'md:w-64'}
             w-64
@@ -84,7 +84,7 @@ export const Admin = ({ onExit, onLogout }: { onExit?: () => void; onLogout?: ()
                 {/* Toggle Button (Desktop Only) */}
                 <button
                     onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="hidden md:flex absolute -right-3 top-8 bg-blue-600 text-white p-1.5 rounded-full shadow-lg hover:bg-blue-500 transition-colors z-10 border-2 border-gray-100"
+                    className="hidden md:flex absolute -right-3 top-8 bg-cooper-leaf text-white p-1.5 rounded-full shadow-lg hover:bg-cooper-moss transition-colors z-10 border-2 border-cooper-canvas"
                     title={isCollapsed ? "Expandir Menu" : "Recolher Menu"}
                 >
                     {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
@@ -92,13 +92,13 @@ export const Admin = ({ onExit, onLogout }: { onExit?: () => void; onLogout?: ()
 
                 <div className={`p-6 ${isCollapsed ? 'md:items-center md:flex md:flex-col' : ''} transition-all duration-300`}>
                     {isCollapsed ? (
-                        <div className="hidden md:flex w-10 h-10 bg-gradient-to-br from-red-600 to-orange-500 rounded-lg items-center justify-center text-white font-bold text-xl shadow-lg">
+                        <div className="hidden md:flex w-10 h-10 bg-cooper-leaf rounded-lg items-center justify-center text-white font-bold text-xl shadow-lift">
                             C
                         </div>
                     ) : (
                         <div className="animate-in fade-in duration-300 hidden md:block">
-                            <h1 className="text-xl font-bold text-white tracking-tighter truncate">Escoteiros<span className="text-red-500">Cooper</span></h1>
-                            <p className="text-xs text-gray-500 mt-1 truncate">Backoffice Suite v1.0</p>
+                            <h1 className="text-xl font-bold text-white tracking-tight truncate">Cooper Cotia</h1>
+                            <p className="text-xs text-gray-400 mt-1 truncate">Backoffice da lanchonete</p>
                         </div>
                     )}
                     {/* Mobile Title in Sidebar */}
@@ -116,8 +116,8 @@ export const Admin = ({ onExit, onLogout }: { onExit?: () => void; onLogout?: ()
                                 setIsMobileMenuOpen(false);
                             }}
                             className={`w-full flex items-center ${isCollapsed ? 'md:justify-center md:px-0' : 'px-4'} px-4 py-3 rounded-lg transition-all duration-200 group relative ${activeTab === item.id
-                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50'
-                                    : 'hover:bg-gray-800 hover:text-white'
+                                    ? 'bg-cooper-leaf text-white shadow-lift'
+                                    : 'hover:bg-white/10 hover:text-white'
                                 }`}
                         >
                             <div className="shrink-0">{item.icon}</div>
@@ -128,21 +128,21 @@ export const Admin = ({ onExit, onLogout }: { onExit?: () => void; onLogout?: ()
 
                             {/* Tooltip for collapsed state (Desktop) */}
                             {isCollapsed && (
-                                <div className="hidden md:block absolute left-full ml-4 px-3 py-2 bg-gray-800 text-white text-xs font-bold rounded shadow-xl opacity-0 group-hover:opacity-100 whitespace-nowrap z-50 pointer-events-none transition-all duration-200 translate-x-2 group-hover:translate-x-0">
+                                <div className="hidden md:block absolute left-full ml-4 px-3 py-2 bg-cooper-ink text-white text-xs font-bold rounded shadow-xl opacity-0 group-hover:opacity-100 whitespace-nowrap z-50 pointer-events-none transition-all duration-200 translate-x-2 group-hover:translate-x-0">
                                     {item.label}
                                     {/* Arrow */}
-                                    <div className="absolute top-1/2 -left-1 -mt-1 border-4 border-transparent border-r-gray-800" />
+                                    <div className="absolute top-1/2 -left-1 -mt-1 border-4 border-transparent border-r-cooper-ink" />
                                 </div>
                             )}
                         </button>
                     ))}
                 </nav>
 
-                <div className="p-4 border-t border-gray-800 space-y-2">
+                <div className="p-4 border-t border-white/10 space-y-2">
                     {onExit && (
                         <button
                             onClick={onExit}
-                            className={`flex items-center ${isCollapsed ? 'md:justify-center' : 'gap-3'} gap-3 text-blue-400 hover:text-white transition-colors w-full px-4 py-2 rounded-lg hover:bg-gray-800`}
+                            className={`flex items-center ${isCollapsed ? 'md:justify-center' : 'gap-3'} gap-3 text-cooper-moss hover:text-white transition-colors w-full px-4 py-2 rounded-lg hover:bg-white/10`}
                         >
                             <LogOut size={18} className="rotate-180" />
                             <span className={`${isCollapsed ? 'md:hidden' : 'block'}`}>Trocar Módulo</span>
@@ -151,7 +151,7 @@ export const Admin = ({ onExit, onLogout }: { onExit?: () => void; onLogout?: ()
 
                     <button
                         onClick={onLogout}
-                        className={`flex items-center ${isCollapsed ? 'md:justify-center' : 'gap-3'} gap-3 text-gray-400 hover:text-white transition-colors w-full px-4 py-2 rounded-lg hover:bg-gray-800`}
+                        className={`flex items-center ${isCollapsed ? 'md:justify-center' : 'gap-3'} gap-3 text-gray-400 hover:text-white transition-colors w-full px-4 py-2 rounded-lg hover:bg-white/10`}
                     >
                         <LogOut size={18} />
                         <span className={`${isCollapsed ? 'md:hidden' : 'block'}`}>Sair</span>
@@ -160,17 +160,20 @@ export const Admin = ({ onExit, onLogout }: { onExit?: () => void; onLogout?: ()
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-gray-100 w-full">
+            <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-cooper-canvas w-full">
                 <header className="mb-8 flex justify-between items-center animate-in fade-in slide-in-from-top-4 duration-500">
-                    <h2 className="text-3xl font-bold text-gray-800 tracking-tight">
-                        {navItems.find(i => i.id === activeTab)?.label}
-                    </h2>
+                    <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-cooper-muted mb-1">Administração</p>
+                        <h2 className="text-3xl font-bold text-cooper-ink tracking-tight">
+                            {navItems.find(i => i.id === activeTab)?.label}
+                        </h2>
+                    </div>
                     <div className="flex items-center gap-4">
                         <div className="text-right hidden sm:block">
-                            <span className="text-xs text-gray-500 block uppercase tracking-wider font-bold">Loja Matriz</span>
-                            <span className="text-sm font-bold text-gray-800">São Paulo, SP</span>
+                            <span className="text-xs text-cooper-muted block uppercase tracking-wider font-bold">Operação</span>
+                            <span className="text-sm font-bold text-cooper-ink">Cooper Cotia</span>
                         </div>
-                        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center font-bold text-gray-600 border-2 border-white shadow-sm">
+                        <div className="w-10 h-10 bg-cooper-surface rounded-full flex items-center justify-center font-bold text-cooper-leaf border-2 border-white shadow-sm">
                             AD
                         </div>
                     </div>
@@ -713,7 +716,7 @@ const SettingsView = () => {
                     <p className="text-gray-500 mt-1">Ferramentas de administração e limpeza de dados.</p>
                 </div>
 
-                <Card className="p-6 border-l-4 border-l-red-600 shadow-md">
+                <Card className="p-6 border-red-200 bg-red-50/40">
                     <div className="flex items-center gap-2 mb-6 border-b pb-4">
                         <Database className="text-red-600" />
                         <h3 className="text-xl font-bold text-gray-800">Reset de Banco de Dados</h3>
@@ -827,36 +830,36 @@ const DashboardView = ({ onNavigate }: { onNavigate: (tab: AdminTab) => void }) 
 
             {/* KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-                <Card className="flex items-center gap-4 border-l-4 border-l-green-500">
-                    <div className="p-3 bg-green-100 text-green-600 rounded-full"><DollarSign /></div>
+                <Card className="flex items-center gap-4">
+                    <div className="p-3 bg-green-50 text-green-700 rounded-lg border border-green-100"><DollarSign /></div>
                     <div>
                         <div className="text-sm text-gray-500">Vendas Líquidas</div>
                         <div className="text-2xl font-bold">{formatCurrency(totalSales)}</div>
                     </div>
                 </Card>
-                <Card className="flex items-center gap-4 border-l-4 border-l-blue-500">
-                    <div className="p-3 bg-blue-100 text-blue-600 rounded-full"><Activity /></div>
+                <Card className="flex items-center gap-4">
+                    <div className="p-3 bg-cooper-leaf/10 text-cooper-leaf rounded-lg border border-cooper-leaf/15"><Activity /></div>
                     <div>
                         <div className="text-sm text-gray-500">Pedidos</div>
                         <div className="text-2xl font-bold">{orders.length}</div>
                     </div>
                 </Card>
-                <Card className="flex items-center gap-4 border-l-4 border-l-orange-500">
-                    <div className="p-3 bg-orange-100 text-orange-600 rounded-full"><BarChart /></div>
+                <Card className="flex items-center gap-4">
+                    <div className="p-3 bg-amber-50 text-amber-700 rounded-lg border border-amber-100"><BarChart /></div>
                     <div>
                         <div className="text-sm text-gray-500">Ticket Médio</div>
                         <div className="text-2xl font-bold">{formatCurrency(orders.length ? totalSales / orders.length : 0)}</div>
                     </div>
                 </Card>
-                <Card className="flex items-center gap-4 border-l-4 border-l-purple-500">
-                    <div className="p-3 bg-purple-100 text-purple-600 rounded-full"><Package /></div>
+                <Card className="flex items-center gap-4">
+                    <div className="p-3 bg-lime-50 text-lime-800 rounded-lg border border-lime-100"><Package /></div>
                     <div>
-                        <div className="text-sm text-gray-500">Margem Est.</div>
+                        <div className="text-sm text-gray-500">Saldo Oper.</div>
                         <div className="text-2xl font-bold">{(totalSales > 0 ? ((totalSales - estimatedCost) / totalSales * 100).toFixed(1) : 0)}%</div>
                     </div>
                 </Card>
-                <Card className="flex items-center gap-4 border-l-4 border-l-pink-500">
-                    <div className="p-3 bg-pink-100 text-pink-600 rounded-full"><Percent /></div>
+                <Card className="flex items-center gap-4">
+                    <div className="p-3 bg-orange-50 text-orange-700 rounded-lg border border-orange-100"><Percent /></div>
                     <div>
                         <div className="text-sm text-gray-500">Descontos</div>
                         <div className="text-2xl font-bold">{formatCurrency(totalDiscounts)}</div>
@@ -901,7 +904,7 @@ const DashboardView = ({ onNavigate }: { onNavigate: (tab: AdminTab) => void }) 
                                     <div className="font-medium">{p.name}</div>
                                     <div className="w-full bg-gray-100 rounded-full h-2 mt-2">
                                         <div
-                                            className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+                                            className="bg-cooper-leaf h-2 rounded-full transition-all duration-500"
                                             style={{ width: `${(p.sales / maxSales) * 100}%` }}
                                         ></div>
                                     </div>

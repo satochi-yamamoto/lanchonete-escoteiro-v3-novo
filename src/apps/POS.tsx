@@ -212,19 +212,19 @@ export const POS = ({
     // 1. Shift Closed Screen
     if (!currentShift || currentShift.status === 'CLOSED') {
         return (
-            <div className="h-screen bg-gray-100 flex items-center justify-center">
-                <div className="bg-white p-8 rounded-xl shadow-lg max-w-3xl w-full relative max-h-[92vh] overflow-y-auto">
+            <div className="h-screen bg-cooper-canvas flex items-center justify-center p-4 cooper-subtle-grid">
+                <div className="bg-cooper-surface p-8 rounded-lg shadow-soft border border-cooper-line max-w-3xl w-full relative max-h-[92vh] overflow-y-auto">
                     <button onClick={onExit} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
                         <LogOut size={20} />
                     </button>
                     <div className="flex justify-center mb-6">
-                        <div className="bg-red-100 p-4 rounded-full text-red-600"><Lock size={32} /></div>
+                        <div className="bg-cooper-leaf/10 p-4 rounded-lg text-cooper-leaf"><Lock size={32} /></div>
                     </div>
                     <h1 className="text-2xl font-bold text-center mb-2">Caixa Fechado</h1>
 
                     {!currentSession ? (
                         <div className="text-center">
-                            <p className="text-red-600 font-bold mb-4">A LOJA ESTÁ FECHADA</p>
+                            <p className="text-cooper-leaf font-bold mb-4">A LOJA ESTÁ FECHADA</p>
                             <p className="text-gray-500 mb-6">Abra o expediente da loja no painel administrativo para liberar a abertura de caixa.</p>
                             <Button variant="secondary" className="w-full" onClick={onExit}>VOLTAR AO MENU</Button>
                         </div>
@@ -365,29 +365,29 @@ export const POS = ({
 
     // 2. Main POS Screen
     return (
-        <div className="flex flex-col md:flex-row h-screen bg-gray-100 overflow-hidden font-sans relative">
+        <div className="flex flex-col md:flex-row h-screen bg-cooper-canvas overflow-hidden font-sans relative text-cooper-ink">
 
             {/* --- MOBILE HEADER --- */}
-            <div className="md:hidden h-14 bg-gray-900 text-white flex items-center justify-between px-4 shrink-0 z-30 shadow-md">
-                <div className="font-bold text-lg tracking-tighter text-red-500">PDV</div>
+            <div className="md:hidden h-14 bg-cooper-ink text-white flex items-center justify-between px-4 shrink-0 z-30 shadow-md">
+                <div className="font-bold text-lg tracking-tight text-cooper-moss">PDV</div>
                 <div className="flex items-center gap-3">
                     <div className="flex flex-col items-end opacity-70">
                         <span className="text-[10px] font-mono leading-none">{currentShift.terminal_id}</span>
                         <span className="text-[10px] leading-none">{currentShift.staff_name.split(' ')[0]}</span>
                     </div>
-                    <button onClick={onExit} className="p-2 bg-blue-600 rounded-lg text-white shadow-lg shadow-blue-900/50 hover:bg-blue-500 transition-colors" title="Trocar Módulo">
+                    <button onClick={onExit} className="p-2 bg-cooper-leaf rounded-lg text-white shadow-lift hover:bg-cooper-moss transition-colors" title="Trocar Módulo">
                         <LogOut size={18} className="rotate-180" />
                     </button>
                 </div>
             </div>
 
             {/* --- DESKTOP SIDEBAR --- */}
-            <div className="hidden md:flex w-20 bg-gray-900 text-white flex-col items-center py-4 gap-6 z-30 shadow-xl shrink-0">
-                <div className="font-bold text-xl tracking-tighter text-red-500">PDV</div>
+            <div className="hidden md:flex w-20 bg-cooper-ink text-white flex-col items-center py-4 gap-6 z-30 shadow-xl shrink-0">
+                <div className="font-bold text-xl tracking-tight text-cooper-moss">PDV</div>
 
                 <div className="flex flex-col gap-4 w-full px-2">
                     <button
-                        className="p-3 w-full bg-gray-800 rounded-lg hover:bg-gray-700 active:bg-blue-600 transition-colors flex justify-center text-blue-400 hover:text-white"
+                        className="p-3 w-full bg-white/5 rounded-lg hover:bg-white/10 active:bg-cooper-leaf transition-colors flex justify-center text-cooper-moss hover:text-white"
                         onClick={() => setUiState({ modal: 'SHIFT' })}
                         title="Ajustes de Turno"
                     >
@@ -395,17 +395,17 @@ export const POS = ({
                     </button>
 
                     <button
-                        className="p-3 w-full bg-gray-800 rounded-lg hover:bg-gray-700 active:bg-green-600 transition-colors flex justify-center text-green-400 hover:text-white"
+                        className="p-3 w-full bg-white/5 rounded-lg hover:bg-white/10 active:bg-cooper-leaf transition-colors flex justify-center text-green-300 hover:text-white"
                         onClick={() => setUiState({ modal: 'REPORTS' })}
                         title="Relatórios"
                     >
                         <BarChart2 size={20} />
                     </button>
 
-                    <div className="h-px bg-gray-800 w-full mx-auto my-2"></div>
+                    <div className="h-px bg-white/10 w-full mx-auto my-2"></div>
 
                     <button
-                        className="p-3 w-full bg-red-900/50 border border-red-900 rounded-lg hover:bg-red-600 hover:text-white text-red-400 transition-all flex justify-center shadow-inner"
+                        className="p-3 w-full bg-red-950/30 border border-red-900 rounded-lg hover:bg-red-700 hover:text-white text-red-300 transition-all flex justify-center shadow-inner"
                         onClick={handleCloseShift}
                         title="Fechar Turno (Relatório Z)"
                     >
@@ -417,7 +417,7 @@ export const POS = ({
 
                 <button
                     onClick={onExit}
-                    className="p-3 w-full bg-gray-800 rounded-lg hover:bg-gray-700 text-blue-400 hover:text-white transition-colors mb-4 flex justify-center"
+                    className="p-3 w-full bg-white/5 rounded-lg hover:bg-white/10 text-cooper-moss hover:text-white transition-colors mb-4 flex justify-center"
                     title="Trocar Módulo"
                 >
                     <LogOut size={20} className="rotate-180" />
@@ -447,7 +447,7 @@ export const POS = ({
             </div>
 
             {/* --- MOBILE BOTTOM NAV --- */}
-            <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t flex items-center justify-around z-40 pb-safe">
+            <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-cooper-surface border-t border-cooper-line flex items-center justify-around z-40 pb-safe">
                 <button
                     onClick={() => setUiState({ modal: 'SHIFT' })}
                     className="flex flex-col items-center justify-center w-14 h-full text-gray-500 active:text-blue-600"
@@ -466,7 +466,7 @@ export const POS = ({
 
                 <button
                     onClick={() => setShowMobileCart(true)}
-                    className="flex flex-col items-center justify-center -mt-6 w-14 h-14 bg-blue-600 rounded-full text-white shadow-lg shadow-blue-600/30 active:scale-95 transition-transform relative"
+                    className="flex flex-col items-center justify-center -mt-6 w-14 h-14 bg-cooper-leaf rounded-full text-white shadow-lg shadow-cooper-leaf/30 active:scale-95 transition-transform relative"
                 >
                     <ShoppingCart size={24} />
                     {cart.length > 0 && (
@@ -487,14 +487,14 @@ export const POS = ({
 
             {/* Current Cart (Responsive) */}
             <div className={`
-        fixed inset-0 z-50 bg-white transform transition-transform duration-300 md:relative md:transform-none md:inset-auto md:z-10
+        fixed inset-0 z-50 bg-cooper-surface transform transition-transform duration-300 md:relative md:transform-none md:inset-auto md:z-10
         ${showMobileCart ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
         w-full md:w-[400px] flex flex-col shadow-2xl
       `}>
                 {/* Mobile Header for Cart */}
-                <div className="md:hidden flex justify-between items-center p-4 bg-gray-900 text-white">
+                <div className="md:hidden flex justify-between items-center p-4 bg-cooper-ink text-white">
                     <h2 className="font-bold text-lg">Carrinho ({cart.length})</h2>
-                    <button onClick={() => setShowMobileCart(false)} className="p-2 bg-gray-800 rounded-full">
+                    <button onClick={() => setShowMobileCart(false)} className="p-2 bg-white/10 rounded-full">
                         <X size={20} />
                     </button>
                 </div>
@@ -599,8 +599,8 @@ export const POS = ({
 
             {uiState.modal === 'REPORTS' && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in">
-                    <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95">
-                        <div className="bg-gray-900 text-white p-5 flex justify-between items-center">
+                    <div className="bg-cooper-surface w-full max-w-sm rounded-lg shadow-2xl overflow-hidden animate-in zoom-in-95 border border-cooper-line">
+                        <div className="bg-cooper-ink text-white p-5 flex justify-between items-center">
                             <h2 className="text-lg font-bold flex items-center gap-2">
                                 <BarChart2 size={20} /> Relatórios
                             </h2>
@@ -611,10 +611,10 @@ export const POS = ({
                         <div className="p-4 space-y-2">
                             <button
                                 onClick={() => setUiState({ modal: 'CASH_CLOSING_REPORT' })}
-                                className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-blue-50 border hover:border-blue-200 rounded-xl transition-colors group"
+                                className="w-full flex items-center justify-between p-4 bg-cooper-panel hover:bg-cooper-surface border border-cooper-line rounded-lg transition-colors group"
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-blue-100 text-blue-700 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                                    <div className="w-10 h-10 bg-cooper-leaf/10 text-cooper-leaf rounded-lg flex items-center justify-center group-hover:bg-cooper-leaf/15 transition-colors">
                                         <FileText size={20} />
                                     </div>
                                     <div className="text-left">
@@ -622,7 +622,7 @@ export const POS = ({
                                         <div className="text-xs text-gray-500">Resumo de vendas e movimentações do turno</div>
                                     </div>
                                 </div>
-                                <ChevronRight size={18} className="text-gray-400 group-hover:text-blue-600" />
+                                <ChevronRight size={18} className="text-gray-400 group-hover:text-cooper-leaf" />
                             </button>
                         </div>
                     </div>

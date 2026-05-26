@@ -1,6 +1,8 @@
 # Lanchonete Escoteiros POS Suite v2
 
-Sistema de PDV (Ponto de Venda) modular para lanchonetes, desenvolvido com React, Vite e Supabase.
+Sistema de PDV (Ponto de Venda) modular para a lanchonete do Grupo Escoteiro Cooper Cotia, desenvolvido com React, Vite e Supabase.
+
+O projeto apoia a operação de vendas da lanchonete em atividades, eventos e ações do grupo escoteiro. As vendas registradas no sistema não têm como objetivo a lucratividade; elas servem para organizar a operação, controlar insumos, prestar contas e apoiar a sustentabilidade das atividades escoteiras.
 
 ## Arquitetura
 
@@ -107,4 +109,4 @@ npm run test
 - **Variáveis**: Nunca comite `.env.local` ou chaves de serviço (`service_role`) no repositório.
 
 ---
-Desenvolvido por Lanchonete Escoteiros Cooper
+Desenvolvido para a Lanchonete do Grupo Escoteiro Cooper Cotia
