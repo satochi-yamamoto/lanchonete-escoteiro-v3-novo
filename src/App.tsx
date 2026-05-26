@@ -13,6 +13,7 @@ const App = () => {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const initializeBackend = useStore(s => s.initializeBackend);
     const backend = useStore(s => s.backend);
+    const backendStatus = useStore(s => s.backendStatus);
     const realtimeStatus = useStore(s => s.realtimeStatus);
     const didInit = useRef(false);
 
@@ -55,11 +56,11 @@ const App = () => {
                 {/* Connection Status Box */}
                 {backend.kind === 'supabase' && (
                     <div className="mb-8 flex flex-col items-center gap-4 w-full max-w-2xl">
-                        {backend.status === 'loading' && (
+                        {backendStatus.status === 'loading' && (
                             <div className="text-sm text-blue-300 animate-pulse">Conectando ao banco de dados...</div>
                         )}
 
-                        {backend.status === 'ready' && (
+                        {backendStatus.status === 'ready' && (
                             <div className={`text-xs px-3 py-1 rounded-full border flex items-center gap-2 ${realtimeStatus === 'SUBSCRIBED'
                                 ? 'bg-green-900/30 border-green-500/50 text-green-400'
                                 : 'bg-yellow-900/30 border-yellow-500/50 text-yellow-400'
@@ -70,10 +71,10 @@ const App = () => {
                             </div>
                         )}
 
-                        {backend.status === 'error' && (
+                        {backendStatus.status === 'error' && (
                             <div className="p-4 rounded bg-red-900/50 border border-red-500/50 text-sm text-gray-200 text-center w-full">
                                 <p className="font-bold text-red-300 mb-2">Falha na conexão com o Banco de Dados</p>
-                                <p className="mb-2">{backend.error}</p>
+                                <p className="mb-2">{backendStatus.error}</p>
                                 <p className="text-xs opacity-75">
                                     Dica: Se este é o primeiro acesso, certifique-se de ter rodado os scripts
                                     <code>schema.clean.sql</code> e <code>schema.rls.sql</code> no painel do Supabase.

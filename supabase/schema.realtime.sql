@@ -6,6 +6,7 @@ begin;
 
   -- 1. Set Replica Identity to FULL (ensures we get the full row data on updates/deletes)
   alter table public.orders replica identity full;
+  alter table public.store_sessions replica identity full;
   alter table public.stock_logs replica identity full;
   alter table public.shifts replica identity full;
 
@@ -14,6 +15,7 @@ begin;
   drop publication if exists supabase_realtime;
   create publication supabase_realtime for table 
     public.orders, 
+    public.store_sessions,
     public.stock_logs, 
     public.shifts,
     public.products,
