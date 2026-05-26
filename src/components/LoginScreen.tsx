@@ -69,19 +69,22 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     }, [authenticate, pin, selectedUser]);
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4 md:p-6 font-sans">
-            <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-slate-700">
+        <div className="min-h-screen flex items-center justify-center bg-cooper-canvas text-cooper-ink p-4 md:p-6 font-sans cooper-subtle-grid">
+            <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 bg-cooper-surface rounded-lg overflow-hidden shadow-soft border border-cooper-line">
 
                 {/* Left Side: User Selection */}
-                <div className="p-6 md:p-8 border-r-0 md:border-r border-b md:border-b-0 border-slate-700 flex flex-col h-[440px] md:h-auto">
+                <div className="p-6 md:p-8 border-r-0 md:border-r border-b md:border-b-0 border-cooper-line flex flex-col h-[440px] md:h-auto">
+                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-cooper-muted mb-3">
+                        Grupo Escoteiro Cooper Cotia
+                    </p>
                     <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                        <UserIcon className="text-emerald-400" />
+                        <UserIcon className="text-cooper-leaf" />
                         Selecione o Usuário
                     </h2>
 
                     <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
                         {users.length === 0 && (
-                            <div className="rounded-xl border border-slate-700 bg-slate-800 p-4 text-sm text-slate-300">
+                            <div className="rounded-lg border border-cooper-line bg-cooper-panel p-4 text-sm text-cooper-muted">
                                 Nenhum usuário encontrado no backend. Verifique a tabela <code>users</code> no Supabase.
                             </div>
                         )}
@@ -89,13 +92,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                             <button
                                 key={user.id}
                                 onClick={() => handleUserSelect(user)}
-                                className={`w-full p-4 rounded-xl flex items-center justify-between transition-all duration-200 ${selectedUser?.id === user.id
-                                    ? 'bg-emerald-600 text-white shadow-lg scale-[1.02]'
-                                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                                className={`w-full p-4 rounded-lg flex items-center justify-between transition-all duration-200 border ${selectedUser?.id === user.id
+                                    ? 'bg-cooper-leaf text-white shadow-lift border-cooper-leaf'
+                                    : 'bg-cooper-panel hover:bg-cooper-surface text-cooper-ink border-cooper-line'
                                     }`}
                             >
                                 <div className="flex items-center gap-4">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${selectedUser?.id === user.id ? 'bg-white text-blue-600' : 'bg-gray-600 text-gray-400'
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${selectedUser?.id === user.id ? 'bg-white text-cooper-leaf' : 'bg-cooper-surface text-cooper-muted border border-cooper-line'
                                         }`}>
                                         {user.name.charAt(0)}
                                     </div>
@@ -111,17 +114,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                 </div>
 
                 {/* Right Side: PIN Pad */}
-                <div className="p-6 md:p-8 flex flex-col items-center justify-center bg-slate-900/50 relative h-[440px] md:h-auto">
+                <div className="p-6 md:p-8 flex flex-col items-center justify-center bg-cooper-panel/70 relative h-[440px] md:h-auto">
                     {!selectedUser ? (
-                        <div className="text-center opacity-30">
+                        <div className="text-center text-cooper-muted">
                             <Lock size={64} className="mx-auto mb-4" />
                             <p>Selecione um usuário para continuar</p>
                         </div>
                     ) : (
                         <div className="w-full max-w-[280px] animate-in fade-in slide-in-from-right duration-300">
                             <div className="text-center mb-8">
-                                <h3 className="text-xl font-medium mb-2">Olá, <span className="font-bold text-emerald-400">{selectedUser.name}</span></h3>
-                                <p className="text-sm text-gray-400">Digite seu PIN de acesso</p>
+                                <h3 className="text-xl font-medium mb-2">Olá, <span className="font-bold text-cooper-leaf">{selectedUser.name}</span></h3>
+                                <p className="text-sm text-cooper-muted">Digite seu PIN de acesso</p>
                             </div>
 
                             {/* PIN Display */}
@@ -130,8 +133,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                                     <div
                                         key={i}
                                         className={`w-4 h-4 rounded-full transition-all duration-200 ${pin.length > i
-                                            ? errorMessage ? 'bg-red-500 scale-110' : 'bg-emerald-500 scale-110'
-                                            : 'bg-slate-600'
+                                            ? errorMessage ? 'bg-red-500 scale-110' : 'bg-cooper-leaf scale-110'
+                                            : 'bg-cooper-line'
                                             }`}
                                     />
                                 ))}
@@ -157,7 +160,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                                         key={num}
                                         onClick={() => handlePinInput(num.toString())}
                                         disabled={isAuthenticating}
-                                        className="h-16 rounded-xl bg-slate-700 hover:bg-slate-600 disabled:opacity-50 active:bg-slate-500 text-2xl font-bold transition-all shadow-md active:scale-95"
+                                        className="h-16 rounded-lg bg-cooper-surface hover:bg-white disabled:opacity-50 active:bg-cooper-panel text-2xl font-bold transition-all shadow-lift border border-cooper-line active:scale-[0.98]"
                                     >
                                         {num}
                                     </button>
@@ -166,7 +169,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                                     <button
                                         onClick={() => handlePinInput('0')}
                                         disabled={isAuthenticating}
-                                        className="w-full h-16 rounded-xl bg-slate-700 hover:bg-slate-600 disabled:opacity-50 active:bg-slate-500 text-2xl font-bold transition-all shadow-md active:scale-95"
+                                        className="w-full h-16 rounded-lg bg-cooper-surface hover:bg-white disabled:opacity-50 active:bg-cooper-panel text-2xl font-bold transition-all shadow-lift border border-cooper-line active:scale-[0.98]"
                                     >
                                         0
                                     </button>
@@ -174,7 +177,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                                 <button
                                     onClick={handleBackspace}
                                     disabled={isAuthenticating}
-                                    className="h-16 rounded-xl bg-slate-700/50 hover:bg-red-900/30 disabled:opacity-50 text-red-400 flex items-center justify-center transition-all active:scale-95"
+                                    className="h-16 rounded-lg bg-red-50 hover:bg-red-100 disabled:opacity-50 text-red-700 flex items-center justify-center transition-all border border-red-100 active:scale-[0.98]"
                                 >
                                     <Delete size={24} />
                                 </button>
@@ -183,7 +186,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                             <button
                                 disabled={pin.length !== 4 || isAuthenticating}
                                 onClick={() => void authenticate(pin)}
-                                className="mt-4 w-full rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-400 py-3 font-semibold transition-colors"
+                                className="mt-4 w-full rounded-lg bg-cooper-leaf hover:bg-cooper-leafDark disabled:bg-cooper-line disabled:text-cooper-muted text-white py-3 font-semibold transition-colors shadow-lift"
                             >
                                 Entrar
                             </button>
@@ -192,7 +195,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                 </div>
             </div>
 
-            <div className="fixed bottom-4 text-xs text-gray-600">
+            <div className="fixed bottom-4 text-xs text-cooper-muted">
                 Lanchonete Escoteiros POS Suite v2.0
             </div>
         </div>

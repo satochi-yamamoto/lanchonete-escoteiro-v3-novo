@@ -1,6 +1,8 @@
 # Manual do Usuário - Lanchonete Escoteiros POS Suite
 
-Bem-vindo ao Lanchonete Escoteiros POS Suite! Este guia rápido ajudará você a operar o sistema de forma simples e eficiente.
+Bem-vindo ao Lanchonete Escoteiros POS Suite! Este guia rápido ajudará você a operar o sistema da lanchonete do Grupo Escoteiro Cooper Cotia de forma simples e eficiente.
+
+Este sistema foi criado para apoiar a organização da lanchonete em atividades e eventos escoteiros. As vendas não visam lucratividade; elas ajudam no controle da operação, dos insumos, do caixa e da prestação de contas do grupo.
 
 ---
 
@@ -11,7 +13,7 @@ O sistema é dividido em módulos integrados:
 *   **Totem Autoatendimento**: Interface para o cliente fazer o próprio pedido.
 *   **KDS (Cozinha)**: Monitor de preparo de pedidos.
 *   **Status TV**: Painel de senhas para os clientes acompanharem.
-*   **Admin Backoffice**: Gestão da loja, cardápio, estoque e relatórios.
+*   **Admin Backoffice**: Gestão da lanchonete, cardápio, estoque e relatórios.
 
 ---
 
@@ -92,4 +94,4 @@ O KDS substitui as impressoras de cozinha.
 *   **Sair do Sistema**: Use o botão flutuante "Trocar Módulo" (canto inferior esquerdo) ou o botão de Logoff no menu principal para trocar de usuário/tela.
 
 ---
-*Lanchonete Escoteiros POS Suite - Simplificando sua operação.*
+*Lanchonete Escoteiros POS Suite - Apoio operacional para a Lanchonete do Grupo Escoteiro Cooper Cotia.*

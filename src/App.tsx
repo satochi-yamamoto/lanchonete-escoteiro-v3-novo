@@ -5,7 +5,7 @@ import { Button } from './components/ui';
 import { useStore } from './store';
 import { LoginScreen } from './components/LoginScreen';
 import { User } from './types';
-import { LogOut } from 'lucide-react';
+import { LogOut, Monitor, Settings2 } from 'lucide-react';
 
 // Simple router to switch between apps for the demo
 const App = () => {
@@ -39,31 +39,41 @@ const App = () => {
         const canAccessPOS = role === 'ADMIN' || role === 'MANAGER' || role === 'CASHIER';
 
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white p-4 relative">
+            <div className="min-h-screen flex flex-col items-center justify-center bg-cooper-canvas text-cooper-ink p-4 relative cooper-subtle-grid">
                 {/* Logout Button */}
                 <button
                     onClick={handleLogout}
-                    className="absolute top-6 right-6 flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg transition-colors text-sm"
+                    className="absolute top-6 right-6 flex items-center gap-2 bg-cooper-surface hover:bg-cooper-panel border border-cooper-line px-4 py-2 rounded-lg transition-colors text-sm shadow-lift"
                 >
                     <LogOut size={16} /> Sair ({currentUser.name})
                 </button>
 
-                <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">
-                    Lanchonete Escoteiros Cooper
-                </h1>
-                <p className="text-gray-400 mb-12 text-lg md:text-xl text-center">Selecione um módulo para iniciar</p>
+                <div className="mb-10 text-center max-w-2xl">
+                    <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-cooper-leaf text-white shadow-lift">
+                        C
+                    </div>
+                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-cooper-muted mb-3">
+                        Grupo Escoteiro Cooper Cotia
+                    </p>
+                    <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center tracking-tight">
+                        Lanchonete Escoteiros
+                    </h1>
+                    <p className="text-cooper-muted text-lg md:text-xl text-center">
+                        Selecione o módulo de trabalho para iniciar a operação.
+                    </p>
+                </div>
 
                 {/* Connection Status Box */}
                 {backend.kind === 'supabase' && (
                     <div className="mb-8 flex flex-col items-center gap-4 w-full max-w-2xl">
                         {backendStatus.status === 'loading' && (
-                            <div className="text-sm text-blue-300 animate-pulse">Conectando ao banco de dados...</div>
+                            <div className="text-sm text-cooper-leaf animate-pulse">Conectando ao banco de dados...</div>
                         )}
 
                         {backendStatus.status === 'ready' && (
                             <div className={`text-xs px-3 py-1 rounded-full border flex items-center gap-2 ${realtimeStatus === 'SUBSCRIBED'
-                                ? 'bg-green-900/30 border-green-500/50 text-green-400'
-                                : 'bg-yellow-900/30 border-yellow-500/50 text-yellow-400'
+                                ? 'bg-green-50 border-green-200 text-green-800'
+                                : 'bg-amber-50 border-amber-200 text-amber-800'
                                 }`}>
                                 <div className={`w-2 h-2 rounded-full ${realtimeStatus === 'SUBSCRIBED' ? 'bg-green-500' : 'bg-yellow-500 animate-pulse'}`}></div>
                                 Realtime: {realtimeStatus}
@@ -72,8 +82,8 @@ const App = () => {
                         )}
 
                         {backendStatus.status === 'error' && (
-                            <div className="p-4 rounded bg-red-900/50 border border-red-500/50 text-sm text-gray-200 text-center w-full">
-                                <p className="font-bold text-red-300 mb-2">Falha na conexão com o Banco de Dados</p>
+                            <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-sm text-red-900 text-center w-full">
+                                <p className="font-bold text-red-700 mb-2">Falha na conexão com o Banco de Dados</p>
                                 <p className="mb-2">{backendStatus.error}</p>
                                 <p className="text-xs opacity-75">
                                     Dica: Se este é o primeiro acesso, certifique-se de ter rodado os scripts
@@ -90,7 +100,7 @@ const App = () => {
                             title="Terminal PDV"
                             desc="Interface do caixa para pedidos."
                             onClick={() => setCurrentApp('POS')}
-                            color="bg-blue-600"
+                            icon={<Monitor size={22} />}
                         />
                     )}
 
@@ -99,7 +109,7 @@ const App = () => {
                             title="Admin Backoffice"
                             desc="Painel de gestão e relatórios."
                             onClick={() => setCurrentApp('ADMIN')}
-                            color="bg-gray-700"
+                            icon={<Settings2 size={22} />}
                         />
                     )}
                 </div>
@@ -122,13 +132,16 @@ const App = () => {
     );
 };
 
-const MenuButton = ({ title, desc, onClick, color }: any) => (
+const MenuButton = ({ title, desc, onClick, icon }: any) => (
     <button
         onClick={onClick}
-        className={`${color} hover:brightness-110 p-8 rounded-2xl text-left transition-all hover:scale-105 active:scale-95 shadow-lg group`}
+        className="bg-cooper-surface hover:bg-cooper-panel p-7 rounded-lg text-left transition-all active:scale-[0.98] shadow-soft border border-cooper-line group"
     >
+        <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-lg bg-cooper-leaf/10 text-cooper-leaf">
+            {icon}
+        </div>
         <h3 className="text-2xl font-bold mb-2 group-hover:translate-x-1 transition-transform">{title}</h3>
-        <p className="opacity-80">{desc}</p>
+        <p className="text-cooper-muted">{desc}</p>
     </button>
 );
 

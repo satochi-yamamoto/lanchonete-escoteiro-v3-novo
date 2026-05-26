@@ -1,8 +1,9 @@
 # 🍔 Lanchonete Escoteiros POS Suite v2 - Documentação do Projeto
 
 ## 📋 Visão Geral
-O **Lanchonete Escoteiros POS Suite** é uma solução completa para gestão de fast-food e restaurantes, desenvolvida com tecnologias modernas de frontend para garantir alta performance, responsividade e experiência de usuário fluida. O sistema opera em uma arquitetura híbrida, funcionando localmente (estado em memória/storage) ou integrado ao **Supabase** para persistência e recursos em tempo real.
+O **Lanchonete Escoteiros POS Suite** é uma solução completa para gestão da lanchonete do **Grupo Escoteiro Cooper Cotia**, desenvolvida com tecnologias modernas de frontend para garantir alta performance, responsividade e experiência de usuário fluida. O sistema opera em uma arquitetura híbrida, funcionando localmente (estado em memória/storage) ou integrado ao **Supabase** para persistência e recursos em tempo real.
 
+O sistema foi pensado para apoiar atividades, eventos e ações escoteiras, organizando pedidos, caixa, estoque, produção e prestação de contas. As vendas registradas não visam lucratividade; seu objetivo é permitir uma operação transparente, controlada e sustentável para as atividades do grupo.
 
 
 ### 🛠️ Stack Tecnológico
@@ -60,7 +61,7 @@ Display para clientes visualizarem o status dos pedidos.
 Painel administrativo para gestão completa do negócio.
 
 #### 📊 Dashboard
-*   **KPIs em Tempo Real:** Vendas Líquidas, Ticket Médio, Total de Pedidos, Margem Estimada.
+*   **KPIs em Tempo Real:** Vendas Líquidas, Ticket Médio, Total de Pedidos e acompanhamento financeiro operacional.
 *   **Gráficos e Listas:** Produtos mais vendidos e últimas transações.
 
 #### 📝 Relatórios (`ReportsManager`)
