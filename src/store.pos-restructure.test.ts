@@ -9,9 +9,11 @@ describe('Reestruturação inicial do POS', () => {
     useStore.setState(useStore.getInitialState(), true);
   });
 
-  it('calcula o valor unitário sugerido pela quantidade total de lanches', () => {
-    expect(calculateOpeningUnitCost(500, 80, 20)).toBe(5);
-    expect(calculateOpeningUnitCost(500, 0, 0)).toBe(0);
+  it('calcula o valor unitário sugerido pela quantidade de lanches pagantes (Escoteiros/Extra)', () => {
+    // 500 custo / 90 pagantes (100 total - 10 chefes) = 5,5556
+    expect(calculateOpeningUnitCost(500, 90)).toBeCloseTo(5.5556, 4);
+    expect(calculateOpeningUnitCost(450, 90)).toBe(5);
+    expect(calculateOpeningUnitCost(500, 0)).toBe(0);
   });
 
   it('bloqueia dados de abertura sem quantidade planejada', () => {

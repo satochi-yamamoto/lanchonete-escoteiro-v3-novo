@@ -7,10 +7,11 @@ import { Settings, LogOut, User, Lock, Monitor, Power, ShoppingCart, X, BarChart
 import { printReceipt } from '../utils';
 import { buildShiftFixedProducts, computeBurgerPlan } from '../constants/fixedProducts';
 
-export const calculateOpeningUnitCost = (totalCost: number, normalBurgers: number, veganBurgers: number) => {
-    const totalBurgers = normalBurgers + veganBurgers;
-    if (totalBurgers <= 0) return 0;
-    return totalCost / totalBurgers;
+// O valor unitário sugerido rateia o custo apenas entre os lanches pagantes
+// (Escoteiros/Extra), já que os lanches de Chefes têm preço R$ 0,00.
+export const calculateOpeningUnitCost = (totalCost: number, payableBurgers: number) => {
+    if (!Number.isFinite(payableBurgers) || payableBurgers <= 0) return 0;
+    return totalCost / payableBurgers;
 };
 
 export const isOpeningShiftInputValid = ({
@@ -119,11 +120,6 @@ export const POS = ({
     const parsedOpeningCost = parseFloat(openingProductCostTotal || '0');
     const parsedNormalBurgers = parseInt(plannedNormalBurgers || '0', 10);
     const parsedVeganBurgers = parseInt(plannedVeganBurgers || '0', 10);
-    const openingUnitCostSuggested = calculateOpeningUnitCost(
-        Number.isFinite(parsedOpeningCost) ? parsedOpeningCost : 0,
-        Number.isFinite(parsedNormalBurgers) ? parsedNormalBurgers : 0,
-        Number.isFinite(parsedVeganBurgers) ? parsedVeganBurgers : 0
-    );
 
     // Total de lanches = Normal + Vegano. Chefes é um recorte desse total;
     // o restante é destinado a Escoteiros/Extra (calculado, somente leitura).
@@ -137,6 +133,12 @@ export const POS = ({
     const totalPlannedBurgers = burgerPlan.total;
     const escoteiroExtraBurgers = burgerPlan.escoteiroExtra;
     const chefeExceedsTotal = burgerPlan.chefeExceedsTotal;
+
+    // Sugestão baseada nos lanches pagantes (Escoteiros/Extra), pois Chefes = R$ 0,00.
+    const openingUnitCostSuggested = calculateOpeningUnitCost(
+        Number.isFinite(parsedOpeningCost) ? parsedOpeningCost : 0,
+        escoteiroExtraBurgers
+    );
 
     useEffect(() => {
         if (!openingUnitCostEdited) {
