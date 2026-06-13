@@ -14,15 +14,3 @@ export const supabase: SupabaseClientOrNull =
 
 export const isSupabaseConfigured = () => Boolean(supabaseUrl && supabaseAnonKey);
 
-export const ensureAuth = async () => {
-  if (!supabase) return;
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
-    console.log('[Auth] Signing in anonymously...');
-    const { error } = await supabase.auth.signInAnonymously();
-    if (error) {
-      console.warn('[Auth] Anonymous sign-in unavailable. Continuing with public anon key access:', error.message);
-    }
-  }
-};
-
