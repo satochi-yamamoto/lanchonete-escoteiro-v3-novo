@@ -121,6 +121,19 @@ export interface Shift {
   menu_name?: string; // Cardápio do Lanche
   closer_name?: string; // Nome completo da pessoa que preenche
   feedback?: string;
+  // Histórico de ajustes feitos no fechamento em relação ao planejado na abertura
+  adjustments?: ShiftAdjustment[];
+}
+
+// Registro de auditoria: valor alterado no fechamento vs. o planejado na abertura
+export interface ShiftAdjustment {
+  id: string;
+  field: 'menu_name' | 'burger_cost' | 'burgers_produced';
+  label: string; // Rótulo legível (ex.: "Cardápio do Lanche")
+  previous_value: string | number | null; // Valor original (abertura)
+  new_value: string | number | null; // Valor informado no fechamento
+  changed_at: string;
+  changed_by?: string;
 }
 
 export interface ShiftTransaction {
