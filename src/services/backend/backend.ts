@@ -1,5 +1,5 @@
 import { Ingredient, Order, Product, Promotion, Shift, StockLog, StoreSession, TaxSettings, User, Scout, PaymentMethod, MenuCatalog, TerminalConfig } from '../../types';
-import { isSupabaseConfigured, supabase, ensureAuth } from './supabaseClient';
+import { isSupabaseConfigured, supabase } from './supabaseClient';
 import { MOCK_INGREDIENTS, MOCK_PRODUCTS, MOCK_USERS, MOCK_SCOUTS } from '../mockData';
 import { MOCK_PROMOTIONS } from '../promotionEngine';
 
@@ -444,14 +444,6 @@ export const backend: BackendInterface = {
       };
     }
     const sb = requireSupabase();
-
-    // Try to ensure auth, but don't fail hard if it's disabled (e.g., Anonymous sign-ins off)
-    // This allows the app to fallback to Public/Anon access if RLS allows it.
-    try {
-      await ensureAuth();
-    } catch (e) {
-      console.warn("[Backend] Auth initialization warning (proceeding with anon/public access):", e);
-    }
 
     await seedIfEmpty();
 
