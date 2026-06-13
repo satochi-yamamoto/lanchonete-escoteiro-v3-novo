@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useStore } from '../store';
-import { PaymentMethod } from '../types';
 import { Card, Badge, formatCurrency, Button } from '../components/ui';
 import { InventoryManager, ProductManager, PromotionManager, UserManager, ReportsManager, MenuCatalogManager, TerminalManager } from '../components/admin/AdminComponents';
 import { ScoutManager } from '../components/admin/ScoutManager';
@@ -197,9 +196,6 @@ const SettingsView = () => {
         resetDatabase,
         maxItemsPerOrder,
         setMaxItemsPerOrder,
-        activePaymentMethodsPOS,
-        activePaymentMethodsKiosk,
-        togglePaymentMethod,
         printReceiptEnabled,
         setPrintReceiptEnabled
     } = useStore();
@@ -640,71 +636,23 @@ const SettingsView = () => {
                 <Card className="p-6 border-l-4 border-l-blue-500 shadow-md mt-6">
                     <div className="flex items-center gap-2 mb-6 border-b pb-4">
                         <Wallet className="text-blue-600" />
-                        <h3 className="text-xl font-bold text-gray-800">Meios de Pagamento - PDV (Caixa)</h3>
+                        <div>
+                            <h3 className="text-xl font-bold text-gray-800">Meios de Pagamento</h3>
+                            <p className="text-sm text-gray-500">Fluxo operacional fixo para agilizar o atendimento.</p>
+                        </div>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {[
-                            { id: PaymentMethod.CASH, label: 'Dinheiro' },
-                            { id: PaymentMethod.CREDIT_CARD, label: 'Crédito' },
-                            { id: PaymentMethod.DEBIT_CARD, label: 'Débito' },
-                            { id: PaymentMethod.PIX, label: 'PIX' },
-                            { id: PaymentMethod.VOUCHER, label: 'Vale Refeição' },
-                            { id: PaymentMethod.ONLINE, label: 'Online' }
-                        ].map((m) => {
-                            const isActive = activePaymentMethodsPOS.includes(m.id);
-                            return (
-                                <button
-                                    key={m.id}
-                                    onClick={() => togglePaymentMethod('POS', m.id)}
-                                    className={`p-4 rounded-lg border-2 transition-all flex flex-col items-center justify-center gap-2 ${isActive
-                                            ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-md'
-                                            : 'border-gray-200 bg-gray-50 text-gray-400 grayscale'
-                                        }`}
-                                >
-                                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${isActive ? 'border-blue-500' : 'border-gray-300'}`}>
-                                        {isActive && <div className="w-2 h-2 rounded-full bg-blue-500" />}
-                                    </div>
-                                    <span className="font-bold text-sm">{m.label}</span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </Card>
-
-                {/* --- Kiosk Payment Methods --- */}
-                <Card className="p-6 border-l-4 border-l-green-500 shadow-md mt-6">
-                    <div className="flex items-center gap-2 mb-6 border-b pb-4">
-                        <Monitor className="text-green-600" />
-                        <h3 className="text-xl font-bold text-gray-800">Meios de Pagamento - Totem</h3>
-                    </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {[
-                            { id: PaymentMethod.CASH, label: 'Dinheiro (No Caixa)' },
-                            { id: PaymentMethod.CREDIT_CARD, label: 'Crédito' },
-                            { id: PaymentMethod.DEBIT_CARD, label: 'Débito' },
-                            { id: PaymentMethod.PIX, label: 'PIX' },
-                            { id: PaymentMethod.VOUCHER, label: 'Vale Refeição' },
-                            { id: PaymentMethod.ONLINE, label: 'Online' }
-                        ].map((m) => {
-                            const isActive = activePaymentMethodsKiosk.includes(m.id);
-                            return (
-                                <button
-                                    key={m.id}
-                                    onClick={() => togglePaymentMethod('KIOSK', m.id)}
-                                    className={`p-4 rounded-lg border-2 transition-all flex flex-col items-center justify-center gap-2 ${isActive
-                                            ? 'border-green-500 bg-green-50 text-green-700 shadow-md'
-                                            : 'border-gray-200 bg-gray-50 text-gray-400 grayscale'
-                                        }`}
-                                >
-                                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${isActive ? 'border-green-500' : 'border-gray-300'}`}>
-                                        {isActive && <div className="w-2 h-2 rounded-full bg-green-500" />}
-                                    </div>
-                                    <span className="font-bold text-sm text-center">{m.label}</span>
-                                </button>
-                            );
-                        })}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="rounded-xl border-2 border-green-200 bg-green-50 p-5">
+                            <span className="block text-xs font-bold uppercase tracking-widest text-green-600 mb-1">Pagamento imediato</span>
+                            <strong className="text-xl text-green-900">PIX</strong>
+                            <p className="text-sm text-green-700 mt-1">Conclui a venda diretamente no botão do caixa.</p>
+                        </div>
+                        <div className="rounded-xl border-2 border-gray-200 bg-gray-50 p-5">
+                            <span className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Pagamento com troco</span>
+                            <strong className="text-xl text-gray-900">Dinheiro</strong>
+                            <p className="text-sm text-gray-600 mt-1">Solicita o valor recebido antes de concluir.</p>
+                        </div>
                     </div>
                 </Card>
             </div>
