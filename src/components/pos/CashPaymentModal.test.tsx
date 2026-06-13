@@ -41,7 +41,8 @@ describe('CashPaymentModal', () => {
             'value'
         )?.set;
 
-        expect(confirmButton.disabled).toBe(true);
+        // Campo vazio é permitido: assume o valor total a pagar
+        expect(confirmButton.disabled).toBe(false);
 
         act(() => {
             setInputValue?.call(input, '5,00');
@@ -62,5 +63,28 @@ describe('CashPaymentModal', () => {
             confirmButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
         });
         expect(onConfirm).toHaveBeenCalledWith(20);
+    });
+
+    it('assume o valor total a pagar quando o campo fica vazio', () => {
+        const onConfirm = vi.fn();
+
+        act(() => {
+            root.render(
+                <CashPaymentModal
+                    total={8}
+                    onCancel={vi.fn()}
+                    onConfirm={onConfirm}
+                />
+            );
+        });
+
+        const confirmButton = container.querySelector<HTMLButtonElement>('[data-testid="confirm-cash-payment"]')!;
+
+        expect(confirmButton.disabled).toBe(false);
+
+        act(() => {
+            confirmButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        });
+        expect(onConfirm).toHaveBeenCalledWith(8);
     });
 });

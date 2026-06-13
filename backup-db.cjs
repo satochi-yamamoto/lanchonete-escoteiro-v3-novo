@@ -14,7 +14,11 @@ function loadEnv() {
   const env = {};
   fs.readFileSync(envPath, 'utf-8').split('\n').forEach(line => {
     const [key, ...rest] = line.split('=');
-    if (key && rest.length) env[key.trim()] = rest.join('=').trim();
+    if (key && rest.length) {
+      // Remove aspas envolventes (simples ou duplas) do valor
+      const value = rest.join('=').trim().replace(/^["']|["']$/g, '');
+      env[key.trim()] = value;
+    }
   });
   return env;
 }

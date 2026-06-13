@@ -494,7 +494,9 @@ export const CashPaymentModal = ({
     onConfirm: (paidAmount: number) => void;
 }) => {
     const [received, setReceived] = useState('');
-    const paidAmount = Number(received.replace(',', '.')) || 0;
+    // Campo vazio assume o valor total a pagar (pagamento exato, sem troco)
+    const isEmpty = received.trim() === '';
+    const paidAmount = isEmpty ? total : Number(received.replace(',', '.')) || 0;
     const change = paidAmount - total;
     const canConfirm = paidAmount >= total;
 
