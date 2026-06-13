@@ -187,7 +187,7 @@ const AddProductModal = ({ onClose, onSave, categories }: AddProductModalProps) 
 };
 
 // --- Product Grid Component ---
-export const ProductGrid = ({ products, onAdd, onCreateProduct }: { products: Product[], onAdd: (p: Product) => void, onCreateProduct?: (p: Product) => void }) => {
+export const ProductGrid = ({ products, onAdd, onCreateProduct, pinnedProducts = [] }: { products: Product[], onAdd: (p: Product) => void, onCreateProduct?: (p: Product) => void, pinnedProducts?: Product[] }) => {
     const [category, setCategory] = useState<string>('Todos');
     const [stationFilter, setStationFilter] = useState<Station | 'ALL'>('ALL');
     const [showUnavailable, setShowUnavailable] = useState(false);
@@ -298,6 +298,35 @@ export const ProductGrid = ({ products, onAdd, onCreateProduct }: { products: Pr
             </div>
 
             <div className="flex-1 overflow-y-auto p-2 md:p-4">
+                {/* Pinned shift products (Chefe / Escoteiro / Extra) — always visible */}
+                {pinnedProducts.length > 0 && (
+                    <div className="mb-4">
+                        <div className="flex items-center gap-2 mb-2 text-cooper-muted">
+                            <span className="text-xs font-black uppercase tracking-widest">Lanches do Dia</span>
+                            <div className="h-px bg-cooper-line flex-1" />
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-3">
+                            {pinnedProducts.map(p => {
+                                const isAnimating = addedId === p.id;
+                                return (
+                                    <button
+                                        key={p.id}
+                                        onClick={() => handleProductClick(p)}
+                                        className={`flex flex-col justify-between text-left border-2 rounded-lg p-3 h-28 transition-all duration-150 select-none ${
+                                            isAnimating
+                                                ? 'ring-4 ring-green-500 border-green-500 bg-green-50 scale-[0.98]'
+                                                : 'border-cooper-leaf/40 bg-cooper-leaf/5 hover:bg-cooper-leaf/10 hover:-translate-y-0.5 active:scale-[0.98]'
+                                        }`}
+                                    >
+                                        <h4 className="font-black text-sm text-cooper-ink line-clamp-2">{p.name}</h4>
+                                        <div className="font-black text-lg text-cooper-leaf">{formatCurrency(p.price)}</div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-3">
                     {/* Add New Product Card (Keep as well for visibility in empty state) */}
                     {onCreateProduct && (
