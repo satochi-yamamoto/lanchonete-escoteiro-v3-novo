@@ -2,8 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../store';
 import { OrderType, Product, PaymentMethod, Order, ShiftTransaction } from '../types';
 import { Button, formatCurrency } from '../components/ui';
-import { ProductGrid, CartPanel, PaymentModal, ShiftPanel, SuccessModal, ZReportModal, CashClosingReportModal } from '../components/pos/PosComponents';
-import { Settings, LogOut, User, Lock, Monitor, Power, ShoppingCart, X, BarChart2, FileText, ChevronRight } from 'lucide-react';
+import { ProductGrid, CartPanel, CashPaymentModal, ShiftPanel, SuccessModal, ZReportModal, CashClosingReportModal } from '../components/pos/PosComponents';
+import { Settings, LogOut, User, Lock, Monitor, Power, ShoppingCart, X, BarChart2, FileText, ChevronRight, Banknote, QrCode, Hash } from 'lucide-react';
 import { printReceipt } from '../utils';
 
 export const calculateOpeningUnitCost = (totalCost: number, normalBurgers: number, veganBurgers: number) => {
@@ -59,14 +59,14 @@ export const POS = ({
     const {
         currentSession,
         terminals,
-        products, cart, cartTotals, currentShift, orders, maxItemsPerOrder, activePaymentMethodsPOS,
+        products, cart, cartTotals, currentShift, orders, maxItemsPerOrder,
         printReceiptEnabled,
         addToCart, removeFromCart, updateCartItem, clearCart, createOrder,
         openShift, closeShift, addShiftTransaction, addProduct
     } = useStore();
 
     const [uiState, setUiState] = useState<{
-        modal: 'NONE' | 'PAYMENT' | 'SHIFT' | 'AUTH_VOID' | 'SUCCESS' | 'CLOSE_SHIFT' | 'REPORTS' | 'CASH_CLOSING_REPORT';
+        modal: 'NONE' | 'CASH_PAYMENT' | 'SHIFT' | 'AUTH_VOID' | 'SUCCESS' | 'CLOSE_SHIFT' | 'REPORTS' | 'CASH_CLOSING_REPORT';
         pendingVoidId?: string;
     }>({ modal: 'NONE' });
 
@@ -121,6 +121,7 @@ export const POS = ({
     // Order State
     const [lastOrder, setLastOrder] = useState<Order | null>(null);
     const [lastPaidAmount, setLastPaidAmount] = useState<number>(0);
+    const [orderIdentifier, setOrderIdentifier] = useState('');
 
     // --- Handlers ---
 
@@ -204,7 +205,35 @@ export const POS = ({
         // 4. Set local state for success modal
         setLastOrder(newOrder);
         setLastPaidAmount(paidAmount);
+        setOrderIdentifier('');
         setUiState({ modal: 'SUCCESS' });
+    };
+
+    const validateCheckout = () => {
+        if (!currentShift || currentShift.status === 'CLOSED') {
+            console.log('[SHIFT VALIDATION] Checkout blocked - no open shift');
+            setShiftValidationError('Abra um turno de caixa antes de realizar vendas');
+            setTimeout(() => setShiftValidationError(null), 3000);
+            return false;
+        }
+        return cart.length > 0;
+    };
+
+    const handlePixPayment = () => {
+        if (!validateCheckout()) return;
+        setShowMobileCart(false);
+        handlePaymentConfirm(PaymentMethod.PIX, cartTotals.total, orderIdentifier.trim());
+    };
+
+    const handleCashPayment = () => {
+        if (!validateCheckout()) return;
+        setShowMobileCart(false);
+        setUiState({ modal: 'CASH_PAYMENT' });
+    };
+
+    const handleCancelCart = () => {
+        clearCart();
+        setOrderIdentifier('');
     };
 
     // --- Render Logic ---
@@ -524,20 +553,48 @@ export const POS = ({
                 </div>
 
                 <div className="p-4 bg-white border-t shrink-0 pb-8 md:pb-4">
-                    <div className="grid grid-cols-2 gap-3">
-                        <Button variant="danger" onClick={clearCart} disabled={cart.length === 0}>Cancelar</Button>
-                        <Button variant="success" onClick={() => {
-                            // TC019 FIX: Improved shift validation with visible error message
-                            if (!currentShift || currentShift.status === 'CLOSED') {
-                                console.log('[SHIFT VALIDATION] Checkout blocked - no open shift');
-                                setShiftValidationError('Abra um turno de caixa antes de realizar vendas');
-                                setTimeout(() => setShiftValidationError(null), 3000);
-                                return;
-                            }
-                            console.log('[CHECKOUT] Opening payment modal');
-                            setUiState({ modal: 'PAYMENT' });
-                            setShowMobileCart(false);
-                        }} disabled={cart.length === 0}>PAGAR</Button>
+                    <div className="space-y-3">
+                        <div>
+                            <label htmlFor="order-identifier" className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">
+                                Senha / Pager / Identificador (opcional)
+                            </label>
+                            <div className="relative">
+                                <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={17} />
+                                <input
+                                    id="order-identifier"
+                                    value={orderIdentifier}
+                                    onChange={(event) => setOrderIdentifier(event.target.value.toUpperCase())}
+                                    disabled={cart.length === 0}
+                                    className="w-full rounded-lg border border-cooper-line bg-cooper-panel py-2.5 pl-10 pr-3 text-sm font-bold uppercase text-cooper-ink outline-none focus:border-cooper-leaf focus:bg-white disabled:opacity-50"
+                                    placeholder="Ex: A23, 10, JOÃO"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                            <button
+                                data-testid="pay-pix"
+                                onClick={handlePixPayment}
+                                disabled={cart.length === 0}
+                                className="min-h-16 rounded-xl bg-cooper-leaf text-white px-3 py-3 flex items-center justify-center gap-2 font-black text-lg shadow-lift hover:bg-cooper-leafDark active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                                <QrCode size={24} />
+                                PIX
+                            </button>
+                            <button
+                                data-testid="pay-cash"
+                                onClick={handleCashPayment}
+                                disabled={cart.length === 0}
+                                className="min-h-16 rounded-xl bg-cooper-ink text-white px-3 py-3 flex items-center justify-center gap-2 font-black text-lg shadow-lift hover:bg-black active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                                <Banknote size={24} />
+                                Dinheiro
+                            </button>
+                        </div>
+
+                        <Button variant="danger" className="w-full py-2" onClick={handleCancelCart} disabled={cart.length === 0}>
+                            Cancelar pedido
+                        </Button>
                     </div>
                 </div>
             </div>
@@ -558,12 +615,18 @@ export const POS = ({
             )}
 
             {/* Modals */}
-            {uiState.modal === 'PAYMENT' && (
-                <PaymentModal
+            {uiState.modal === 'CASH_PAYMENT' && (
+                <CashPaymentModal
                     total={cartTotals.total}
-                    activeMethods={activePaymentMethodsPOS}
-                    onCancel={() => setUiState({ modal: 'NONE' })}
-                    onConfirm={handlePaymentConfirm}
+                    onCancel={() => {
+                        setUiState({ modal: 'NONE' });
+                        setShowMobileCart(true);
+                    }}
+                    onConfirm={(paidAmount) => handlePaymentConfirm(
+                        PaymentMethod.CASH,
+                        paidAmount,
+                        orderIdentifier.trim()
+                    )}
                 />
             )}
 

@@ -110,12 +110,25 @@ const sanitizeUsersForLogin = (users: User[]): User[] =>
 const PAYMENT_SETTINGS_STORAGE_KEY = 'omni_payment_settings';
 
 const defaultPaymentSettings = {
-  pos: [PaymentMethod.CASH, PaymentMethod.CREDIT_CARD, PaymentMethod.DEBIT_CARD, PaymentMethod.PIX],
-  kiosk: [PaymentMethod.CREDIT_CARD, PaymentMethod.DEBIT_CARD, PaymentMethod.PIX]
+  pos: [PaymentMethod.PIX, PaymentMethod.CASH],
+  kiosk: [PaymentMethod.PIX, PaymentMethod.CASH]
 };
 
-const isPaymentMethod = (value: unknown): value is PaymentMethod => {
-  return typeof value === 'string' && Object.values(PaymentMethod).includes(value as PaymentMethod);
+const supportedPaymentMethods = new Set<PaymentMethod>([PaymentMethod.PIX, PaymentMethod.CASH]);
+
+const isSupportedPaymentMethod = (value: unknown): value is PaymentMethod =>
+  typeof value === 'string' && supportedPaymentMethods.has(value as PaymentMethod);
+
+const normalizePaymentSettings = (settings?: { pos?: unknown[]; kiosk?: unknown[] }) => {
+  const normalize = (methods: unknown[] | undefined, fallback: PaymentMethod[]) => {
+    const supported = Array.isArray(methods) ? methods.filter(isSupportedPaymentMethod) : [];
+    return supported.length > 0 ? supported : fallback;
+  };
+
+  return {
+    pos: normalize(settings?.pos, defaultPaymentSettings.pos),
+    kiosk: normalize(settings?.kiosk, defaultPaymentSettings.kiosk)
+  };
 };
 
 const readPaymentSettingsFromStorage = (): { pos: PaymentMethod[]; kiosk: PaymentMethod[] } | null => {
@@ -124,10 +137,7 @@ const readPaymentSettingsFromStorage = (): { pos: PaymentMethod[]; kiosk: Paymen
     const raw = window.localStorage.getItem(PAYMENT_SETTINGS_STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as { pos?: unknown[]; kiosk?: unknown[] };
-    const pos = Array.isArray(parsed.pos) ? parsed.pos.filter(isPaymentMethod) : [];
-    const kiosk = Array.isArray(parsed.kiosk) ? parsed.kiosk.filter(isPaymentMethod) : [];
-    if (pos.length === 0 || kiosk.length === 0) return null;
-    return { pos, kiosk };
+    return normalizePaymentSettings(parsed);
   } catch {
     return null;
   }
@@ -224,16 +234,15 @@ export const useStore = create<AppState>((set, get) => ({
         users: sanitizeUsersForLogin(data.users),
         menuCatalogs: data.menuCatalogs || [],
         terminals: data.terminals || [],
-        activePaymentMethodsPOS: (data as any).paymentSettings?.pos || get().activePaymentMethodsPOS,
-        activePaymentMethodsKiosk: (data as any).paymentSettings?.kiosk || get().activePaymentMethodsKiosk,
+        activePaymentMethodsPOS: normalizePaymentSettings((data as any).paymentSettings).pos,
+        activePaymentMethodsKiosk: normalizePaymentSettings((data as any).paymentSettings).kiosk,
         printReceiptEnabled: (data as any).printSettings?.enabled ?? get().printReceiptEnabled,
         maxItemsPerOrder: (data as any).businessRules?.maxItemsPerOrder ?? get().maxItemsPerOrder
       });
       set({ backendStatus: { kind: 'supabase', status: 'ready' } });
 
       writePaymentSettingsToStorage({
-        pos: (data as any).paymentSettings?.pos || get().activePaymentMethodsPOS,
-        kiosk: (data as any).paymentSettings?.kiosk || get().activePaymentMethodsKiosk
+        ...normalizePaymentSettings((data as any).paymentSettings)
       });
 
       // Auto-seed test data if in test mode
@@ -804,6 +813,7 @@ export const useStore = create<AppState>((set, get) => ({
   activePaymentMethodsPOS: defaultPaymentSettings.pos,
   activePaymentMethodsKiosk: defaultPaymentSettings.kiosk,
   togglePaymentMethod: (target, method) => {
+    if (!supportedPaymentMethods.has(method)) return;
     set(state => {
       let nextState: any = {};
       if (target === 'POS') {

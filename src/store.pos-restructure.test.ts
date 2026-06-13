@@ -72,4 +72,15 @@ describe('Reestruturação inicial do POS', () => {
     expect(order?.paid_at).toBeDefined();
     expect(order?.delivered_at).toBeDefined();
   });
+
+  it('mantém somente PIX e dinheiro como meios operacionais', () => {
+    expect(useStore.getState().activePaymentMethodsPOS).toEqual([
+      PaymentMethod.PIX,
+      PaymentMethod.CASH
+    ]);
+    expect(useStore.getState().activePaymentMethodsKiosk).toEqual([
+      PaymentMethod.PIX,
+      PaymentMethod.CASH
+    ]);
+  });
 });

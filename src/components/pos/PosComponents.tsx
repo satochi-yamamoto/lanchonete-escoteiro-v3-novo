@@ -483,6 +483,109 @@ export const CartPanel = ({ cart, totals, onRemove, onUpdate }: any) => {
   );
 };
 
+// --- Cash Payment Modal ---
+export const CashPaymentModal = ({
+    total,
+    onCancel,
+    onConfirm
+}: {
+    total: number;
+    onCancel: () => void;
+    onConfirm: (paidAmount: number) => void;
+}) => {
+    const [received, setReceived] = useState('');
+    const paidAmount = Number(received.replace(',', '.')) || 0;
+    const change = paidAmount - total;
+    const canConfirm = paidAmount >= total;
+
+    const handleSubmit = (event: React.FormEvent) => {
+        event.preventDefault();
+        if (canConfirm) onConfirm(paidAmount);
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-cooper-ink/70 backdrop-blur-sm p-4 animate-in fade-in">
+            <form
+                onSubmit={handleSubmit}
+                className="bg-cooper-surface w-full max-w-md rounded-2xl shadow-2xl border border-cooper-line overflow-hidden animate-in zoom-in-95 duration-200"
+            >
+                <div className="flex items-center justify-between px-6 py-5 border-b border-cooper-line">
+                    <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-cooper-leaf/10 text-cooper-leaf flex items-center justify-center">
+                            <Banknote size={24} />
+                        </div>
+                        <div>
+                            <p className="text-xs font-bold tracking-widest uppercase text-gray-500">Pagamento</p>
+                            <h2 className="text-xl font-black text-cooper-ink">Dinheiro</h2>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="p-2 rounded-lg text-gray-400 hover:text-cooper-ink hover:bg-cooper-panel transition-colors"
+                        aria-label="Fechar pagamento em dinheiro"
+                    >
+                        <X size={22} />
+                    </button>
+                </div>
+
+                <div className="p-6 space-y-5">
+                    <div className="text-center py-2">
+                        <p className="text-xs font-bold tracking-widest uppercase text-gray-500 mb-2">Total a pagar</p>
+                        <p className="text-5xl font-black text-cooper-ink">{formatCurrency(total)}</p>
+                    </div>
+
+                    <div>
+                        <label htmlFor="cash-received" className="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">
+                            Valor recebido
+                        </label>
+                        <div className="flex items-center gap-3 bg-cooper-panel border-2 border-cooper-line rounded-xl px-4 focus-within:border-cooper-leaf focus-within:bg-white transition-colors">
+                            <span className="text-xl font-bold text-gray-500">R$</span>
+                            <input
+                                id="cash-received"
+                                data-testid="cash-received"
+                                type="text"
+                                inputMode="decimal"
+                                autoFocus
+                                value={received}
+                                onChange={(event) => setReceived(event.target.value)}
+                                className="w-full bg-transparent py-4 text-3xl font-black text-cooper-ink outline-none"
+                                placeholder="0,00"
+                            />
+                        </div>
+                    </div>
+
+                    <div className={`rounded-xl border p-5 text-center ${canConfirm ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-100 text-red-500'}`}>
+                        <p className="text-xs font-bold uppercase tracking-widest mb-1">Troco</p>
+                        <p data-testid="cash-change" className="text-4xl font-black">{formatCurrency(Math.max(0, change))}</p>
+                        {!canConfirm && (
+                            <p className="text-sm font-bold mt-2">Faltam {formatCurrency(Math.max(0, -change))}</p>
+                        )}
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-[auto_1fr] gap-3 px-6 pb-6">
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="px-5 py-4 rounded-xl font-bold text-gray-600 border border-cooper-line hover:bg-cooper-panel transition-colors"
+                    >
+                        Voltar
+                    </button>
+                    <button
+                        data-testid="confirm-cash-payment"
+                        type="submit"
+                        disabled={!canConfirm}
+                        className="px-5 py-4 rounded-xl font-black text-white bg-cooper-leaf hover:bg-cooper-leafDark shadow-lift transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                        Confirmar pagamento
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
+};
+
 // --- Payment Modal ---
 export const PaymentModal = ({ total, onCancel, onConfirm, activeMethods, isKiosk }: { total: number, onCancel: () => void, onConfirm: any, activeMethods?: PaymentMethod[], isKiosk?: boolean }) => {
     const [method, setMethod] = useState<PaymentMethod | null>(null);

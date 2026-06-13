@@ -38,8 +38,22 @@ const defaultTaxSettings: TaxSettings = {
 };
 
 const defaultPaymentSettings = {
-  pos: [PaymentMethod.CASH, PaymentMethod.CREDIT_CARD, PaymentMethod.DEBIT_CARD, PaymentMethod.PIX],
-  kiosk: [PaymentMethod.CREDIT_CARD, PaymentMethod.DEBIT_CARD, PaymentMethod.PIX]
+  pos: [PaymentMethod.PIX, PaymentMethod.CASH],
+  kiosk: [PaymentMethod.PIX, PaymentMethod.CASH]
+};
+
+const supportedPaymentMethods = new Set<PaymentMethod>([PaymentMethod.PIX, PaymentMethod.CASH]);
+
+const normalizePaymentSettings = (settings?: { pos?: PaymentMethod[]; kiosk?: PaymentMethod[] }) => {
+  const normalize = (methods: PaymentMethod[] | undefined, fallback: PaymentMethod[]) => {
+    const supported = methods?.filter((method) => supportedPaymentMethods.has(method)) ?? [];
+    return supported.length > 0 ? supported : fallback;
+  };
+
+  return {
+    pos: normalize(settings?.pos, defaultPaymentSettings.pos),
+    kiosk: normalize(settings?.kiosk, defaultPaymentSettings.kiosk)
+  };
 };
 
 const defaultMenuCatalogs: MenuCatalog[] = [];
@@ -187,7 +201,7 @@ const loadPaymentSettings = async () => {
   const sb = requireSupabase();
   const { data, error } = await sb.from('settings').select('value').eq('id', 'payment_settings').maybeSingle();
   if (error) throw error;
-  return (data?.value as { pos: PaymentMethod[], kiosk: PaymentMethod[] } | undefined) ?? defaultPaymentSettings;
+  return normalizePaymentSettings(data?.value as { pos?: PaymentMethod[], kiosk?: PaymentMethod[] } | undefined);
 };
 
 const loadPrintSettings = async () => {
