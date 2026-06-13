@@ -5,6 +5,7 @@ import { Button, formatCurrency } from '../components/ui';
 import { ProductGrid, CartPanel, CashPaymentModal, ShiftPanel, SuccessModal, ZReportModal, CashClosingReportModal } from '../components/pos/PosComponents';
 import { Settings, LogOut, User, Lock, Monitor, Power, ShoppingCart, X, BarChart2, FileText, ChevronRight, Banknote, QrCode, Hash } from 'lucide-react';
 import { printReceipt } from '../utils';
+import { buildShiftFixedProducts } from '../constants/fixedProducts';
 
 export const calculateOpeningUnitCost = (totalCost: number, normalBurgers: number, veganBurgers: number) => {
     const totalBurgers = normalBurgers + veganBurgers;
@@ -20,7 +21,8 @@ export const isOpeningShiftInputValid = ({
     totalCost,
     normalQty,
     veganQty,
-    finalUnitCost
+    finalUnitCost,
+    chefeQty = 0
 }: {
     startCash: number;
     operatorName: string;
@@ -30,6 +32,7 @@ export const isOpeningShiftInputValid = ({
     normalQty: number;
     veganQty: number;
     finalUnitCost: number;
+    chefeQty?: number;
 }) => {
     const totalPlanned = normalQty + veganQty;
     return (
@@ -45,7 +48,10 @@ export const isOpeningShiftInputValid = ({
         veganQty >= 0 &&
         totalPlanned > 0 &&
         Number.isFinite(finalUnitCost) &&
-        finalUnitCost >= 0
+        finalUnitCost >= 0 &&
+        Number.isFinite(chefeQty) &&
+        chefeQty >= 0 &&
+        chefeQty <= totalPlanned
     );
 };
 
@@ -84,6 +90,7 @@ export const POS = ({
     const [openingProductCostTotal, setOpeningProductCostTotal] = useState('');
     const [plannedNormalBurgers, setPlannedNormalBurgers] = useState('');
     const [plannedVeganBurgers, setPlannedVeganBurgers] = useState('');
+    const [plannedChefeBurgers, setPlannedChefeBurgers] = useState('0');
     const [openingUnitCost, setOpeningUnitCost] = useState('');
     const [openingUnitCostEdited, setOpeningUnitCostEdited] = useState(false);
 
@@ -103,6 +110,12 @@ export const POS = ({
         }
     }, [activeTerminals, terminalId]);
 
+    // Lanches fixos do caixa (Chefe/Escoteiro/Extra) com preço derivado da abertura
+    const shiftFixedProducts = useMemo(
+        () => buildShiftFixedProducts(currentShift?.opening_unit_cost),
+        [currentShift?.opening_unit_cost]
+    );
+
     const parsedOpeningCost = parseFloat(openingProductCostTotal || '0');
     const parsedNormalBurgers = parseInt(plannedNormalBurgers || '0', 10);
     const parsedVeganBurgers = parseInt(plannedVeganBurgers || '0', 10);
@@ -111,6 +124,16 @@ export const POS = ({
         Number.isFinite(parsedNormalBurgers) ? parsedNormalBurgers : 0,
         Number.isFinite(parsedVeganBurgers) ? parsedVeganBurgers : 0
     );
+
+    // Total de lanches = Normal + Vegano. Chefes é um recorte desse total;
+    // o restante é destinado a Escoteiros/Extra (calculado, somente leitura).
+    const totalPlannedBurgers =
+        (Number.isFinite(parsedNormalBurgers) ? parsedNormalBurgers : 0) +
+        (Number.isFinite(parsedVeganBurgers) ? parsedVeganBurgers : 0);
+    const parsedChefeBurgers = parseInt(plannedChefeBurgers || '0', 10);
+    const safeChefeBurgers = Number.isFinite(parsedChefeBurgers) ? parsedChefeBurgers : 0;
+    const escoteiroExtraBurgers = Math.max(0, totalPlannedBurgers - safeChefeBurgers);
+    const chefeExceedsTotal = safeChefeBurgers > totalPlannedBurgers;
 
     useEffect(() => {
         if (!openingUnitCostEdited) {
@@ -130,6 +153,7 @@ export const POS = ({
         const totalCost = parseFloat(openingProductCostTotal);
         const normalQty = parseInt(plannedNormalBurgers, 10);
         const veganQty = parseInt(plannedVeganBurgers, 10);
+        const chefeQty = parseInt(plannedChefeBurgers || '0', 10);
         const finalUnitCost = parseFloat(openingUnitCost);
 
         if (isOpeningShiftInputValid({
@@ -140,12 +164,16 @@ export const POS = ({
             totalCost,
             normalQty,
             veganQty,
-            finalUnitCost
+            finalUnitCost,
+            chefeQty
         })) {
+            const totalQty = normalQty + veganQty;
             openShift(operatorName.trim(), amount, terminalId, {
                 opening_product_cost_total: totalCost,
                 planned_normal_burgers: normalQty,
                 planned_vegan_burgers: veganQty,
+                planned_chefe_burgers: chefeQty,
+                planned_escoteiro_extra_burgers: Math.max(0, totalQty - chefeQty),
                 opening_unit_cost_suggested: openingUnitCostSuggested,
                 opening_unit_cost: finalUnitCost,
                 daily_menu_name: dailyMenuName.trim()
@@ -383,6 +411,36 @@ export const POS = ({
                                         placeholder="Ex: 20"
                                     />
                                 </div>
+                                <div>
+                                    <label className="block text-sm font-bold mb-1 text-gray-600">Quantidade de Lanche para Chefes</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="1"
+                                        value={plannedChefeBurgers}
+                                        onChange={e => setPlannedChefeBurgers(e.target.value)}
+                                        className={`w-full border p-3 rounded-lg ${chefeExceedsTotal ? 'border-red-400 bg-red-50' : ''}`}
+                                        placeholder="Ex: 10"
+                                    />
+                                    {chefeExceedsTotal && (
+                                        <p className="text-xs text-red-600 mt-1">
+                                            Não pode exceder o total de lanches ({totalPlannedBurgers}).
+                                        </p>
+                                    )}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold mb-1 text-gray-600">Quantidade Lanche Escoteiros/Extra</label>
+                                    <input
+                                        type="number"
+                                        value={escoteiroExtraBurgers}
+                                        readOnly
+                                        tabIndex={-1}
+                                        className="w-full border p-3 rounded-lg bg-gray-100 text-gray-700 font-bold cursor-not-allowed"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Calculado: (Normal + Vegano) − Chefes
+                                    </p>
+                                </div>
                             </div>
                             <Button onClick={handleOpenShift} className="w-full py-4 text-lg shadow-xl">ABRIR CAIXA</Button>
                         </>
@@ -463,6 +521,7 @@ export const POS = ({
                 <div className="flex-1 overflow-hidden">
                     <ProductGrid
                         products={products}
+                        pinnedProducts={shiftFixedProducts}
                         onAdd={(p) => {
                             if (cart.length >= maxItemsPerOrder) {
                                 alert(`Limite de ${maxItemsPerOrder} itens por pedido atingido.`);
