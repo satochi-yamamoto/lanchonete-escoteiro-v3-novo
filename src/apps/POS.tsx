@@ -5,7 +5,7 @@ import { Button, formatCurrency } from '../components/ui';
 import { ProductGrid, CartPanel, CashPaymentModal, ShiftPanel, SuccessModal, ZReportModal, CashClosingReportModal } from '../components/pos/PosComponents';
 import { Settings, LogOut, User, Lock, Monitor, Power, ShoppingCart, X, BarChart2, FileText, ChevronRight, Banknote, QrCode, Hash } from 'lucide-react';
 import { printReceipt } from '../utils';
-import { buildShiftFixedProducts } from '../constants/fixedProducts';
+import { buildShiftFixedProducts, computeBurgerPlan } from '../constants/fixedProducts';
 
 export const calculateOpeningUnitCost = (totalCost: number, normalBurgers: number, veganBurgers: number) => {
     const totalBurgers = normalBurgers + veganBurgers;
@@ -34,7 +34,7 @@ export const isOpeningShiftInputValid = ({
     finalUnitCost: number;
     chefeQty?: number;
 }) => {
-    const totalPlanned = normalQty + veganQty;
+    const plan = computeBurgerPlan({ normal: normalQty, vegan: veganQty, chefe: chefeQty });
     return (
         startCash >= 0 &&
         Boolean(operatorName.trim()) &&
@@ -46,12 +46,12 @@ export const isOpeningShiftInputValid = ({
         normalQty >= 0 &&
         Number.isFinite(veganQty) &&
         veganQty >= 0 &&
-        totalPlanned > 0 &&
+        plan.total > 0 &&
         Number.isFinite(finalUnitCost) &&
         finalUnitCost >= 0 &&
         Number.isFinite(chefeQty) &&
         chefeQty >= 0 &&
-        chefeQty <= totalPlanned
+        !plan.chefeExceedsTotal
     );
 };
 
@@ -127,13 +127,16 @@ export const POS = ({
 
     // Total de lanches = Normal + Vegano. Chefes é um recorte desse total;
     // o restante é destinado a Escoteiros/Extra (calculado, somente leitura).
-    const totalPlannedBurgers =
-        (Number.isFinite(parsedNormalBurgers) ? parsedNormalBurgers : 0) +
-        (Number.isFinite(parsedVeganBurgers) ? parsedVeganBurgers : 0);
+    // Regras centralizadas em computeBurgerPlan para não divergir da validação.
     const parsedChefeBurgers = parseInt(plannedChefeBurgers || '0', 10);
-    const safeChefeBurgers = Number.isFinite(parsedChefeBurgers) ? parsedChefeBurgers : 0;
-    const escoteiroExtraBurgers = Math.max(0, totalPlannedBurgers - safeChefeBurgers);
-    const chefeExceedsTotal = safeChefeBurgers > totalPlannedBurgers;
+    const burgerPlan = computeBurgerPlan({
+        normal: parsedNormalBurgers,
+        vegan: parsedVeganBurgers,
+        chefe: parsedChefeBurgers
+    });
+    const totalPlannedBurgers = burgerPlan.total;
+    const escoteiroExtraBurgers = burgerPlan.escoteiroExtra;
+    const chefeExceedsTotal = burgerPlan.chefeExceedsTotal;
 
     useEffect(() => {
         if (!openingUnitCostEdited) {
@@ -167,13 +170,13 @@ export const POS = ({
             finalUnitCost,
             chefeQty
         })) {
-            const totalQty = normalQty + veganQty;
+            const plan = computeBurgerPlan({ normal: normalQty, vegan: veganQty, chefe: chefeQty });
             openShift(operatorName.trim(), amount, terminalId, {
                 opening_product_cost_total: totalCost,
                 planned_normal_burgers: normalQty,
                 planned_vegan_burgers: veganQty,
                 planned_chefe_burgers: chefeQty,
-                planned_escoteiro_extra_burgers: Math.max(0, totalQty - chefeQty),
+                planned_escoteiro_extra_burgers: plan.escoteiroExtra,
                 opening_unit_cost_suggested: openingUnitCostSuggested,
                 opening_unit_cost: finalUnitCost,
                 daily_menu_name: dailyMenuName.trim()

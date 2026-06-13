@@ -3,6 +3,36 @@ import { Product } from '../types';
 // Categoria usada para os lanches do dia fixos no caixa.
 export const FIXED_BURGER_CATEGORY = 'Lanches do Dia';
 
+export interface BurgerPlanInput {
+  normal: number;
+  vegan: number;
+  chefe: number;
+}
+
+export interface BurgerPlan {
+  total: number; // Normal + Vegano
+  chefe: number;
+  escoteiroExtra: number; // Restante = total - chefe (nunca negativo)
+  chefeExceedsTotal: boolean;
+}
+
+/**
+ * Fonte única das regras de quantidade dos lanches do dia.
+ * Usado tanto na validação da abertura quanto no cálculo exibido no PDV,
+ * evitando que as duas pontas divirjam.
+ */
+export const computeBurgerPlan = ({ normal, vegan, chefe }: BurgerPlanInput): BurgerPlan => {
+  const safe = (n: number) => (Number.isFinite(n) ? n : 0);
+  const total = safe(normal) + safe(vegan);
+  const safeChefe = safe(chefe);
+  return {
+    total,
+    chefe: safeChefe,
+    escoteiroExtra: Math.max(0, total - safeChefe),
+    chefeExceedsTotal: safeChefe > total
+  };
+};
+
 // IDs estáveis dos lanches fixos do caixa (Chefe / Escoteiro / Extra).
 export const FIXED_PRODUCT_IDS = {
   CHEFE: 'shift-lanche-chefe',
