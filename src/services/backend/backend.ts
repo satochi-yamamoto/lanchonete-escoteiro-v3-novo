@@ -590,7 +590,8 @@ export const backend: BackendInterface = {
     // Converter arrays (como transactions) para JSON para o Supabase
     const payload = {
         ...shift,
-        transactions: shift.transactions ? JSON.parse(JSON.stringify(shift.transactions)) : []
+        transactions: shift.transactions ? JSON.parse(JSON.stringify(shift.transactions)) : [],
+        adjustments: shift.adjustments ? JSON.parse(JSON.stringify(shift.adjustments)) : []
     };
     const { error } = await sb.from('shifts').upsert([payload], { onConflict: 'id' });
     if (error) {

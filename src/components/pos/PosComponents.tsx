@@ -1302,15 +1302,36 @@ export const ZReportModal = ({ shift, orders, onClose, onConfirmClose }: any) =>
                 .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')),
         [menuCatalogs]
     );
+    // Valores planejados na abertura, usados como referência e pré-preenchimento
+    const openingProducedTotal = (shift.planned_normal_burgers ?? 0) + (shift.planned_vegan_burgers ?? 0);
+    const hasOpeningProduced = shift.planned_normal_burgers != null || shift.planned_vegan_burgers != null;
+    const openingCost = shift.opening_unit_cost;
+    const openingMenu = shift.daily_menu_name;
+
     const [metrics, setMetrics] = useState({
-        drinks_liters: '',
-        burger_cost: '',
-        burgers_produced: '',
-        burgers_unsold: '',
-        menu_name: '',
-        closer_name: '',
-        feedback: ''
+        drinks_liters: shift.drinks_liters != null ? String(shift.drinks_liters) : '',
+        burger_cost: shift.burger_cost != null
+            ? String(shift.burger_cost)
+            : (openingCost != null ? Number(openingCost).toFixed(2) : ''),
+        burgers_produced: shift.burgers_produced != null
+            ? String(shift.burgers_produced)
+            : (hasOpeningProduced ? String(openingProducedTotal) : ''),
+        burgers_unsold: shift.burgers_unsold != null ? String(shift.burgers_unsold) : '',
+        menu_name: shift.menu_name || openingMenu || '',
+        closer_name: shift.closer_name || '',
+        feedback: shift.feedback || ''
     });
+
+    // Garante que o cardápio definido na abertura apareça no select mesmo que não
+    // esteja entre os catálogos ativos (abertura aceita texto livre).
+    const menuOptions = useMemo(() => {
+        const names = activeMenuCatalogs.map((menu) => menu.name);
+        const current = metrics.menu_name || openingMenu;
+        if (current && !names.includes(current)) {
+            return [current, ...names];
+        }
+        return names;
+    }, [activeMenuCatalogs, metrics.menu_name, openingMenu]);
 
     // 1. Filter Data
     const shiftOrders = orders.filter((o: Order) => o.shift_id === shift.id);
@@ -1499,13 +1520,18 @@ export const ZReportModal = ({ shift, orders, onClose, onConfirmClose }: any) =>
                                     onChange={e => setMetrics({...metrics, menu_name: e.target.value})}
                                 >
                                     <option value="">Selecione o cardápio</option>
-                                    {activeMenuCatalogs.map((menu) => (
-                                        <option key={menu.id} value={menu.name}>
-                                            {menu.name}
+                                    {menuOptions.map((name) => (
+                                        <option key={name} value={name}>
+                                            {name}
                                         </option>
                                     ))}
                                 </select>
-                                {activeMenuCatalogs.length === 0 && (
+                                {openingMenu && (
+                                    <p className="text-xs text-blue-700 mt-1">
+                                        Abertura: <strong>{openingMenu}</strong>
+                                    </p>
+                                )}
+                                {activeMenuCatalogs.length === 0 && !openingMenu && (
                                     <p className="text-xs text-amber-700 mt-1">
                                         Nenhum cardápio ativo cadastrado no Admin.
                                     </p>
@@ -1523,23 +1549,33 @@ export const ZReportModal = ({ shift, orders, onClose, onConfirmClose }: any) =>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-blue-800 mb-1">Preço de custo do lanche (R$)?</label>
-                                <input 
+                                <input
                                     type="number" step="0.01"
                                     className="w-full border p-2 rounded-lg"
                                     value={metrics.burger_cost}
                                     onChange={e => setMetrics({...metrics, burger_cost: e.target.value})}
                                     placeholder="Ex: 8.50"
                                 />
+                                {openingCost != null && (
+                                    <p className="text-xs text-blue-700 mt-1">
+                                        Abertura: <strong>{formatCurrency(Number(openingCost))}</strong>
+                                    </p>
+                                )}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-blue-800 mb-1">Total de lanches produzidos?</label>
-                                <input 
+                                <input
                                     type="number"
                                     className="w-full border p-2 rounded-lg"
                                     value={metrics.burgers_produced}
                                     onChange={e => setMetrics({...metrics, burgers_produced: e.target.value})}
                                     placeholder="Ex: 50"
                                 />
+                                {hasOpeningProduced && (
+                                    <p className="text-xs text-blue-700 mt-1">
+                                        Planejado na abertura: <strong>{openingProducedTotal} un</strong>
+                                    </p>
+                                )}
                             </div>
                             <div className="md:col-span-2">
                                 <label className="block text-sm font-medium text-blue-800 mb-1">Feedback</label>

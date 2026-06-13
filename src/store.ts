@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { CartItem, Order, OrderStatus, OrderType, Product, Shift, ShiftTransaction, PaymentMethod, Ingredient, StockLog, User, Promotion, ShiftTransactionExtras, ShiftOpeningData, TaxSettings, StoreSession, Scout, MenuCatalog, TerminalConfig } from './types';
+import { CartItem, Order, OrderStatus, OrderType, Product, Shift, ShiftTransaction, ShiftAdjustment, PaymentMethod, Ingredient, StockLog, User, Promotion, ShiftTransactionExtras, ShiftOpeningData, TaxSettings, StoreSession, Scout, MenuCatalog, TerminalConfig } from './types';
 import { calculateCartTotals, MOCK_PROMOTIONS } from './services/promotionEngine';
 import { backend, BackendInterface, BackendStatus } from './services/backend/backend';
 import { MOCK_INGREDIENTS, MOCK_PRODUCTS, MOCK_USERS, MOCK_SCOUTS } from './services/mockData';
@@ -760,11 +760,54 @@ export const useStore = create<AppState>((set, get) => ({
   closeShift: (metrics?: { drinks_liters?: number, burger_cost?: number, burgers_produced?: number, burgers_unsold?: number, menu_name?: string, closer_name?: string, feedback?: string }) => {
     set((state) => {
       if (!state.currentShift) return {};
+      const shift = state.currentShift;
+      const now = new Date().toISOString();
+      const changedBy = metrics?.closer_name || shift.staff_name;
+
+      // Baseline planejado na abertura para comparar com o que foi informado no fechamento
+      const openingMenu = shift.daily_menu_name ?? null;
+      const openingCost = shift.opening_unit_cost ?? null;
+      const hasPlanned = shift.planned_normal_burgers != null || shift.planned_vegan_burgers != null;
+      const openingProduced = hasPlanned
+        ? (shift.planned_normal_burgers ?? 0) + (shift.planned_vegan_burgers ?? 0)
+        : null;
+
+      const adjustments: ShiftAdjustment[] = [...(shift.adjustments ?? [])];
+      const recordAdjustment = (
+        field: ShiftAdjustment['field'],
+        label: string,
+        previous: string | number | null,
+        next: string | number | null | undefined
+      ) => {
+        // Só registra quando havia um valor de abertura e ele de fato mudou
+        if (next === undefined || next === null || next === '') return;
+        if (previous === null || previous === undefined || previous === '') return;
+        // Tolerância numérica para evitar falsos ajustes por arredondamento (2 casas)
+        const unchanged = typeof previous === 'number' && typeof next === 'number'
+          ? Math.abs(previous - next) < 0.005
+          : previous === next;
+        if (unchanged) return;
+        adjustments.push({
+          id: newId(),
+          field,
+          label,
+          previous_value: previous,
+          new_value: next,
+          changed_at: now,
+          changed_by: changedBy
+        });
+      };
+
+      recordAdjustment('menu_name', 'Cardápio do Lanche', openingMenu, metrics?.menu_name);
+      recordAdjustment('burger_cost', 'Custo do Lanche', openingCost, metrics?.burger_cost);
+      recordAdjustment('burgers_produced', 'Total de Lanches Produzidos', openingProduced, metrics?.burgers_produced);
+
       const updatedShift: Shift = {
-        ...state.currentShift,
+        ...shift,
         ...metrics,
+        adjustments,
         status: 'CLOSED',
-        closed_at: new Date().toISOString()
+        closed_at: now
       };
       // Use a persistent action to update backend, but here we just trigger it
       void backend.upsertShift(updatedShift).catch(() => { });

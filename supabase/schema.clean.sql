@@ -113,6 +113,7 @@ create table if not exists public.shifts (
   menu_name text,
   closer_name text,
   feedback text,
+  adjustments jsonb not null default '[]'::jsonb,
   updated_at timestamptz not null default now()
 );
 
