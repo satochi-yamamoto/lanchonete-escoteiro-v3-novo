@@ -89,6 +89,8 @@ export interface ShiftOpeningData {
   opening_product_cost_total: number;
   planned_normal_burgers: number;
   planned_vegan_burgers: number;
+  planned_chefe_burgers: number; // Lanches reservados para Chefes (preço R$ 0,00)
+  planned_escoteiro_extra_burgers: number; // Restante = (normal + vegano) - chefes
   opening_unit_cost_suggested: number;
   opening_unit_cost: number;
   daily_menu_name: string;
@@ -110,6 +112,8 @@ export interface Shift {
   opening_product_cost_total?: number;
   planned_normal_burgers?: number;
   planned_vegan_burgers?: number;
+  planned_chefe_burgers?: number;
+  planned_escoteiro_extra_burgers?: number;
   opening_unit_cost_suggested?: number;
   opening_unit_cost?: number;
   daily_menu_name?: string;

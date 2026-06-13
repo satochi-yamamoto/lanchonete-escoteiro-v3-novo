@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { calculateOpeningUnitCost, isOpeningShiftInputValid } from './apps/POS';
+import { buildShiftFixedProducts } from './constants/fixedProducts';
 import { useStore } from './store';
 import { OrderStatus, OrderType, PaymentMethod } from './types';
 
@@ -40,6 +41,8 @@ describe('Reestruturação inicial do POS', () => {
       opening_product_cost_total: 500,
       planned_normal_burgers: 80,
       planned_vegan_burgers: 20,
+      planned_chefe_burgers: 10,
+      planned_escoteiro_extra_burgers: 90,
       opening_unit_cost_suggested: 5,
       opening_unit_cost: 6,
       daily_menu_name: 'Lanche Escoteiro'
@@ -51,10 +54,39 @@ describe('Reestruturação inicial do POS', () => {
       opening_product_cost_total: 500,
       planned_normal_burgers: 80,
       planned_vegan_burgers: 20,
+      planned_chefe_burgers: 10,
+      planned_escoteiro_extra_burgers: 90,
       opening_unit_cost_suggested: 5,
       opening_unit_cost: 6,
       daily_menu_name: 'Lanche Escoteiro'
     });
+  });
+
+  it('bloqueia abertura quando os lanches de Chefes excedem o total planejado', () => {
+    const base = {
+      startCash: 150,
+      operatorName: 'Caixa 01',
+      terminalId: 'Grupo A',
+      dailyMenuName: 'Lanche do Dia',
+      totalCost: 500,
+      normalQty: 80,
+      veganQty: 20,
+      finalUnitCost: 5
+    };
+    expect(isOpeningShiftInputValid({ ...base, chefeQty: 100 })).toBe(true);
+    expect(isOpeningShiftInputValid({ ...base, chefeQty: 101 })).toBe(false);
+    expect(isOpeningShiftInputValid({ ...base, chefeQty: -1 })).toBe(false);
+    // chefeQty é opcional e assume 0
+    expect(isOpeningShiftInputValid(base)).toBe(true);
+  });
+
+  it('monta os lanches fixos do caixa com preços derivados da abertura', () => {
+    const [chefe, escoteiro, extra] = buildShiftFixedProducts(6);
+    expect(chefe).toMatchObject({ name: '00 - Chefe', price: 0 });
+    expect(escoteiro).toMatchObject({ name: '01 - Escoteiro', price: 6 });
+    expect(extra).toMatchObject({ name: '02 - Extra', price: 6 });
+    // Sem valor de abertura, Escoteiro/Extra ficam zerados (Chefe sempre 0)
+    expect(buildShiftFixedProducts(undefined).map((p) => p.price)).toEqual([0, 0, 0]);
   });
 
   it('registra histórico de ajustes quando o fechamento difere da abertura', () => {
@@ -71,6 +103,8 @@ describe('Reestruturação inicial do POS', () => {
       opening_product_cost_total: 500,
       planned_normal_burgers: 80,
       planned_vegan_burgers: 20,
+      planned_chefe_burgers: 10,
+      planned_escoteiro_extra_burgers: 90,
       opening_unit_cost_suggested: 5,
       opening_unit_cost: 6,
       daily_menu_name: 'Lanche Escoteiro'
@@ -111,6 +145,8 @@ describe('Reestruturação inicial do POS', () => {
       opening_product_cost_total: 500,
       planned_normal_burgers: 80,
       planned_vegan_burgers: 20,
+      planned_chefe_burgers: 10,
+      planned_escoteiro_extra_burgers: 90,
       opening_unit_cost_suggested: 5,
       opening_unit_cost: 6,
       daily_menu_name: 'Lanche Escoteiro'
