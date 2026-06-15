@@ -23,9 +23,11 @@ O sistema foi pensado para apoiar atividades, eventos e ações escoteiras, orga
 Interface destinada aos operadores de caixa para lançamento de pedidos e gestão de turnos. Acesso: ADMIN, MANAGER, CASHIER.
 
 *   **Gestão de Turno (Caixa):**
-    *   Abertura de caixa com fundo inicial e **planejamento operacional** (custo de produtos, quantidade planejada de hambúrgueres normais/veganos, custo unitário, nome do cardápio do dia).
+    *   Abertura de caixa com fundo inicial e **planejamento operacional**: custo total de produtos, quantidade planejada de lanches normais/veganos, **quantidade de lanches para Chefes**, **quantidade de Escoteiros/Extra** (calculada = Normal + Vegano − Chefes, somente leitura), custo unitário e nome do cardápio do dia.
+    *   **Valor unitário sugerido** rateia o custo total apenas pelos lanches **pagantes** (Escoteiros/Extra), já que os lanches de Chefes têm preço R$ 0,00. Recalcula automaticamente ao alterar a quantidade de Chefes (helper compartilhado `computeBurgerPlan`).
+    *   **Lanches fixos no caixa:** três produtos sempre disponíveis no topo do catálogo — `00 - Chefe` (R$ 0,00), `01 - Escoteiro` e `02 - Extra` (valor unitário da abertura). São produtos virtuais derivados do turno (`buildShiftFixedProducts`), sem poluir o catálogo.
     *   Registro de movimentações: **Suprimento** (ADD), **Sangria** (DROP) e **Reembolsos** (REIMBURSEMENT).
-    *   Fechamento de caixa com métricas: consumo de bebidas (litros), custo de hambúrgueres, produção, sobras, nome do responsável e feedback.
+    *   Fechamento de caixa **pré-preenchido com os dados da abertura** (cardápio, custo do lanche e total produzido). Alterações em relação à abertura são gravadas como **histórico de ajustes** (`shift.adjustments`) para auditoria. Métricas: consumo de bebidas (litros), custo de hambúrgueres, produção, sobras, nome do responsável e feedback.
     *   Relatório Z Térmico para impressão em bobinas.
 *   **Tomada de Pedidos:**
     *   Seleção visual de produtos por categorias.
@@ -33,6 +35,7 @@ Interface destinada aos operadores de caixa para lançamento de pedidos e gestã
     *   Carrinho de compras com cálculo automático de totais e promoções.
 *   **Pagamento:**
     *   Métodos ativos: **PIX** e **Dinheiro (CASH)**.
+    *   No pagamento em dinheiro, se o campo **Valor recebido** ficar vazio ao confirmar, o sistema assume o **total a pagar** (pagamento exato, sem troco). Valores menores que o total continuam bloqueados.
     *   Integração com Motor de Promoções para aplicação automática de descontos.
     *   Configuração de métodos persistida em localStorage.
 
@@ -154,13 +157,13 @@ Painel administrativo para gestão completa do negócio. Acesso: ADMIN.
 4.  **Reposição:** Gerente lança `RECEIVE` no Admin para repor estoque.
 
 ### 3. Fluxo Financeiro e de Caixa (Shift Flow)
-1.  **Abertura:** Operador abre o caixa informando fundo inicial e dados de planejamento operacional.
-2.  **Operação:** Vendas em dinheiro somam ao saldo esperado.
+1.  **Abertura:** Operador abre o caixa informando fundo inicial e dados de planejamento operacional (incluindo lanches de Chefes e o cálculo de Escoteiros/Extra).
+2.  **Operação:** Vendas em dinheiro somam ao saldo esperado. Os lanches fixos (Chefe/Escoteiro/Extra) ficam disponíveis no topo do caixa.
 3.  **Movimentações:**
     *   **DROP (Sangria):** Retirada de dinheiro do caixa.
     *   **ADD (Suprimento):** Entrada de dinheiro no caixa.
     *   **REIMBURSEMENT:** Reembolsos com nome do beneficiário e comprovante.
-4.  **Fechamento:** Operador encerra o turno com métricas de produção.
+4.  **Fechamento:** Operador encerra o turno com o formulário pré-preenchido pela abertura; ajustes geram histórico de auditoria (`shift.adjustments`).
 5.  **Conferência:** Gerente acessa **Relatórios** no Admin para ver o balanço final e auditar as movimentações.
 
 ---
@@ -189,7 +192,8 @@ src/
 │   ├── mockData.ts       # Dados mock para modo offline
 │   └── seedTestData.ts   # Dados de seed para testes
 ├── constants/
-│   └── messages.ts       # Mensagens centralizadas (erros, sucesso, info)
+│   ├── messages.ts       # Mensagens centralizadas (erros, sucesso, info)
+│   └── fixedProducts.ts  # Lanches fixos do caixa (Chefe/Escoteiro/Extra) e computeBurgerPlan
 ├── store.ts              # Gerenciamento de Estado Global Zustand (~35KB)
 ├── types.ts              # Definições de Tipos TypeScript (Interfaces centrais)
 └── utils.ts              # Utilitários

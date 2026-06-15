@@ -86,13 +86,16 @@ npm run backup    # Backup do banco de dados Supabase
 - Controle de acesso por role (ADMIN, MANAGER, CASHIER, KITCHEN)
 
 ### Gestão de Turno (Caixa)
-- **Abertura com Planejamento Operacional**: Ao abrir turno, informar custo dos produtos, quantidade planejada de hambúrgueres, custo unitário e nome do cardápio do dia.
-- **Métricas de Fechamento**: Consumo de bebidas, custo, produção, sobras e feedback do operador.
+- **Abertura com Planejamento Operacional**: Ao abrir turno, informar custo dos produtos, quantidade planejada de lanches normais/veganos, **quantidade de lanches para Chefes** (o total de **Escoteiros/Extra** é calculado automaticamente = Normal + Vegano − Chefes), custo unitário e nome do cardápio do dia.
+- **Valor Unitário Sugerido**: Rateado apenas pelos lanches pagantes (Escoteiros/Extra), pois os lanches de **Chefes** custam R$ 0,00.
+- **Lanches Fixos no Caixa**: `00 - Chefe` (R$ 0,00), `01 - Escoteiro` e `02 - Extra` (valor unitário da abertura) sempre disponíveis no topo do catálogo.
+- **Fechamento pré-preenchido**: O formulário de fechamento traz os dados da abertura (cardápio, custo e total produzido); alterações são gravadas como **histórico de ajustes** para auditoria.
 - **Transações**: OPENING, SALE, DROP (sangria), ADD (suprimento), REIMBURSEMENT, CLOSING.
 - **Relatório Z Térmico**: Impressão nativa formatada para bobinas de impressoras térmicas.
 
 ### Pagamentos
 - Métodos ativos: **PIX** e **Dinheiro (CASH)**
+- No pagamento em dinheiro, **campo "Valor recebido" vazio assume o total a pagar** (pagamento exato, sem troco)
 - Configurações de métodos persistidas em localStorage
 
 ### Escoteiros
