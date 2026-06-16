@@ -195,8 +195,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                 </div>
             </div>
 
-            <div className="fixed bottom-4 text-xs text-cooper-muted">
-                Lanchonete Escoteiros POS Suite v2.0
+            <div className="fixed bottom-4 text-xs text-cooper-muted text-center">
+                <div>Lanchonete Escoteiros POS Suite v2.0</div>
+                <div>Desenvolvido por SATOCHI YAMAMOTO TECNOLOGIA DA INFORMACAO LTDA</div>
             </div>
         </div>
     );
