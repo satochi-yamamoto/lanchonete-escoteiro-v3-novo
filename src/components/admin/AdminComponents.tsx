@@ -366,7 +366,9 @@ export const ProductManager = () => {
     const [newProdAvailable, setNewProdAvailable] = useState(true);
 
     const isShiftOpen = currentShift?.status === 'OPEN';
-    const shiftFixedProducts = buildShiftFixedProducts(isShiftOpen ? currentShift.opening_unit_cost : undefined);
+    const shiftFixedProducts = buildShiftFixedProducts(isShiftOpen ? currentShift.opening_unit_cost : undefined, {
+        includeVegan: isShiftOpen && (currentShift.planned_vegan_burgers ?? 0) > 0
+    });
     const isEditingFixedProduct = editingId ? shiftFixedProducts.some((p) => p.id === editingId) : false;
     const isEditingFixedChefe = editingId === FIXED_PRODUCT_IDS.CHEFE;
 
@@ -568,7 +570,7 @@ export const ProductManager = () => {
                                     />
                                     {isEditingFixedProduct && !isEditingFixedChefe && (
                                         <p className="text-xs text-blue-700 mt-1">
-                                            Atualiza Escoteiro e Extra neste caixa.
+                                            Atualiza Escoteiro, Extra e Vegano neste caixa.
                                         </p>
                                     )}
                                     {isEditingFixedChefe && (
@@ -1327,7 +1329,9 @@ export const PromotionManager = () => {
     const [view, setView] = useState<'LIST' | 'CREATE' | 'EDIT'>('LIST');
     const [editingPromo, setEditingPromo] = useState<Promotion | undefined>(undefined);
 
-    const shiftFixedProducts = buildShiftFixedProducts(currentShift?.status === 'OPEN' ? currentShift.opening_unit_cost : undefined);
+    const shiftFixedProducts = buildShiftFixedProducts(currentShift?.status === 'OPEN' ? currentShift.opening_unit_cost : undefined, {
+        includeVegan: currentShift?.status === 'OPEN' && (currentShift.planned_vegan_burgers ?? 0) > 0
+    });
     const promotionProducts = [...shiftFixedProducts, ...products];
     const productNameById = new Map(promotionProducts.map((p) => [
         p.id,
