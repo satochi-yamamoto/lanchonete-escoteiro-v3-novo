@@ -468,19 +468,37 @@ export const useStore = create<AppState>((set, get) => ({
   addPromotion: (p) => {
     // Ensure ID is present
     const promoWithId = { ...p, id: p.id || newId() };
-    set(s => ({ promotions: [...s.promotions, promoWithId] }));
+    set(s => {
+      const promotions = [...s.promotions, promoWithId];
+      return {
+        promotions,
+        cartTotals: calculateCartTotals(s.cart, promotions)
+      };
+    });
     void backend.upsertPromotion(promoWithId).catch((e) => console.error("Falha ao salvar promoção:", e));
   },
 
   updatePromotion: (id, p) => {
-    set(s => ({ promotions: s.promotions.map(x => x.id === id ? { ...x, ...p } : x) }));
+    set(s => {
+      const promotions = s.promotions.map(x => x.id === id ? { ...x, ...p } : x);
+      return {
+        promotions,
+        cartTotals: calculateCartTotals(s.cart, promotions)
+      };
+    });
     const updated = get().promotions.find(x => x.id === id);
     if (updated) void backend.upsertPromotion(updated).catch((e) => console.error("Falha ao atualizar promoção:", e));
   },
 
   deletePromotion: (id) => {
     console.log("Deletando promoção:", id);
-    set(s => ({ promotions: s.promotions.filter(x => x.id !== id) }));
+    set(s => {
+      const promotions = s.promotions.filter(x => x.id !== id);
+      return {
+        promotions,
+        cartTotals: calculateCartTotals(s.cart, promotions)
+      };
+    });
     void backend.deletePromotion(id).catch((e) => console.error("Falha ao excluir promoção:", e));
   },
 

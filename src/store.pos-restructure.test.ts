@@ -90,6 +90,52 @@ describe('Reestruturação inicial do POS', () => {
       value: 10,
       priority: 100
     });
+
+    expect(buildOpeningPromotion({
+      quantity: 3,
+      value: 15,
+      dailyMenuName: 'Lanche Especial',
+      active: false
+    }).rules.active).toBe(false);
+  });
+
+  it('recalcula o carrinho ao ativar ou desativar a promoção da abertura', () => {
+    const promo = buildOpeningPromotion({
+      quantity: 2,
+      value: 10,
+      dailyMenuName: 'Lanche Escoteiro'
+    });
+    const product = {
+      id: 'shift-lanche-escoteiro',
+      name: '01 - Escoteiro',
+      price: 8,
+      category: 'Lanches do Dia',
+      station: 'ASSEMBLY' as const,
+      is_available: true
+    };
+
+    useStore.getState().addPromotion(promo);
+    useStore.getState().addToCart(product);
+    useStore.getState().addToCart(product);
+
+    expect(useStore.getState().cartTotals).toMatchObject({
+      subtotal: 16,
+      discount: 6,
+      total: 10
+    });
+
+    useStore.getState().updatePromotion(OPENING_PROMOTION_ID, {
+      rules: {
+        ...promo.rules,
+        active: false
+      }
+    });
+
+    expect(useStore.getState().cartTotals).toMatchObject({
+      subtotal: 16,
+      discount: 0,
+      total: 16
+    });
   });
 
   it('prepara somente valores válidos do detalhamento para registrar reembolsos', () => {

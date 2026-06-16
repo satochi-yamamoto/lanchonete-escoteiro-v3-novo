@@ -12,11 +12,13 @@ export const OPENING_PROMOTION_ID = 'shift-opening-burger-bundle-promotion';
 export const buildOpeningPromotion = ({
     quantity,
     value,
-    dailyMenuName
+    dailyMenuName,
+    active = true
 }: {
     quantity: number;
     value: number;
     dailyMenuName: string;
+    active?: boolean;
 }): Promotion => ({
     id: OPENING_PROMOTION_ID,
     name: dailyMenuName.trim() ? `Promoção - ${dailyMenuName.trim()}` : 'Promoção dos Lanches do Dia',
@@ -24,7 +26,7 @@ export const buildOpeningPromotion = ({
     rules: {
         category_id: FIXED_BURGER_CATEGORY,
         min_quantity: quantity,
-        active: true
+        active
     },
     value,
     priority: 100,
@@ -703,6 +705,23 @@ export const POS = ({
         [currentShift?.opening_unit_cost, currentShift?.planned_vegan_burgers, fixedAvailabilityByProductId]
     );
 
+    const openingPromotion = promotions.find((promotion) => promotion.id === OPENING_PROMOTION_ID);
+    const currentOpeningPromotionQuantity = currentShift?.opening_promotion_quantity ?? openingPromotion?.rules.min_quantity;
+    const currentOpeningPromotionValue = currentShift?.opening_promotion_value ?? openingPromotion?.value;
+    const openingPromotionIsConfigured = (
+        Number.isInteger(currentOpeningPromotionQuantity) &&
+        (currentOpeningPromotionQuantity ?? 0) > 0 &&
+        Number.isFinite(currentOpeningPromotionValue) &&
+        (currentOpeningPromotionValue ?? 0) > 0
+    );
+    const openingPromotionStatus = openingPromotionIsConfigured
+        ? {
+            quantity: currentOpeningPromotionQuantity as number,
+            value: currentOpeningPromotionValue as number,
+            active: openingPromotion?.rules.active !== false
+        }
+        : undefined;
+
     const parsedOpeningCost = parseFloat(openingProductCostTotal || '0');
     const parsedOpeningPromotionQuantity = parseInt(openingPromotionQuantity || '0', 10);
     const parsedOpeningPromotionValue = parseFloat(openingPromotionValue || '0');
@@ -788,7 +807,8 @@ export const POS = ({
                 const openingPromotion = buildOpeningPromotion({
                     quantity: promotionQuantity,
                     value: promotionValue,
-                    dailyMenuName
+                    dailyMenuName,
+                    active: true
                 });
                 if (promotions.some((promotion) => promotion.id === OPENING_PROMOTION_ID)) {
                     updatePromotion(OPENING_PROMOTION_ID, openingPromotion);
@@ -918,13 +938,31 @@ export const POS = ({
             const openingPromotion = buildOpeningPromotion({
                 quantity: promotionQuantity as number,
                 value: promotionValue as number,
-                dailyMenuName: updatedShift.daily_menu_name ?? ''
+                dailyMenuName: updatedShift.daily_menu_name ?? '',
+                active: promotions.find((promotion) => promotion.id === OPENING_PROMOTION_ID)?.rules.active !== false
             });
             if (promotions.some((promotion) => promotion.id === OPENING_PROMOTION_ID)) {
                 updatePromotion(OPENING_PROMOTION_ID, openingPromotion);
             } else {
                 addPromotion(openingPromotion);
             }
+        }
+    };
+
+    const handleToggleOpeningPromotion = () => {
+        if (!currentShift || !openingPromotionStatus) return;
+
+        const nextPromotion = buildOpeningPromotion({
+            quantity: openingPromotionStatus.quantity,
+            value: openingPromotionStatus.value,
+            dailyMenuName: currentShift.daily_menu_name ?? '',
+            active: !openingPromotionStatus.active
+        });
+
+        if (openingPromotion) {
+            updatePromotion(OPENING_PROMOTION_ID, nextPromotion);
+        } else {
+            addPromotion(nextPromotion);
         }
     };
 
@@ -1265,6 +1303,8 @@ export const POS = ({
                             pinnedProducts={shiftFixedProducts}
                             pinnedAvailability={fixedProductAvailability}
                             pinnedSalesSummary={fixedSalesSummary}
+                            openingPromotionStatus={openingPromotionStatus}
+                            onToggleOpeningPromotion={handleToggleOpeningPromotion}
                             onAdd={(p) => {
                                 if (cart.length >= maxItemsPerOrder) {
                                     alert(`Limite de ${maxItemsPerOrder} itens por pedido atingido.`);

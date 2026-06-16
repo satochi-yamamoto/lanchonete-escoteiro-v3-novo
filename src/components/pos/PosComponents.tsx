@@ -201,20 +201,30 @@ export type PinnedSalesSummary = {
     remainingToCost: number;
 };
 
+export type OpeningPromotionStatus = {
+    quantity: number;
+    value: number;
+    active: boolean;
+};
+
 export const ProductGrid = ({
     products,
     onAdd,
     onCreateProduct,
     pinnedProducts = [],
     pinnedAvailability = [],
-    pinnedSalesSummary
+    pinnedSalesSummary,
+    openingPromotionStatus,
+    onToggleOpeningPromotion
 }: {
     products: Product[],
     onAdd: (p: Product) => void,
     onCreateProduct?: (p: Product) => void,
     pinnedProducts?: Product[],
     pinnedAvailability?: PinnedProductAvailabilityRow[],
-    pinnedSalesSummary?: PinnedSalesSummary
+    pinnedSalesSummary?: PinnedSalesSummary,
+    openingPromotionStatus?: OpeningPromotionStatus,
+    onToggleOpeningPromotion?: () => void
 }) => {
     const [category, setCategory] = useState<string>('Todos');
     const [stationFilter, setStationFilter] = useState<Station | 'ALL'>('ALL');
@@ -329,9 +339,41 @@ export const ProductGrid = ({
                 {/* Pinned shift products (Chefe / Escoteiro / Extra / Vegano) — always visible */}
                 {pinnedProducts.length > 0 && (
                     <div className="mb-4">
-                        <div className="flex items-center gap-2 mb-2 text-cooper-muted">
-                            <span className="text-xs font-black uppercase tracking-widest">Lanches do Dia</span>
-                            <div className="h-px bg-cooper-line flex-1" />
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2 text-cooper-muted">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <span className="text-xs font-black uppercase tracking-widest whitespace-nowrap">Lanches do Dia</span>
+                                <div className="h-px bg-cooper-line flex-1" />
+                            </div>
+                            {openingPromotionStatus && onToggleOpeningPromotion && (
+                                <label className={`shrink-0 inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-black transition-colors cursor-pointer ${
+                                    openingPromotionStatus.active
+                                        ? 'bg-purple-50 border-purple-200 text-purple-800'
+                                        : 'bg-gray-50 border-cooper-line text-gray-500'
+                                }`}>
+                                    <input
+                                        type="checkbox"
+                                        className="sr-only"
+                                        checked={openingPromotionStatus.active}
+                                        onChange={onToggleOpeningPromotion}
+                                    />
+                                    <span className={`relative h-5 w-9 rounded-full transition-colors ${
+                                        openingPromotionStatus.active ? 'bg-purple-600' : 'bg-gray-300'
+                                    }`}>
+                                        <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                                            openingPromotionStatus.active ? 'translate-x-4' : 'translate-x-0.5'
+                                        }`} />
+                                    </span>
+                                    <Ticket size={14} />
+                                    <span>
+                                        Promo {openingPromotionStatus.quantity} por {formatCurrency(openingPromotionStatus.value)}
+                                    </span>
+                                    <span className={`rounded px-1.5 py-0.5 text-[10px] ${
+                                        openingPromotionStatus.active ? 'bg-purple-100 text-purple-800' : 'bg-gray-200 text-gray-600'
+                                    }`}>
+                                        {openingPromotionStatus.active ? 'ON' : 'OFF'}
+                                    </span>
+                                </label>
+                            )}
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-3">
                             {pinnedProducts.map(p => {
