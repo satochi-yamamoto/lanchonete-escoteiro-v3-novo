@@ -94,6 +94,8 @@ export interface ShiftOpeningData {
   planned_escoteiro_extra_burgers: number; // Restante = (normal + vegano) - chefes
   opening_unit_cost_suggested: number;
   opening_unit_cost: number;
+  opening_promotion_quantity: number;
+  opening_promotion_value: number;
   daily_menu_name: string;
 }
 
@@ -117,6 +119,8 @@ export interface Shift {
   planned_escoteiro_extra_burgers?: number;
   opening_unit_cost_suggested?: number;
   opening_unit_cost?: number;
+  opening_promotion_quantity?: number;
+  opening_promotion_value?: number;
   daily_menu_name?: string;
   opening_drinks_liters?: number;
   // End of shift metrics

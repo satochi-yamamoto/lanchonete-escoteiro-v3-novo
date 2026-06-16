@@ -1494,6 +1494,7 @@ export const ZReportModal = ({ shift, orders, onClose, onConfirmClose }: any) =>
             shift.planned_normal_burgers !== undefined ? `LANCHE NORMAL:   ${shift.planned_normal_burgers} un` : null,
             shift.planned_vegan_burgers !== undefined ? `LANCHE VEGANO:   ${shift.planned_vegan_burgers} un` : null,
             shift.opening_drinks_liters !== undefined ? `BEBIDA PLANEJ.:  ${shift.opening_drinks_liters} L` : null,
+            shift.opening_promotion_quantity !== undefined && shift.opening_promotion_value !== undefined ? `PROMOCAO:        ${shift.opening_promotion_quantity} un por ${formatCurrency(shift.opening_promotion_value)}` : null,
             shift.opening_unit_cost_suggested !== undefined ? `UNIT. SUGERIDO:  ${formatCurrency(shift.opening_unit_cost_suggested)}` : null,
             shift.opening_unit_cost !== undefined ? `UNIT. FINAL:     ${formatCurrency(shift.opening_unit_cost)}` : null,
             "--------------------------------",

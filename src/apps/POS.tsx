@@ -1,11 +1,38 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../store';
-import { OrderType, Product, PaymentMethod, Order, ShiftTransaction, OrderStatus, Shift, TerminalConfig } from '../types';
+import { OrderType, Product, PaymentMethod, Order, ShiftTransaction, OrderStatus, Shift, TerminalConfig, Promotion, PromotionType } from '../types';
 import { Button, formatCurrency } from '../components/ui';
 import { ProductGrid, CartPanel, CashPaymentModal, ShiftPanel, SuccessModal, ZReportModal, CashClosingReportModal } from '../components/pos/PosComponents';
 import { Settings, LogOut, User, Lock, Monitor, Power, ShoppingCart, X, BarChart2, FileText, ChevronRight, Banknote, QrCode, Hash, Plus, Trash2, ArrowLeft, Save } from 'lucide-react';
 import { printReceipt } from '../utils';
-import { buildShiftFixedProducts, computeBurgerPlan, FIXED_PRODUCT_IDS } from '../constants/fixedProducts';
+import { buildShiftFixedProducts, computeBurgerPlan, FIXED_BURGER_CATEGORY, FIXED_PRODUCT_IDS } from '../constants/fixedProducts';
+
+export const OPENING_PROMOTION_ID = 'shift-opening-burger-bundle-promotion';
+
+export const buildOpeningPromotion = ({
+    quantity,
+    value,
+    dailyMenuName
+}: {
+    quantity: number;
+    value: number;
+    dailyMenuName: string;
+}): Promotion => ({
+    id: OPENING_PROMOTION_ID,
+    name: dailyMenuName.trim() ? `Promoção - ${dailyMenuName.trim()}` : 'Promoção dos Lanches do Dia',
+    type: PromotionType.FIXED_PRICE_BUNDLE,
+    rules: {
+        category_id: FIXED_BURGER_CATEGORY,
+        min_quantity: quantity,
+        active: true
+    },
+    value,
+    priority: 100,
+    valid_days: [0, 1, 2, 3, 4, 5, 6],
+    valid_hours_start: '00:00',
+    valid_hours_end: '23:59',
+    channels: ['POS', 'KIOSK', 'DELIVERY']
+});
 
 // O valor unitário sugerido rateia o custo apenas entre os lanches pagantes
 // (Escoteiros/Extra), já que os lanches de Chefes têm preço R$ 0,00.
@@ -21,6 +48,8 @@ export const isOpeningShiftInputValid = ({
     dailyMenuName,
     totalCost,
     drinksLiters,
+    promotionQuantity,
+    promotionValue,
     normalQty,
     veganQty,
     finalUnitCost,
@@ -32,6 +61,8 @@ export const isOpeningShiftInputValid = ({
     dailyMenuName: string;
     totalCost: number;
     drinksLiters: number;
+    promotionQuantity: number;
+    promotionValue: number;
     normalQty: number;
     veganQty: number;
     finalUnitCost: number;
@@ -47,6 +78,10 @@ export const isOpeningShiftInputValid = ({
         totalCost >= 0 &&
         Number.isFinite(drinksLiters) &&
         drinksLiters >= 0 &&
+        Number.isInteger(promotionQuantity) &&
+        promotionQuantity > 0 &&
+        Number.isFinite(promotionValue) &&
+        promotionValue > 0 &&
         Number.isFinite(normalQty) &&
         normalQty >= 0 &&
         Number.isFinite(veganQty) &&
@@ -194,7 +229,7 @@ const OpeningAdjustmentsScreen = ({
     shift: Shift;
     activeTerminals: TerminalConfig[];
     onBack: () => void;
-    onSave: (updates: Partial<Pick<Shift, 'staff_name' | 'terminal_id' | 'start_cash' | 'opening_product_cost_total' | 'opening_drinks_liters' | 'planned_normal_burgers' | 'planned_vegan_burgers' | 'planned_chefe_burgers' | 'planned_escoteiro_extra_burgers' | 'opening_unit_cost_suggested' | 'opening_unit_cost' | 'daily_menu_name'>>) => Promise<void>;
+    onSave: (updates: Partial<Pick<Shift, 'staff_name' | 'terminal_id' | 'start_cash' | 'opening_product_cost_total' | 'opening_drinks_liters' | 'planned_normal_burgers' | 'planned_vegan_burgers' | 'planned_chefe_burgers' | 'planned_escoteiro_extra_burgers' | 'opening_unit_cost_suggested' | 'opening_unit_cost' | 'opening_promotion_quantity' | 'opening_promotion_value' | 'daily_menu_name'>>) => Promise<void>;
 }) => {
     const [operatorName, setOperatorName] = useState(shift.staff_name);
     const [terminalId, setTerminalId] = useState(shift.terminal_id);
@@ -202,6 +237,8 @@ const OpeningAdjustmentsScreen = ({
     const [dailyMenuName, setDailyMenuName] = useState(shift.daily_menu_name ?? '');
     const [openingProductCostTotal, setOpeningProductCostTotal] = useState((shift.opening_product_cost_total ?? 0).toString());
     const [openingDrinksLiters, setOpeningDrinksLiters] = useState((shift.opening_drinks_liters ?? 0).toString());
+    const [openingPromotionQuantity, setOpeningPromotionQuantity] = useState((shift.opening_promotion_quantity ?? 2).toString());
+    const [openingPromotionValue, setOpeningPromotionValue] = useState((shift.opening_promotion_value ?? 10).toString());
     const [plannedNormalBurgers, setPlannedNormalBurgers] = useState((shift.planned_normal_burgers ?? 0).toString());
     const [plannedVeganBurgers, setPlannedVeganBurgers] = useState((shift.planned_vegan_burgers ?? 0).toString());
     const [plannedChefeBurgers, setPlannedChefeBurgers] = useState((shift.planned_chefe_burgers ?? 0).toString());
@@ -216,6 +253,8 @@ const OpeningAdjustmentsScreen = ({
         setDailyMenuName(shift.daily_menu_name ?? '');
         setOpeningProductCostTotal((shift.opening_product_cost_total ?? 0).toString());
         setOpeningDrinksLiters((shift.opening_drinks_liters ?? 0).toString());
+        setOpeningPromotionQuantity((shift.opening_promotion_quantity ?? 2).toString());
+        setOpeningPromotionValue((shift.opening_promotion_value ?? 10).toString());
         setPlannedNormalBurgers((shift.planned_normal_burgers ?? 0).toString());
         setPlannedVeganBurgers((shift.planned_vegan_burgers ?? 0).toString());
         setPlannedChefeBurgers((shift.planned_chefe_burgers ?? 0).toString());
@@ -226,6 +265,8 @@ const OpeningAdjustmentsScreen = ({
     const parsedStartCash = parseFloat(startCash || '0');
     const parsedOpeningCost = parseFloat(openingProductCostTotal || '0');
     const parsedOpeningDrinksLiters = parseFloat(openingDrinksLiters || '0');
+    const parsedOpeningPromotionQuantity = parseInt(openingPromotionQuantity || '0', 10);
+    const parsedOpeningPromotionValue = parseFloat(openingPromotionValue || '0');
     const parsedNormalBurgers = parseInt(plannedNormalBurgers || '0', 10);
     const parsedVeganBurgers = parseInt(plannedVeganBurgers || '0', 10);
     const parsedChefeBurgers = parseInt(plannedChefeBurgers || '0', 10);
@@ -246,6 +287,8 @@ const OpeningAdjustmentsScreen = ({
         dailyMenuName,
         totalCost: parsedOpeningCost,
         drinksLiters: parsedOpeningDrinksLiters,
+        promotionQuantity: parsedOpeningPromotionQuantity,
+        promotionValue: parsedOpeningPromotionValue,
         normalQty: parsedNormalBurgers,
         veganQty: parsedVeganBurgers,
         finalUnitCost: parsedUnitCost,
@@ -272,6 +315,8 @@ const OpeningAdjustmentsScreen = ({
                 start_cash: parsedStartCash,
                 opening_product_cost_total: parsedOpeningCost,
                 opening_drinks_liters: parsedOpeningDrinksLiters,
+                opening_promotion_quantity: parsedOpeningPromotionQuantity,
+                opening_promotion_value: parsedOpeningPromotionValue,
                 planned_normal_burgers: parsedNormalBurgers,
                 planned_vegan_burgers: parsedVeganBurgers,
                 planned_chefe_burgers: parsedChefeBurgers,
@@ -377,6 +422,33 @@ const OpeningAdjustmentsScreen = ({
                             className="w-full border p-3 rounded-lg"
                             placeholder="Ex: 20"
                         />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold mb-1 text-gray-600">Quantidade de Lanches na Promoção</label>
+                        <input
+                            type="number"
+                            min="1"
+                            step="1"
+                            value={openingPromotionQuantity}
+                            onChange={e => setOpeningPromotionQuantity(e.target.value)}
+                            className="w-full border p-3 rounded-lg"
+                            placeholder="Ex: 2"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold mb-1 text-gray-600">Valor da Promoção (R$)</label>
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0.01"
+                            value={openingPromotionValue}
+                            onChange={e => setOpeningPromotionValue(e.target.value)}
+                            className="w-full border p-3 rounded-lg font-bold text-purple-700"
+                            placeholder="Ex: 10.00"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                            Ex: {Number.isFinite(parsedOpeningPromotionQuantity) ? parsedOpeningPromotionQuantity : 0} lanches por {formatCurrency(Number.isFinite(parsedOpeningPromotionValue) ? parsedOpeningPromotionValue : 0)}
+                        </p>
                     </div>
                     <div>
                         <label className="block text-sm font-bold mb-1 text-gray-600">Custo dos Produtos/Ingredientes (R$)</label>
@@ -489,10 +561,11 @@ export const POS = ({
     const {
         currentSession,
         terminals,
-        products, cart, cartTotals, currentShift, orders, maxItemsPerOrder,
+        products, promotions, cart, cartTotals, currentShift, orders, maxItemsPerOrder,
         printReceiptEnabled,
         addToCart, removeFromCart, updateCartItem, clearCart, createOrder,
-        openShift, updateShiftOpeningData, closeShift, addShiftTransaction, addShiftTransactions, addProduct
+        openShift, updateShiftOpeningData, closeShift, addShiftTransaction, addShiftTransactions, addProduct,
+        addPromotion, updatePromotion
     } = useStore();
 
     const [uiState, setUiState] = useState<{
@@ -514,6 +587,8 @@ export const POS = ({
     const [dailyMenuName, setDailyMenuName] = useState('');
     const [openingProductCostTotal, setOpeningProductCostTotal] = useState('');
     const [openingDrinksLiters, setOpeningDrinksLiters] = useState('');
+    const [openingPromotionQuantity, setOpeningPromotionQuantity] = useState('2');
+    const [openingPromotionValue, setOpeningPromotionValue] = useState('10.00');
     const [openingCostDetails, setOpeningCostDetails] = useState<OpeningCostDetail[]>([createOpeningCostDetail()]);
     const [showOpeningCostDetails, setShowOpeningCostDetails] = useState(false);
     const [plannedNormalBurgers, setPlannedNormalBurgers] = useState('');
@@ -629,6 +704,8 @@ export const POS = ({
     );
 
     const parsedOpeningCost = parseFloat(openingProductCostTotal || '0');
+    const parsedOpeningPromotionQuantity = parseInt(openingPromotionQuantity || '0', 10);
+    const parsedOpeningPromotionValue = parseFloat(openingPromotionValue || '0');
     const parsedNormalBurgers = parseInt(plannedNormalBurgers || '0', 10);
     const parsedVeganBurgers = parseInt(plannedVeganBurgers || '0', 10);
 
@@ -669,6 +746,8 @@ export const POS = ({
         const amount = parseFloat(shiftStartAmount);
         const totalCost = parseFloat(openingProductCostTotal);
         const drinksLiters = parseFloat(openingDrinksLiters || '0');
+        const promotionQuantity = parseInt(openingPromotionQuantity || '0', 10);
+        const promotionValue = parseFloat(openingPromotionValue || '0');
         const normalQty = parseInt(plannedNormalBurgers, 10);
         const veganQty = parseInt(plannedVeganBurgers, 10);
         const chefeQty = parseInt(plannedChefeBurgers || '0', 10);
@@ -681,6 +760,8 @@ export const POS = ({
             dailyMenuName,
             totalCost,
             drinksLiters,
+            promotionQuantity,
+            promotionValue,
             normalQty,
             veganQty,
             finalUnitCost,
@@ -693,6 +774,8 @@ export const POS = ({
                 const openedShift = await openShift(operatorName.trim(), amount, terminalId, {
                     opening_product_cost_total: totalCost,
                     opening_drinks_liters: drinksLiters,
+                    opening_promotion_quantity: promotionQuantity,
+                    opening_promotion_value: promotionValue,
                     planned_normal_burgers: normalQty,
                     planned_vegan_burgers: veganQty,
                     planned_chefe_burgers: chefeQty,
@@ -702,6 +785,16 @@ export const POS = ({
                     daily_menu_name: dailyMenuName.trim()
                 });
                 if (!openedShift) return;
+                const openingPromotion = buildOpeningPromotion({
+                    quantity: promotionQuantity,
+                    value: promotionValue,
+                    dailyMenuName
+                });
+                if (promotions.some((promotion) => promotion.id === OPENING_PROMOTION_ID)) {
+                    updatePromotion(OPENING_PROMOTION_ID, openingPromotion);
+                } else {
+                    addPromotion(openingPromotion);
+                }
                 await addShiftTransactions(openingReimbursements.map((reimbursement) => ({
                     type: 'REIMBURSEMENT',
                     amount: reimbursement.amount,
@@ -814,6 +907,25 @@ export const POS = ({
         if (!updatedShift) {
             throw new Error('Caixa aberto não encontrado para ajuste.');
         }
+        const promotionQuantity = updatedShift.opening_promotion_quantity;
+        const promotionValue = updatedShift.opening_promotion_value;
+        if (
+            Number.isInteger(promotionQuantity) &&
+            (promotionQuantity ?? 0) > 0 &&
+            Number.isFinite(promotionValue) &&
+            (promotionValue ?? 0) > 0
+        ) {
+            const openingPromotion = buildOpeningPromotion({
+                quantity: promotionQuantity as number,
+                value: promotionValue as number,
+                dailyMenuName: updatedShift.daily_menu_name ?? ''
+            });
+            if (promotions.some((promotion) => promotion.id === OPENING_PROMOTION_ID)) {
+                updatePromotion(OPENING_PROMOTION_ID, openingPromotion);
+            } else {
+                addPromotion(openingPromotion);
+            }
+        }
     };
 
     // --- Render Logic ---
@@ -912,6 +1024,33 @@ export const POS = ({
                                             className="w-full border p-3 rounded-lg"
                                             placeholder="Ex: 20"
                                         />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold mb-1 text-gray-600">Quantidade de Lanches na Promoção</label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            step="1"
+                                            value={openingPromotionQuantity}
+                                            onChange={e => setOpeningPromotionQuantity(e.target.value)}
+                                            className="w-full border p-3 rounded-lg"
+                                            placeholder="Ex: 2"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold mb-1 text-gray-600">Valor da Promoção (R$)</label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            min="0.01"
+                                            value={openingPromotionValue}
+                                            onChange={e => setOpeningPromotionValue(e.target.value)}
+                                            className="w-full border p-3 rounded-lg font-bold text-purple-700"
+                                            placeholder="Ex: 10.00"
+                                        />
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Ex: {Number.isFinite(parsedOpeningPromotionQuantity) ? parsedOpeningPromotionQuantity : 0} lanches por {formatCurrency(Number.isFinite(parsedOpeningPromotionValue) ? parsedOpeningPromotionValue : 0)}
+                                        </p>
                                     </div>
                                     <div>
                                         <label className="block text-sm font-bold mb-1 text-gray-600">Custo dos Produtos/Ingredientes (R$)</label>
