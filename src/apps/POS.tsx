@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../store';
-import { OrderType, Product, PaymentMethod, Order, ShiftTransaction } from '../types';
+import { OrderType, Product, PaymentMethod, Order, ShiftTransaction, OrderStatus } from '../types';
 import { Button, formatCurrency } from '../components/ui';
 import { ProductGrid, CartPanel, CashPaymentModal, ShiftPanel, SuccessModal, ZReportModal, CashClosingReportModal } from '../components/pos/PosComponents';
 import { Settings, LogOut, User, Lock, Monitor, Power, ShoppingCart, X, BarChart2, FileText, ChevronRight, Banknote, QrCode, Hash, Plus, Trash2 } from 'lucide-react';
 import { printReceipt } from '../utils';
-import { buildShiftFixedProducts, computeBurgerPlan } from '../constants/fixedProducts';
+import { buildShiftFixedProducts, computeBurgerPlan, FIXED_PRODUCT_IDS } from '../constants/fixedProducts';
 
 // O valor unitário sugerido rateia o custo apenas entre os lanches pagantes
 // (Escoteiros/Extra), já que os lanches de Chefes têm preço R$ 0,00.
@@ -240,10 +240,77 @@ export const POS = ({
         }
     }, [activeTerminals, terminalId]);
 
-    // Lanches fixos do caixa (Chefe/Escoteiro/Extra) com preço derivado da abertura
+    const fixedProductAvailability = useMemo(() => {
+        if (!currentShift) return [];
+
+        const shiftOrders = orders.filter((order) => (
+            order.shift_id === currentShift.id && order.status !== OrderStatus.CANCELLED
+        ));
+
+        const countItems = (ids: string[]) => {
+            const idsSet = new Set(ids);
+            const orderCount = shiftOrders.reduce((total, order) => (
+                total + order.items.filter((item) => idsSet.has(item.id)).length
+            ), 0);
+            const cartCount = cart.filter((item) => idsSet.has(item.id)).length;
+            return orderCount + cartCount;
+        };
+
+        const plannedChefe = currentShift.planned_chefe_burgers ?? 0;
+        const plannedVegan = currentShift.planned_vegan_burgers ?? 0;
+        const plannedEscoteiroExtra = currentShift.planned_escoteiro_extra_burgers ?? computeBurgerPlan({
+            normal: currentShift.planned_normal_burgers ?? 0,
+            vegan: plannedVegan,
+            chefe: plannedChefe
+        }).escoteiroExtra;
+
+        const chefeUsed = countItems([FIXED_PRODUCT_IDS.CHEFE]);
+        const veganUsed = countItems([FIXED_PRODUCT_IDS.VEGANO]);
+        const escoteiroExtraUsed = countItems([FIXED_PRODUCT_IDS.ESCOTEIRO, FIXED_PRODUCT_IDS.EXTRA]);
+
+        return [
+            {
+                id: 'chefe',
+                label: 'Chefe',
+                planned: plannedChefe,
+                used: chefeUsed,
+                available: Math.max(0, plannedChefe - chefeUsed)
+            },
+            ...(plannedVegan > 0 ? [{
+                id: 'vegano',
+                label: 'Lanche Vegano',
+                planned: plannedVegan,
+                used: veganUsed,
+                available: Math.max(0, plannedVegan - veganUsed)
+            }] : []),
+            {
+                id: 'escoteiro-extra',
+                label: 'Lanche Escoteiros/Extra',
+                planned: plannedEscoteiroExtra,
+                used: escoteiroExtraUsed,
+                available: Math.max(0, plannedEscoteiroExtra - escoteiroExtraUsed)
+            }
+        ];
+    }, [cart, currentShift, orders]);
+
+    const fixedAvailabilityByProductId = useMemo(() => {
+        const byRowId = Object.fromEntries(fixedProductAvailability.map((row) => [row.id, row.available]));
+        const escoteiroExtraAvailable = byRowId['escoteiro-extra'];
+        return {
+            [FIXED_PRODUCT_IDS.CHEFE]: byRowId.chefe,
+            [FIXED_PRODUCT_IDS.VEGANO]: byRowId.vegano,
+            [FIXED_PRODUCT_IDS.ESCOTEIRO]: escoteiroExtraAvailable,
+            [FIXED_PRODUCT_IDS.EXTRA]: escoteiroExtraAvailable
+        };
+    }, [fixedProductAvailability]);
+
+    // Lanches fixos do caixa com preço derivado da abertura.
     const shiftFixedProducts = useMemo(
-        () => buildShiftFixedProducts(currentShift?.opening_unit_cost),
-        [currentShift?.opening_unit_cost]
+        () => buildShiftFixedProducts(currentShift?.opening_unit_cost, {
+            includeVegan: (currentShift?.planned_vegan_burgers ?? 0) > 0,
+            availability: fixedAvailabilityByProductId
+        }),
+        [currentShift?.opening_unit_cost, currentShift?.planned_vegan_burgers, fixedAvailabilityByProductId]
     );
 
     const parsedOpeningCost = parseFloat(openingProductCostTotal || '0');
@@ -705,6 +772,7 @@ export const POS = ({
                     <ProductGrid
                         products={products}
                         pinnedProducts={shiftFixedProducts}
+                        pinnedAvailability={fixedProductAvailability}
                         onAdd={(p) => {
                             if (cart.length >= maxItemsPerOrder) {
                                 alert(`Limite de ${maxItemsPerOrder} itens por pedido atingido.`);

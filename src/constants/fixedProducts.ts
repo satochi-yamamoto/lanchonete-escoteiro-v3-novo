@@ -33,30 +33,48 @@ export const computeBurgerPlan = ({ normal, vegan, chefe }: BurgerPlanInput): Bu
   };
 };
 
-// IDs estáveis dos lanches fixos do caixa (Chefe / Escoteiro / Extra).
+// IDs estáveis dos lanches fixos do caixa (Chefe / Escoteiro / Extra / Vegano).
 export const FIXED_PRODUCT_IDS = {
   CHEFE: 'shift-lanche-chefe',
   ESCOTEIRO: 'shift-lanche-escoteiro',
-  EXTRA: 'shift-lanche-extra'
+  EXTRA: 'shift-lanche-extra',
+  VEGANO: 'shift-lanche-vegano'
 } as const;
 
+type FixedProductId = typeof FIXED_PRODUCT_IDS[keyof typeof FIXED_PRODUCT_IDS];
+
+interface BuildShiftFixedProductsOptions {
+  includeVegan?: boolean;
+  availability?: Partial<Record<FixedProductId, number>>;
+}
+
 /**
- * Monta os 3 lanches fixos exibidos no caixa a partir do valor unitário
+ * Monta os lanches fixos exibidos no caixa a partir do valor unitário
  * informado na abertura:
  * - 00 - Chefe: sempre R$ 0,00
  * - 01 - Escoteiro: valor unitário da abertura
  * - 02 - Extra: valor unitário da abertura
+ * - 03 - Vegano: valor unitário da abertura, exibido somente quando planejado
  */
-export const buildShiftFixedProducts = (openingUnitCost: number | undefined | null): Product[] => {
+export const buildShiftFixedProducts = (
+  openingUnitCost: number | undefined | null,
+  options: BuildShiftFixedProductsOptions = {}
+): Product[] => {
   const unit = Number.isFinite(openingUnitCost as number) ? Number(openingUnitCost) : 0;
-  const base = {
+  const base = (id: FixedProductId) => ({
     category: FIXED_BURGER_CATEGORY,
     station: 'ASSEMBLY' as const,
-    is_available: true
-  };
-  return [
-    { id: FIXED_PRODUCT_IDS.CHEFE, name: '00 - Chefe', price: 0, ...base },
-    { id: FIXED_PRODUCT_IDS.ESCOTEIRO, name: '01 - Escoteiro', price: unit, ...base },
-    { id: FIXED_PRODUCT_IDS.EXTRA, name: '02 - Extra', price: unit, ...base }
+    is_available: options.availability?.[id] === undefined ? true : (options.availability[id] ?? 0) > 0
+  });
+  const products: Product[] = [
+    { id: FIXED_PRODUCT_IDS.CHEFE, name: '00 - Chefe', price: 0, ...base(FIXED_PRODUCT_IDS.CHEFE) },
+    { id: FIXED_PRODUCT_IDS.ESCOTEIRO, name: '01 - Escoteiro', price: unit, ...base(FIXED_PRODUCT_IDS.ESCOTEIRO) },
+    { id: FIXED_PRODUCT_IDS.EXTRA, name: '02 - Extra', price: unit, ...base(FIXED_PRODUCT_IDS.EXTRA) }
   ];
+
+  if (options.includeVegan) {
+    products.push({ id: FIXED_PRODUCT_IDS.VEGANO, name: '03 - Vegano', price: unit, ...base(FIXED_PRODUCT_IDS.VEGANO) });
+  }
+
+  return products;
 };

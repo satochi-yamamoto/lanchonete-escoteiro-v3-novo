@@ -162,6 +162,10 @@ describe('Reestruturação inicial do POS', () => {
     expect(extra).toMatchObject({ name: '02 - Extra', price: 6 });
     // Sem valor de abertura, Escoteiro/Extra ficam zerados (Chefe sempre 0)
     expect(buildShiftFixedProducts(undefined).map((p) => p.price)).toEqual([0, 0, 0]);
+
+    const withVegan = buildShiftFixedProducts(6, { includeVegan: true });
+    expect(withVegan.map((p) => p.name)).toEqual(['00 - Chefe', '01 - Escoteiro', '02 - Extra', '03 - Vegano']);
+    expect(withVegan.at(-1)).toMatchObject({ id: FIXED_PRODUCT_IDS.VEGANO, price: 6 });
   });
 
   it('permite corrigir o valor dos lanches fixos pagantes durante o caixa aberto', () => {
@@ -188,11 +192,15 @@ describe('Reestruturação inicial do POS', () => {
     useStore.getState().updateShiftFixedProductPrice(FIXED_PRODUCT_IDS.ESCOTEIRO, 8);
 
     expect(useStore.getState().currentShift?.opening_unit_cost).toBe(8);
-    expect(buildShiftFixedProducts(useStore.getState().currentShift?.opening_unit_cost).map((p) => p.price)).toEqual([0, 8, 8]);
+    expect(buildShiftFixedProducts(useStore.getState().currentShift?.opening_unit_cost, { includeVegan: true }).map((p) => p.price)).toEqual([0, 8, 8, 8]);
+
+    useStore.getState().updateShiftFixedProductPrice(FIXED_PRODUCT_IDS.VEGANO, 9);
+
+    expect(useStore.getState().currentShift?.opening_unit_cost).toBe(9);
 
     useStore.getState().updateShiftFixedProductPrice(FIXED_PRODUCT_IDS.CHEFE, 10);
 
-    expect(useStore.getState().currentShift?.opening_unit_cost).toBe(8);
+    expect(useStore.getState().currentShift?.opening_unit_cost).toBe(9);
   });
 
   it('registra histórico de ajustes quando o fechamento difere da abertura', () => {

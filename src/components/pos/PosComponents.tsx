@@ -187,7 +187,27 @@ const AddProductModal = ({ onClose, onSave, categories }: AddProductModalProps) 
 };
 
 // --- Product Grid Component ---
-export const ProductGrid = ({ products, onAdd, onCreateProduct, pinnedProducts = [] }: { products: Product[], onAdd: (p: Product) => void, onCreateProduct?: (p: Product) => void, pinnedProducts?: Product[] }) => {
+export type PinnedProductAvailabilityRow = {
+    id: string;
+    label: string;
+    planned: number;
+    used: number;
+    available: number;
+};
+
+export const ProductGrid = ({
+    products,
+    onAdd,
+    onCreateProduct,
+    pinnedProducts = [],
+    pinnedAvailability = []
+}: {
+    products: Product[],
+    onAdd: (p: Product) => void,
+    onCreateProduct?: (p: Product) => void,
+    pinnedProducts?: Product[],
+    pinnedAvailability?: PinnedProductAvailabilityRow[]
+}) => {
     const [category, setCategory] = useState<string>('Todos');
     const [stationFilter, setStationFilter] = useState<Station | 'ALL'>('ALL');
     const [showUnavailable, setShowUnavailable] = useState(false);
@@ -298,7 +318,7 @@ export const ProductGrid = ({ products, onAdd, onCreateProduct, pinnedProducts =
             </div>
 
             <div className="flex-1 overflow-y-auto p-2 md:p-4">
-                {/* Pinned shift products (Chefe / Escoteiro / Extra) — always visible */}
+                {/* Pinned shift products (Chefe / Escoteiro / Extra / Vegano) — always visible */}
                 {pinnedProducts.length > 0 && (
                     <div className="mb-4">
                         <div className="flex items-center gap-2 mb-2 text-cooper-muted">
@@ -312,18 +332,53 @@ export const ProductGrid = ({ products, onAdd, onCreateProduct, pinnedProducts =
                                     <button
                                         key={p.id}
                                         onClick={() => handleProductClick(p)}
+                                        disabled={!p.is_available}
                                         className={`flex flex-col justify-between text-left border-2 rounded-lg p-3 h-28 transition-all duration-150 select-none ${
+                                            !p.is_available
+                                                ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed grayscale'
+                                                :
                                             isAnimating
                                                 ? 'ring-4 ring-green-500 border-green-500 bg-green-50 scale-[0.98]'
                                                 : 'border-cooper-leaf/40 bg-cooper-leaf/5 hover:bg-cooper-leaf/10 hover:-translate-y-0.5 active:scale-[0.98]'
                                         }`}
                                     >
                                         <h4 className="font-black text-sm text-cooper-ink line-clamp-2">{p.name}</h4>
-                                        <div className="font-black text-lg text-cooper-leaf">{formatCurrency(p.price)}</div>
+                                        <div>
+                                            {!p.is_available && (
+                                                <span className="block text-[10px] font-black uppercase tracking-wider text-red-600">Esgotado</span>
+                                            )}
+                                            <div className="font-black text-lg text-cooper-leaf">{formatCurrency(p.price)}</div>
+                                        </div>
                                     </button>
                                 );
                             })}
                         </div>
+                        {pinnedAvailability.length > 0 && (
+                            <div className="mt-3 overflow-hidden rounded-lg border border-cooper-line bg-white">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-cooper-panel text-cooper-muted">
+                                        <tr className="text-left text-[11px] font-black uppercase tracking-wider">
+                                            <th className="px-3 py-2">Tipo</th>
+                                            <th className="px-3 py-2 text-right">Planejado</th>
+                                            <th className="px-3 py-2 text-right">Usado</th>
+                                            <th className="px-3 py-2 text-right">Disponível</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-cooper-line">
+                                        {pinnedAvailability.map((row) => (
+                                            <tr key={row.id} className="text-cooper-ink">
+                                                <td className="px-3 py-2 font-bold">{row.label}</td>
+                                                <td className="px-3 py-2 text-right tabular-nums">{row.planned}</td>
+                                                <td className="px-3 py-2 text-right tabular-nums">{row.used}</td>
+                                                <td className={`px-3 py-2 text-right font-black tabular-nums ${row.available <= 0 ? 'text-red-600' : 'text-cooper-leaf'}`}>
+                                                    {row.available}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                     </div>
                 )}
 

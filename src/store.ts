@@ -942,7 +942,11 @@ export const useStore = create<AppState>((set, get) => ({
     if (!Number.isFinite(price) || price < 0) return;
     set((state) => {
       if (!state.currentShift || state.currentShift.status !== 'OPEN') return {};
-      if (productId !== FIXED_PRODUCT_IDS.ESCOTEIRO && productId !== FIXED_PRODUCT_IDS.EXTRA) return {};
+      if (
+        productId !== FIXED_PRODUCT_IDS.ESCOTEIRO &&
+        productId !== FIXED_PRODUCT_IDS.EXTRA &&
+        productId !== FIXED_PRODUCT_IDS.VEGANO
+      ) return {};
 
       const updatedShift: Shift = {
         ...state.currentShift,
