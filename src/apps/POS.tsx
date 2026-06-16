@@ -20,6 +20,7 @@ export const isOpeningShiftInputValid = ({
     terminalId,
     dailyMenuName,
     totalCost,
+    drinksLiters,
     normalQty,
     veganQty,
     finalUnitCost,
@@ -30,6 +31,7 @@ export const isOpeningShiftInputValid = ({
     terminalId: string;
     dailyMenuName: string;
     totalCost: number;
+    drinksLiters: number;
     normalQty: number;
     veganQty: number;
     finalUnitCost: number;
@@ -43,6 +45,8 @@ export const isOpeningShiftInputValid = ({
         Boolean(dailyMenuName.trim()) &&
         Number.isFinite(totalCost) &&
         totalCost >= 0 &&
+        Number.isFinite(drinksLiters) &&
+        drinksLiters >= 0 &&
         Number.isFinite(normalQty) &&
         normalQty >= 0 &&
         Number.isFinite(veganQty) &&
@@ -190,13 +194,14 @@ const OpeningAdjustmentsScreen = ({
     shift: Shift;
     activeTerminals: TerminalConfig[];
     onBack: () => void;
-    onSave: (updates: Partial<Pick<Shift, 'staff_name' | 'terminal_id' | 'start_cash' | 'opening_product_cost_total' | 'planned_normal_burgers' | 'planned_vegan_burgers' | 'planned_chefe_burgers' | 'planned_escoteiro_extra_burgers' | 'opening_unit_cost_suggested' | 'opening_unit_cost' | 'daily_menu_name'>>) => Promise<void>;
+    onSave: (updates: Partial<Pick<Shift, 'staff_name' | 'terminal_id' | 'start_cash' | 'opening_product_cost_total' | 'opening_drinks_liters' | 'planned_normal_burgers' | 'planned_vegan_burgers' | 'planned_chefe_burgers' | 'planned_escoteiro_extra_burgers' | 'opening_unit_cost_suggested' | 'opening_unit_cost' | 'daily_menu_name'>>) => Promise<void>;
 }) => {
     const [operatorName, setOperatorName] = useState(shift.staff_name);
     const [terminalId, setTerminalId] = useState(shift.terminal_id);
     const [startCash, setStartCash] = useState(shift.start_cash.toFixed(2));
     const [dailyMenuName, setDailyMenuName] = useState(shift.daily_menu_name ?? '');
     const [openingProductCostTotal, setOpeningProductCostTotal] = useState((shift.opening_product_cost_total ?? 0).toString());
+    const [openingDrinksLiters, setOpeningDrinksLiters] = useState((shift.opening_drinks_liters ?? 0).toString());
     const [plannedNormalBurgers, setPlannedNormalBurgers] = useState((shift.planned_normal_burgers ?? 0).toString());
     const [plannedVeganBurgers, setPlannedVeganBurgers] = useState((shift.planned_vegan_burgers ?? 0).toString());
     const [plannedChefeBurgers, setPlannedChefeBurgers] = useState((shift.planned_chefe_burgers ?? 0).toString());
@@ -210,6 +215,7 @@ const OpeningAdjustmentsScreen = ({
         setStartCash(shift.start_cash.toFixed(2));
         setDailyMenuName(shift.daily_menu_name ?? '');
         setOpeningProductCostTotal((shift.opening_product_cost_total ?? 0).toString());
+        setOpeningDrinksLiters((shift.opening_drinks_liters ?? 0).toString());
         setPlannedNormalBurgers((shift.planned_normal_burgers ?? 0).toString());
         setPlannedVeganBurgers((shift.planned_vegan_burgers ?? 0).toString());
         setPlannedChefeBurgers((shift.planned_chefe_burgers ?? 0).toString());
@@ -219,6 +225,7 @@ const OpeningAdjustmentsScreen = ({
 
     const parsedStartCash = parseFloat(startCash || '0');
     const parsedOpeningCost = parseFloat(openingProductCostTotal || '0');
+    const parsedOpeningDrinksLiters = parseFloat(openingDrinksLiters || '0');
     const parsedNormalBurgers = parseInt(plannedNormalBurgers || '0', 10);
     const parsedVeganBurgers = parseInt(plannedVeganBurgers || '0', 10);
     const parsedChefeBurgers = parseInt(plannedChefeBurgers || '0', 10);
@@ -238,6 +245,7 @@ const OpeningAdjustmentsScreen = ({
         terminalId,
         dailyMenuName,
         totalCost: parsedOpeningCost,
+        drinksLiters: parsedOpeningDrinksLiters,
         normalQty: parsedNormalBurgers,
         veganQty: parsedVeganBurgers,
         finalUnitCost: parsedUnitCost,
@@ -263,6 +271,7 @@ const OpeningAdjustmentsScreen = ({
                 terminal_id: terminalId,
                 start_cash: parsedStartCash,
                 opening_product_cost_total: parsedOpeningCost,
+                opening_drinks_liters: parsedOpeningDrinksLiters,
                 planned_normal_burgers: parsedNormalBurgers,
                 planned_vegan_burgers: parsedVeganBurgers,
                 planned_chefe_burgers: parsedChefeBurgers,
@@ -355,6 +364,18 @@ const OpeningAdjustmentsScreen = ({
                             onChange={e => setDailyMenuName(e.target.value)}
                             className="w-full border p-3 rounded-lg bg-gray-50 focus:bg-white transition-colors"
                             placeholder="Ex: Lanche Escoteiro"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold mb-1 text-gray-600">Quantos litros de bebida?</label>
+                        <input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            value={openingDrinksLiters}
+                            onChange={e => setOpeningDrinksLiters(e.target.value)}
+                            className="w-full border p-3 rounded-lg"
+                            placeholder="Ex: 20"
                         />
                     </div>
                     <div>
@@ -492,6 +513,7 @@ export const POS = ({
     const [terminalId, setTerminalId] = useState('');
     const [dailyMenuName, setDailyMenuName] = useState('');
     const [openingProductCostTotal, setOpeningProductCostTotal] = useState('');
+    const [openingDrinksLiters, setOpeningDrinksLiters] = useState('');
     const [openingCostDetails, setOpeningCostDetails] = useState<OpeningCostDetail[]>([createOpeningCostDetail()]);
     const [showOpeningCostDetails, setShowOpeningCostDetails] = useState(false);
     const [plannedNormalBurgers, setPlannedNormalBurgers] = useState('');
@@ -646,6 +668,7 @@ export const POS = ({
         if (isOpeningShift) return;
         const amount = parseFloat(shiftStartAmount);
         const totalCost = parseFloat(openingProductCostTotal);
+        const drinksLiters = parseFloat(openingDrinksLiters || '0');
         const normalQty = parseInt(plannedNormalBurgers, 10);
         const veganQty = parseInt(plannedVeganBurgers, 10);
         const chefeQty = parseInt(plannedChefeBurgers || '0', 10);
@@ -657,6 +680,7 @@ export const POS = ({
             terminalId,
             dailyMenuName,
             totalCost,
+            drinksLiters,
             normalQty,
             veganQty,
             finalUnitCost,
@@ -668,6 +692,7 @@ export const POS = ({
                 setIsOpeningShift(true);
                 const openedShift = await openShift(operatorName.trim(), amount, terminalId, {
                     opening_product_cost_total: totalCost,
+                    opening_drinks_liters: drinksLiters,
                     planned_normal_burgers: normalQty,
                     planned_vegan_burgers: veganQty,
                     planned_chefe_burgers: chefeQty,
@@ -874,6 +899,18 @@ export const POS = ({
                                             onChange={e => setDailyMenuName(e.target.value)}
                                             className="w-full border p-3 rounded-lg bg-gray-50 focus:bg-white transition-colors"
                                             placeholder="Ex: Lanche Escoteiro"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold mb-1 text-gray-600">Quantos litros de bebida?</label>
+                                        <input
+                                            type="number"
+                                            step="0.1"
+                                            min="0"
+                                            value={openingDrinksLiters}
+                                            onChange={e => setOpeningDrinksLiters(e.target.value)}
+                                            className="w-full border p-3 rounded-lg"
+                                            placeholder="Ex: 20"
                                         />
                                     </div>
                                     <div>

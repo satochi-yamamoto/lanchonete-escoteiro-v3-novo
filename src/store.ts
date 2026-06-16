@@ -83,7 +83,7 @@ interface AppState {
   currentShift: Shift | null;
   reportShifts: Shift[];
   openShift: (staffName: string, startCash: number, terminalId: string, openingData: ShiftOpeningData) => Promise<Shift | null>;
-  updateShiftOpeningData: (updates: Partial<Pick<Shift, 'staff_name' | 'terminal_id' | 'start_cash' | 'opening_product_cost_total' | 'planned_normal_burgers' | 'planned_vegan_burgers' | 'planned_chefe_burgers' | 'planned_escoteiro_extra_burgers' | 'opening_unit_cost_suggested' | 'opening_unit_cost' | 'daily_menu_name'>>) => Promise<Shift | null>;
+  updateShiftOpeningData: (updates: Partial<Pick<Shift, 'staff_name' | 'terminal_id' | 'start_cash' | 'opening_product_cost_total' | 'opening_drinks_liters' | 'planned_normal_burgers' | 'planned_vegan_burgers' | 'planned_chefe_burgers' | 'planned_escoteiro_extra_burgers' | 'opening_unit_cost_suggested' | 'opening_unit_cost' | 'daily_menu_name'>>) => Promise<Shift | null>;
   closeShift: (metrics?: { drinks_liters?: number, burger_cost?: number, burgers_produced?: number, burgers_unsold?: number, menu_name?: string, closer_name?: string, feedback?: string }) => Promise<Shift | null>;
   addShiftTransaction: (type: ShiftTransaction['type'], amount: number, reason: string, extras?: ShiftTransactionExtras) => void;
   addShiftTransactions: (transactions: Array<{ type: ShiftTransaction['type']; amount: number; reason: string; extras?: ShiftTransactionExtras }>) => Promise<Shift | null>;
@@ -850,6 +850,7 @@ export const useStore = create<AppState>((set, get) => ({
     // Baseline planejado na abertura para comparar com o que foi informado no fechamento
     const openingMenu = shift.daily_menu_name ?? null;
     const openingCost = shift.opening_unit_cost ?? null;
+    const openingDrinksLiters = shift.opening_drinks_liters ?? null;
     const hasPlanned = shift.planned_normal_burgers != null || shift.planned_vegan_burgers != null;
     const openingProduced = hasPlanned
       ? (shift.planned_normal_burgers ?? 0) + (shift.planned_vegan_burgers ?? 0)
@@ -884,6 +885,7 @@ export const useStore = create<AppState>((set, get) => ({
     recordAdjustment('menu_name', 'Cardápio do Lanche', openingMenu, metrics?.menu_name);
     recordAdjustment('burger_cost', 'Custo do Lanche', openingCost, metrics?.burger_cost);
     recordAdjustment('burgers_produced', 'Total de Lanches Produzidos', openingProduced, metrics?.burgers_produced);
+    recordAdjustment('drinks_liters', 'Litros de Bebida', openingDrinksLiters, metrics?.drinks_liters);
 
     const updatedShift: Shift = {
       ...shift,

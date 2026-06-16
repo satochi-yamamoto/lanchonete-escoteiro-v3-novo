@@ -600,6 +600,7 @@ export const backend: BackendInterface = {
       status: shift.status,
       transactions: shift.transactions ? JSON.parse(JSON.stringify(shift.transactions)) : [],
       opening_product_cost_total: shift.opening_product_cost_total,
+      opening_drinks_liters: shift.opening_drinks_liters,
       planned_normal_burgers: shift.planned_normal_burgers,
       planned_vegan_burgers: shift.planned_vegan_burgers,
       planned_chefe_burgers: shift.planned_chefe_burgers,

@@ -669,11 +669,11 @@ const PromotionBuilder = ({
 }) => {
     // Local state for the form
     const [form, setForm] = useState<Partial<Promotion>>(initialData || {
-        name: 'Nova Promoção',
+        name: 'Promoção de Lanches',
         type: PromotionType.FIXED_PRICE_BUNDLE,
-        value: 0,
+        value: 10,
         priority: 1,
-        rules: { min_quantity: 1 },
+        rules: { min_quantity: 2, category_id: FIXED_BURGER_CATEGORY, active: true },
         valid_days: [0, 1, 2, 3, 4, 5, 6],
         channels: ['POS', 'KIOSK', 'DELIVERY'],
         valid_hours_start: '00:00',
@@ -684,12 +684,33 @@ const PromotionBuilder = ({
     const updateRule = (key: string, val: any) => setForm(prev => ({ ...prev, rules: { ...prev.rules!, [key]: val } }));
 
     const handleSave = () => {
-        if (!form.name || form.value === undefined) return alert("Por favor preencha nome e valor");
+        const promoValue = Number(form.value);
+        const minQuantity = Number(form.rules?.min_quantity);
+        if (!form.name?.trim()) return alert("Por favor preencha o nome da promoção.");
+        if (!Number.isFinite(promoValue) || promoValue < 0) return alert("Informe um valor de promoção válido.");
+        if (!Number.isInteger(minQuantity) || minQuantity <= 0) return alert("Informe uma quantidade válida para a promoção.");
         // Preserve ID if editing, otherwise generate new
-        onSave({ ...form, id: form.id || generateUUID() } as Promotion);
+        onSave({
+            ...form,
+            name: form.name.trim(),
+            value: promoValue,
+            rules: {
+                ...form.rules!,
+                min_quantity: minQuantity
+            },
+            id: form.id || generateUUID()
+        } as Promotion);
     };
 
     const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const promoQuantity = Number(form.rules?.min_quantity || 0);
+    const promoValue = Number(form.value || 0);
+    const targetName = form.rules?.product_id
+        ? products.find((product) => product.id === form.rules?.product_id)?.name || 'produto selecionado'
+        : form.rules?.category_id || 'itens elegíveis';
+    const bundleSummary = form.type === PromotionType.FIXED_PRICE_BUNDLE
+        ? `${promoQuantity || 0} ${targetName} por ${formatCurrency(promoValue)}`
+        : '';
 
     return (
         <div className="space-y-6 animate-in slide-in-from-right duration-300">
@@ -730,7 +751,7 @@ const PromotionBuilder = ({
                             </div>
                             <div className="grid grid-cols-3 gap-4">
                                 {[
-                                    { id: PromotionType.FIXED_PRICE_BUNDLE, label: 'Preço Fixo', icon: '🎁' },
+                                    { id: PromotionType.FIXED_PRICE_BUNDLE, label: 'Qtd por Valor', icon: '🎁' },
                                     { id: PromotionType.PERCENTAGE_OFF, label: '% Desconto', icon: '✂️' },
                                     { id: PromotionType.BOGO, label: 'Leve+ Pague-', icon: '👯' }
                                 ].map(t => (
@@ -750,14 +771,22 @@ const PromotionBuilder = ({
                             <div className="flex gap-4">
                                 <div className="flex-1">
                                     <label className="block text-sm font-medium mb-1">
-                                        {form.type === PromotionType.PERCENTAGE_OFF ? 'Desconto (0.1 = 10%)' : 'Valor (R$)'}
+                                        {form.type === PromotionType.PERCENTAGE_OFF ? 'Desconto (0.1 = 10%)' : 'Valor da Promoção (R$)'}
                                     </label>
                                     <input 
                                         type="number" 
+                                        step={form.type === PromotionType.PERCENTAGE_OFF ? '0.01' : '0.01'}
+                                        min="0"
                                         className="w-full border p-2 rounded font-mono text-lg font-bold" 
-                                        value={form.value} 
-                                        onChange={e => updateForm('value', parseFloat(e.target.value))}
+                                        value={form.value ?? ''} 
+                                        onChange={e => updateForm('value', e.target.value === '' ? 0 : parseFloat(e.target.value))}
+                                        placeholder={form.type === PromotionType.FIXED_PRICE_BUNDLE ? 'Ex: 10.00' : undefined}
                                     />
+                                    {form.type === PromotionType.FIXED_PRICE_BUNDLE && (
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Exemplo: 2 lanches por R$ 10,00.
+                                        </p>
+                                    )}
                                 </div>
                                 <div className="w-1/3">
                                     <label className="block text-sm font-medium mb-1">Prioridade</label>
@@ -811,13 +840,23 @@ const PromotionBuilder = ({
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium mb-1">Qtd Mínima</label>
+                                <label className="block text-sm font-medium mb-1">
+                                    {form.type === PromotionType.FIXED_PRICE_BUNDLE ? 'Quantidade de lanches na promoção' : 'Qtd Mínima'}
+                                </label>
                                 <input 
                                     type="number" 
+                                    min="1"
+                                    step="1"
                                     className="w-full border p-2 rounded" 
-                                    value={form.rules?.min_quantity} 
-                                    onChange={e => updateRule('min_quantity', parseInt(e.target.value))}
+                                    value={form.rules?.min_quantity ?? ''} 
+                                    onChange={e => updateRule('min_quantity', e.target.value === '' ? 0 : parseInt(e.target.value, 10))}
+                                    placeholder="Ex: 2"
                                 />
+                                {form.type === PromotionType.FIXED_PRICE_BUNDLE && (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Essa é a quantidade que fecha o pacote da promoção.
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </Card>
@@ -928,6 +967,11 @@ const PromotionBuilder = ({
                                     <span className="text-xs text-gray-400">Valor</span>
                                 </div>
                             </div>
+                            {bundleSummary && (
+                                <div className="mt-4 rounded-lg bg-purple-50 border border-purple-100 px-3 py-2 text-sm font-bold text-purple-800">
+                                    {bundleSummary}
+                                </div>
+                            )}
                         </Card>
 
                         <div className="mt-8 space-y-3">
@@ -1402,6 +1446,14 @@ export const PromotionManager = () => {
             <div className="space-y-4">
                 {promotions.map(promo => {
                     const isActive = promo.rules.active !== false;
+                    const targetLabel = promo.rules.product_id
+                        ? productNameById.get(promo.rules.product_id) || promo.rules.product_id
+                        : promo.rules.category_id || 'Itens elegíveis';
+                    const promoSummary = promo.type === PromotionType.FIXED_PRICE_BUNDLE
+                        ? `${promo.rules.min_quantity} ${targetLabel} por ${formatCurrency(promo.value)}`
+                        : promo.type === PromotionType.PERCENTAGE_OFF
+                            ? `${promo.value * 100}% de desconto em ${targetLabel}`
+                            : `Regra ${promo.type} em ${targetLabel}`;
                     return (
                     <Card key={promo.id} className={`relative overflow-hidden border-l-4 group hover:shadow-md transition-shadow ${isActive ? 'border-l-purple-500' : 'border-l-gray-300 opacity-75'}`}>
                         <div className="flex justify-between items-start">
@@ -1418,10 +1470,13 @@ export const PromotionManager = () => {
                                 </div>
                                 <div className="text-sm text-gray-500 mt-1 space-y-1">
                                     <p className="flex items-center gap-1"><Layers size={14}/> {promo.type}</p>
+                                    <p className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 px-2 py-1 rounded font-bold">
+                                        <Target size={14}/> {promoSummary}
+                                    </p>
                                     <p className="flex items-center gap-1"><Zap size={14} className="text-yellow-500"/> Prioridade: {promo.priority}</p>
                                     {promo.rules.category_id && <p className="bg-gray-100 inline-block px-1 rounded">Categoria: {promo.rules.category_id}</p>}
                                     {promo.rules.product_id && <p className="bg-blue-50 text-blue-700 inline-block px-1 rounded">Produto: {productNameById.get(promo.rules.product_id) || promo.rules.product_id}</p>}
-                                    {promo.rules.min_quantity > 0 && <p className="bg-gray-100 inline-block px-1 rounded ml-2">Qtd Mín: {promo.rules.min_quantity}</p>}
+                                    {promo.rules.min_quantity > 0 && <p className="bg-gray-100 inline-block px-1 rounded ml-2">Qtd Promo: {promo.rules.min_quantity}</p>}
                                 </div>
                             </div>
                             <div className="text-right flex flex-col items-end gap-2">
@@ -2023,6 +2078,12 @@ export const ReportsManager = () => {
                                                 </span>
                                             </div>
                                             <div className="flex justify-between items-center">
+                                                <span className="text-gray-600">Bebida Planejada</span>
+                                                <span className="font-bold">
+                                                    {selectedShift.shift.opening_drinks_liters !== undefined ? `${selectedShift.shift.opening_drinks_liters} L` : '-'}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
                                                 <span className="text-gray-600">Valor Unitário Sugerido</span>
                                                 <span className="font-bold">
                                                     {selectedShift.shift.opening_unit_cost_suggested !== undefined ? formatCurrency(selectedShift.shift.opening_unit_cost_suggested) : '-'}
@@ -2136,6 +2197,7 @@ export const ReportsManager = () => {
                                         selectedShift.shift.opening_product_cost_total !== undefined ? `CUSTO INSUMOS:   ${formatCurrency(selectedShift.shift.opening_product_cost_total)}` : null,
                                         selectedShift.shift.planned_normal_burgers !== undefined ? `LANCHE NORMAL:   ${selectedShift.shift.planned_normal_burgers} un` : null,
                                         selectedShift.shift.planned_vegan_burgers !== undefined ? `LANCHE VEGANO:   ${selectedShift.shift.planned_vegan_burgers} un` : null,
+                                        selectedShift.shift.opening_drinks_liters !== undefined ? `BEBIDA PLANEJ.:  ${selectedShift.shift.opening_drinks_liters} L` : null,
                                         selectedShift.shift.opening_unit_cost_suggested !== undefined ? `UNIT. SUGERIDO:  ${formatCurrency(selectedShift.shift.opening_unit_cost_suggested)}` : null,
                                         selectedShift.shift.opening_unit_cost !== undefined ? `UNIT. FINAL:     ${formatCurrency(selectedShift.shift.opening_unit_cost)}` : null,
                                         "--------------------------------",

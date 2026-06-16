@@ -87,6 +87,7 @@ export interface Order {
 
 export interface ShiftOpeningData {
   opening_product_cost_total: number;
+  opening_drinks_liters: number;
   planned_normal_burgers: number;
   planned_vegan_burgers: number;
   planned_chefe_burgers: number; // Lanches reservados para Chefes (preço R$ 0,00)
@@ -117,6 +118,7 @@ export interface Shift {
   opening_unit_cost_suggested?: number;
   opening_unit_cost?: number;
   daily_menu_name?: string;
+  opening_drinks_liters?: number;
   // End of shift metrics
   drinks_liters?: number;
   burger_cost?: number;
@@ -132,7 +134,7 @@ export interface Shift {
 // Registro de auditoria: valor alterado no fechamento vs. o planejado na abertura
 export interface ShiftAdjustment {
   id: string;
-  field: 'menu_name' | 'burger_cost' | 'burgers_produced';
+  field: 'menu_name' | 'burger_cost' | 'burgers_produced' | 'drinks_liters';
   label: string; // Rótulo legível (ex.: "Cardápio do Lanche")
   previous_value: string | number | null; // Valor original (abertura)
   new_value: string | number | null; // Valor informado no fechamento
