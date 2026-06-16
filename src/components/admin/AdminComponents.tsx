@@ -1635,7 +1635,7 @@ export const ReportsManager = () => {
     const [reportData, setReportData] = useState<{shifts: any[], orders: any[]} | null>(null);
     const [loading, setLoading] = useState(false);
     const [selectedShift, setSelectedShift] = useState<any | null>(null);
-    const { backend, products, scouts } = useStore();
+    const { backend, products, scouts, reportShifts, orders } = useStore();
 
     useEffect(() => {
         loadData();
@@ -1644,6 +1644,14 @@ export const ReportsManager = () => {
     const loadData = async () => {
         setLoading(true);
         try {
+            if (backend.kind !== 'supabase') {
+                setReportData({
+                    shifts: [...reportShifts].sort((a, b) => new Date(b.opened_at).getTime() - new Date(a.opened_at).getTime()),
+                    orders
+                });
+                return;
+            }
+
             const data = await backend.fetchReports();
             setReportData(data);
         } catch (e) {

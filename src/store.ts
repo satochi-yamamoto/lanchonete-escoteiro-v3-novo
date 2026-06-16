@@ -81,6 +81,7 @@ interface AppState {
 
   // Shift Management
   currentShift: Shift | null;
+  reportShifts: Shift[];
   openShift: (staffName: string, startCash: number, terminalId: string, openingData: ShiftOpeningData) => void;
   closeShift: (metrics?: { drinks_liters?: number, burger_cost?: number, burgers_produced?: number, burgers_unsold?: number, menu_name?: string, closer_name?: string, feedback?: string }) => void;
   addShiftTransaction: (type: ShiftTransaction['type'], amount: number, reason: string, extras?: ShiftTransactionExtras) => void;
@@ -526,6 +527,7 @@ export const useStore = create<AppState>((set, get) => ({
   cartTotals: { subtotal: 0, discount: 0, total: 0 },
   orders: [],
   currentShift: null,
+  reportShifts: [],
   currentSession: null,
 
   // --- Cart Actions ---
@@ -755,7 +757,10 @@ export const useStore = create<AppState>((set, get) => ({
         id: 'init', time: new Date().toISOString(), type: 'OPENING', amount: startCash, user_id: staffName
       }]
     };
-    set({ currentShift: newShift });
+    set((state) => ({
+      currentShift: newShift,
+      reportShifts: [newShift, ...state.reportShifts.filter((shift) => shift.id !== newShift.id)]
+    }));
     void backend.upsertShift(newShift).catch(() => { });
   },
 
@@ -818,7 +823,10 @@ export const useStore = create<AppState>((set, get) => ({
       // But for the UI to know there is no *active* shift, null is better, 
       // or we keep the closed shift in view until a new one starts.
       // Let's keep it as closed in state, but StoreControl checks status === 'OPEN'
-      return { currentShift: updatedShift };
+      return {
+        currentShift: updatedShift,
+        reportShifts: state.reportShifts.map((reportShift) => reportShift.id === updatedShift.id ? updatedShift : reportShift)
+      };
     });
   },
 
@@ -843,7 +851,10 @@ export const useStore = create<AppState>((set, get) => ({
         transactions: [...state.currentShift.transactions, newTransaction]
       };
       void backend.upsertShift(updatedShift).catch(() => { });
-      return { currentShift: updatedShift };
+      return {
+        currentShift: updatedShift,
+        reportShifts: state.reportShifts.map((reportShift) => reportShift.id === updatedShift.id ? updatedShift : reportShift)
+      };
     });
   },
 
@@ -859,7 +870,10 @@ export const useStore = create<AppState>((set, get) => ({
       };
 
       void backend.upsertShift(updatedShift).catch(() => { });
-      return { currentShift: updatedShift };
+      return {
+        currentShift: updatedShift,
+        reportShifts: state.reportShifts.map((reportShift) => reportShift.id === updatedShift.id ? updatedShift : reportShift)
+      };
     });
   },
 
@@ -934,6 +948,7 @@ export const useStore = create<AppState>((set, get) => ({
         orders: [],
         stockLogs: [],
         currentShift: null,
+        reportShifts: [],
         currentSession: null,
         // If not keeping catalog, clear it too
         products: keepCatalog ? get().products : [],
