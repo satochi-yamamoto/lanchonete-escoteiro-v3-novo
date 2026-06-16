@@ -25,6 +25,7 @@
 - **State Syncing**: The Zustand store (`src/store.ts`) handles both local state updates and remote persistence/synchronization via Supabase Realtime subscriptions.
 - **Promotion Engine**: Complex discount rules (BOGO, Bundles, % off) are calculated in `src/services/promotionEngine.ts`.
 - **Role-Based Access Control (RBAC)**: Basic security implemented in `App.tsx` based on user roles (`ADMIN`, `MANAGER`, `CASHIER`, `KITCHEN`).
+- **POS Shift Opening Rules**: Shift opening data drives virtual daily burger products in `src/constants/fixedProducts.ts`: `00 - Chefe`, `01 - Escoteiro`, `02 - Extra`, and `03 - Vegano` only when vegan quantity is planned. The POS gear opens an internal opening-adjustment screen persisted by `updateShiftOpeningData()`. The POS daily burger area shows quantity availability (`Planejado`, `Vendido`, `Disponível`) plus a sales-versus-product-cost summary.
 
 ---
 
@@ -54,6 +55,7 @@ To set up the database, execute the following scripts in the Supabase SQL Editor
 - `src/services/`: Business logic, including `promotionEngine.ts` and `backend/` integration.
 - `src/store.ts`: The central source of truth for the application state.
 - `src/types.ts`: Unified TypeScript interfaces and enums for the entire project.
+- `src/constants/fixedProducts.ts`: Fixed daily burger products and shared `computeBurgerPlan` rules.
 - `supabase/`: SQL migration scripts and configuration.
 
 ---

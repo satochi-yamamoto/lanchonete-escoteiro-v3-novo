@@ -25,7 +25,9 @@ Interface destinada aos operadores de caixa para lançamento de pedidos e gestã
 *   **Gestão de Turno (Caixa):**
     *   Abertura de caixa com fundo inicial e **planejamento operacional**: custo total de produtos, quantidade planejada de lanches normais/veganos, **quantidade de lanches para Chefes**, **quantidade de Escoteiros/Extra** (calculada = Normal + Vegano − Chefes, somente leitura), custo unitário e nome do cardápio do dia.
     *   **Valor unitário sugerido** rateia o custo total apenas pelos lanches **pagantes** (Escoteiros/Extra), já que os lanches de Chefes têm preço R$ 0,00. Recalcula automaticamente ao alterar a quantidade de Chefes (helper compartilhado `computeBurgerPlan`).
-    *   **Lanches fixos no caixa:** três produtos sempre disponíveis no topo do catálogo — `00 - Chefe` (R$ 0,00), `01 - Escoteiro` e `02 - Extra` (valor unitário da abertura). São produtos virtuais derivados do turno (`buildShiftFixedProducts`), sem poluir o catálogo.
+    *   **Lanches fixos no caixa:** produtos virtuais no topo do catálogo — `00 - Chefe` (R$ 0,00), `01 - Escoteiro`, `02 - Extra` e `03 - Vegano` quando a abertura tiver quantidade vegana maior que zero. São derivados do turno (`buildShiftFixedProducts`) e não poluem o catálogo.
+    *   **Indicadores dos lanches do dia:** tabela de quantidade com `Planejado`, `Vendido` e `Disponível` para Chefe, Lanche Vegano (se houver planejamento) e Lanche Escoteiros/Extra; abaixo dela, tabela financeira com total vendido do turno, custo dos produtos/ingredientes da abertura e valor que falta para cobrir esse custo. Pedidos cancelados não entram no cálculo.
+    *   **Ajuste de abertura no PDV:** a engrenagem lateral abre a tela interna **Ajustar Abertura do Caixa**, que carrega os dados do turno atual e persiste correções via `updateShiftOpeningData`. Quando o fundo de caixa é alterado, o caixa teórico (`current_cash`) recebe apenas o delta, preservando movimentações já registradas.
     *   Registro de movimentações: **Suprimento** (ADD), **Sangria** (DROP) e **Reembolsos** (REIMBURSEMENT).
     *   Fechamento de caixa **pré-preenchido com os dados da abertura** (cardápio, custo do lanche e total produzido). Alterações em relação à abertura são gravadas como **histórico de ajustes** (`shift.adjustments`) para auditoria. Métricas: consumo de bebidas (litros), custo de hambúrgueres, produção, sobras, nome do responsável e feedback.
     *   Relatório Z Térmico para impressão em bobinas.
@@ -157,8 +159,8 @@ Painel administrativo para gestão completa do negócio. Acesso: ADMIN.
 4.  **Reposição:** Gerente lança `RECEIVE` no Admin para repor estoque.
 
 ### 3. Fluxo Financeiro e de Caixa (Shift Flow)
-1.  **Abertura:** Operador abre o caixa informando fundo inicial e dados de planejamento operacional (incluindo lanches de Chefes e o cálculo de Escoteiros/Extra).
-2.  **Operação:** Vendas em dinheiro somam ao saldo esperado. Os lanches fixos (Chefe/Escoteiro/Extra) ficam disponíveis no topo do caixa.
+1.  **Abertura:** Operador abre o caixa informando fundo inicial e dados de planejamento operacional (incluindo lanches de Chefes, Veganos e o cálculo de Escoteiros/Extra).
+2.  **Operação:** Vendas em dinheiro somam ao saldo esperado. Os lanches fixos (Chefe/Escoteiro/Extra/Vegano, quando planejado) ficam disponíveis no topo do caixa, junto das tabelas de disponibilidade e vendido versus custo.
 3.  **Movimentações:**
     *   **DROP (Sangria):** Retirada de dinheiro do caixa.
     *   **ADD (Suprimento):** Entrada de dinheiro no caixa.
@@ -193,7 +195,7 @@ src/
 │   └── seedTestData.ts   # Dados de seed para testes
 ├── constants/
 │   ├── messages.ts       # Mensagens centralizadas (erros, sucesso, info)
-│   └── fixedProducts.ts  # Lanches fixos do caixa (Chefe/Escoteiro/Extra) e computeBurgerPlan
+│   └── fixedProducts.ts  # Lanches fixos do caixa (Chefe/Escoteiro/Extra/Vegano) e computeBurgerPlan
 ├── store.ts              # Gerenciamento de Estado Global Zustand (~35KB)
 ├── types.ts              # Definições de Tipos TypeScript (Interfaces centrais)
 └── utils.ts              # Utilitários

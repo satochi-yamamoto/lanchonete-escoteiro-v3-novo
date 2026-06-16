@@ -88,7 +88,9 @@ npm run backup    # Backup do banco de dados Supabase
 ### Gestão de Turno (Caixa)
 - **Abertura com Planejamento Operacional**: Ao abrir turno, informar custo dos produtos, quantidade planejada de lanches normais/veganos, **quantidade de lanches para Chefes** (o total de **Escoteiros/Extra** é calculado automaticamente = Normal + Vegano − Chefes), custo unitário e nome do cardápio do dia.
 - **Valor Unitário Sugerido**: Rateado apenas pelos lanches pagantes (Escoteiros/Extra), pois os lanches de **Chefes** custam R$ 0,00.
-- **Lanches Fixos no Caixa**: `00 - Chefe` (R$ 0,00), `01 - Escoteiro` e `02 - Extra` (valor unitário da abertura) sempre disponíveis no topo do catálogo.
+- **Lanches Fixos no Caixa**: `00 - Chefe` (R$ 0,00), `01 - Escoteiro`, `02 - Extra` e `03 - Vegano` quando houver quantidade vegana planejada. Todos ficam no topo do catálogo e são derivados da abertura, sem entrar no cadastro normal de produtos.
+- **Ajuste de Abertura pelo PDV**: A engrenagem do PDV abre a tela **Ajustar Abertura do Caixa**, carregando os dados da abertura para correção pelo operador. Alterações no fundo de caixa ajustam o caixa teórico pela diferença.
+- **Painéis de Lanches do Dia**: O PDV mostra a disponibilidade por tipo de lanche (`Planejado`, `Vendido`, `Disponível`) e um resumo financeiro com **Total Vendido**, **Custo dos Produtos/Ingredientes** e **Falta para Atingir o Custo**.
 - **Fechamento pré-preenchido**: O formulário de fechamento traz os dados da abertura (cardápio, custo e total produzido); alterações são gravadas como **histórico de ajustes** para auditoria.
 - **Transações**: OPENING, SALE, DROP (sangria), ADD (suprimento), REIMBURSEMENT, CLOSING.
 - **Relatório Z Térmico**: Impressão nativa formatada para bobinas de impressoras térmicas.

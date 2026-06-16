@@ -62,7 +62,7 @@ supabase/
 ### Pedidos e Vendas
 - **Order**: Transação central com status (`PENDING` → `PAID` → `PREPARING` → `READY` → `PARTIAL` → `DELIVERED`)
 - **CartItem**: Item no carrinho/pedido com modificadores e observações
-- **Shift**: Sessão de trabalho financeira (abertura/fechamento de caixa)
+- **Shift**: Sessão de trabalho financeira (abertura/fechamento de caixa). A abertura guarda custo de produtos/ingredientes, quantidades planejadas de lanches normais/veganos/Chefes, quantidade calculada de Escoteiros/Extra, custo unitário e nome do lanche do dia.
 - **StoreSession**: Sessão da loja (expediente diário)
 
 ### Catálogo e Estoque
@@ -74,6 +74,12 @@ supabase/
 ### Usuários
 - **User**: Usuário com role (ADMIN/MANAGER/CASHIER/KITCHEN) e PIN
 - **Scout**: Cadastro de clientes (sistema de fidelidade Escoteiros)
+
+### Regras Atuais do POS Escoteiro
+- Os lanches fixos do dia são produtos virtuais derivados do turno por `buildShiftFixedProducts()`: `00 - Chefe`, `01 - Escoteiro`, `02 - Extra` e `03 - Vegano` apenas quando houver quantidade vegana planejada.
+- `computeBurgerPlan({ normal, vegan, chefe })` centraliza total, validação de Chefes e cálculo de Escoteiros/Extra.
+- A engrenagem do PDV abre a tela interna **Ajustar Abertura do Caixa**, carregando dados da abertura e salvando correções via `updateShiftOpeningData()`.
+- O topo do PDV mostra tabelas para disponibilidade (`Planejado`, `Vendido`, `Disponível`) e resumo financeiro (`Total Vendido`, custo de produtos/ingredientes e falta para cobrir o custo). Pedidos cancelados não entram nos cálculos.
 
 ## Configuração e Execução
 

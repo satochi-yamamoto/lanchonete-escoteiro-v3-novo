@@ -51,8 +51,13 @@ Para o sistema funcionar corretamente, siga esta ordem diária:
 **Abertura de Caixa:**
 1.  Selecione o módulo **Terminal PDV**.
 2.  Se a loja estiver aberta, você verá a tela de abertura.
-3.  Informe seu **Nome**, **ID do Terminal** (ex: CX-01) e o **Fundo de Caixa** (dinheiro inicial).
+3.  Informe seu **Nome**, **Terminal**, **Fundo de Caixa**, nome do lanche do dia, custo dos produtos/ingredientes e as quantidades planejadas de lanche normal, vegano e Chefes. O sistema calcula automaticamente a quantidade de **Escoteiros/Extra**.
 4.  Clique em **ABRIR CAIXA**.
+
+**Lanches do Dia:**
+*   No topo do catálogo aparecem os lanches fixos: **00 - Chefe**, **01 - Escoteiro**, **02 - Extra** e **03 - Vegano** quando houver quantidade vegana planejada.
+*   A tabela abaixo mostra **Planejado**, **Vendido** e **Disponível** para cada tipo de lanche.
+*   A segunda tabela mostra **Total Vendido**, **Custo dos Produtos/Ingredientes** e quanto ainda falta para atingir esse custo.
 
 **Realizando uma Venda:**
 1.  Toque nos produtos no catálogo (centro da tela) para adicionar ao carrinho.
@@ -62,7 +67,8 @@ Para o sistema funcionar corretamente, siga esta ordem diária:
 5.  Confirme o recebimento para finalizar.
 
 **Funções Extras (Menu Lateral):**
-*   **⚙️ Ajustes (Shift)**: Para registrar **Sangria** (retirada de dinheiro) ou **Suprimento** (entrada de troco).
+*   **⚙️ Ajustar Abertura**: Abre uma tela com os dados da abertura do caixa para corrigir operador, terminal, fundo de caixa, cardápio, custo e quantidades planejadas.
+*   **📊 Relatórios**: Acessa relatórios do turno, incluindo fechamento de caixa.
 *   **🔴 Fechar Turno**: Encerra suas atividades e exibe o resumo financeiro do caixa.
 
 ---
