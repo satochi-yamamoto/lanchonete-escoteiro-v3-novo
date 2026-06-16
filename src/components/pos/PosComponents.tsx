@@ -195,18 +195,26 @@ export type PinnedProductAvailabilityRow = {
     available: number;
 };
 
+export type PinnedSalesSummary = {
+    totalSold: number;
+    productCost: number;
+    remainingToCost: number;
+};
+
 export const ProductGrid = ({
     products,
     onAdd,
     onCreateProduct,
     pinnedProducts = [],
-    pinnedAvailability = []
+    pinnedAvailability = [],
+    pinnedSalesSummary
 }: {
     products: Product[],
     onAdd: (p: Product) => void,
     onCreateProduct?: (p: Product) => void,
     pinnedProducts?: Product[],
-    pinnedAvailability?: PinnedProductAvailabilityRow[]
+    pinnedAvailability?: PinnedProductAvailabilityRow[],
+    pinnedSalesSummary?: PinnedSalesSummary
 }) => {
     const [category, setCategory] = useState<string>('Todos');
     const [stationFilter, setStationFilter] = useState<Station | 'ALL'>('ALL');
@@ -360,7 +368,7 @@ export const ProductGrid = ({
                                         <tr className="text-left text-[11px] font-black uppercase tracking-wider">
                                             <th className="px-3 py-2">Tipo</th>
                                             <th className="px-3 py-2 text-right">Planejado</th>
-                                            <th className="px-3 py-2 text-right">Usado</th>
+                                            <th className="px-3 py-2 text-right">Vendido</th>
                                             <th className="px-3 py-2 text-right">Disponível</th>
                                         </tr>
                                     </thead>
@@ -375,6 +383,32 @@ export const ProductGrid = ({
                                                 </td>
                                             </tr>
                                         ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                        {pinnedSalesSummary && (
+                            <div className="mt-3 overflow-hidden rounded-lg border border-cooper-line bg-white">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-cooper-panel text-cooper-muted">
+                                        <tr className="text-left text-[11px] font-black uppercase tracking-wider">
+                                            <th className="px-3 py-2 text-right">Total Vendido</th>
+                                            <th className="px-3 py-2 text-right">Custo dos Produtos/Ingredientes</th>
+                                            <th className="px-3 py-2 text-right">Falta para Atingir o Custo</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr className="text-cooper-ink">
+                                            <td className="px-3 py-2 text-right font-black text-cooper-leaf tabular-nums">
+                                                {formatCurrency(pinnedSalesSummary.totalSold)}
+                                            </td>
+                                            <td className="px-3 py-2 text-right font-bold tabular-nums">
+                                                {formatCurrency(pinnedSalesSummary.productCost)}
+                                            </td>
+                                            <td className={`px-3 py-2 text-right font-black tabular-nums ${pinnedSalesSummary.remainingToCost > 0 ? 'text-red-600' : 'text-cooper-leaf'}`}>
+                                                {formatCurrency(pinnedSalesSummary.remainingToCost)}
+                                            </td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>

@@ -582,6 +582,21 @@ export const POS = ({
         };
     }, [fixedProductAvailability]);
 
+    const fixedSalesSummary = useMemo(() => {
+        if (!currentShift) return undefined;
+
+        const totalSold = orders
+            .filter((order) => order.shift_id === currentShift.id && order.status !== OrderStatus.CANCELLED)
+            .reduce((total, order) => total + order.total, 0);
+        const productCost = currentShift.opening_product_cost_total ?? 0;
+
+        return {
+            totalSold,
+            productCost,
+            remainingToCost: Math.max(0, productCost - totalSold)
+        };
+    }, [currentShift, orders]);
+
     // Lanches fixos do caixa com preço derivado da abertura.
     const shiftFixedProducts = useMemo(
         () => buildShiftFixedProducts(currentShift?.opening_unit_cost, {
@@ -1073,6 +1088,7 @@ export const POS = ({
                             products={products}
                             pinnedProducts={shiftFixedProducts}
                             pinnedAvailability={fixedProductAvailability}
+                            pinnedSalesSummary={fixedSalesSummary}
                             onAdd={(p) => {
                                 if (cart.length >= maxItemsPerOrder) {
                                     alert(`Limite de ${maxItemsPerOrder} itens por pedido atingido.`);
