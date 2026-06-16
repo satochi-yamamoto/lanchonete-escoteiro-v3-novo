@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { calculateOpeningUnitCost, isOpeningShiftInputValid } from './apps/POS';
-import { buildShiftFixedProducts } from './constants/fixedProducts';
+import { buildShiftFixedProducts, computeBurgerPlan } from './constants/fixedProducts';
 import { useStore } from './store';
 import { OrderStatus, OrderType, PaymentMethod } from './types';
 
@@ -9,9 +9,11 @@ describe('Reestruturação inicial do POS', () => {
     useStore.setState(useStore.getInitialState(), true);
   });
 
-  it('calcula o valor unitário sugerido pela quantidade total de lanches', () => {
-    expect(calculateOpeningUnitCost(500, 80, 20)).toBe(5);
-    expect(calculateOpeningUnitCost(500, 0, 0)).toBe(0);
+  it('calcula o valor unitário sugerido pela quantidade de lanches pagantes (Escoteiros/Extra)', () => {
+    // 500 custo / 90 pagantes (100 total - 10 chefes) = 5,5556
+    expect(calculateOpeningUnitCost(500, 90)).toBeCloseTo(5.5556, 4);
+    expect(calculateOpeningUnitCost(450, 90)).toBe(5);
+    expect(calculateOpeningUnitCost(500, 0)).toBe(0);
   });
 
   it('bloqueia dados de abertura sem quantidade planejada', () => {
@@ -78,6 +80,29 @@ describe('Reestruturação inicial do POS', () => {
     expect(isOpeningShiftInputValid({ ...base, chefeQty: -1 })).toBe(false);
     // chefeQty é opcional e assume 0
     expect(isOpeningShiftInputValid(base)).toBe(true);
+  });
+
+  it('centraliza o plano de lanches (total, chefe e escoteiro/extra)', () => {
+    expect(computeBurgerPlan({ normal: 80, vegan: 20, chefe: 10 })).toEqual({
+      total: 100,
+      chefe: 10,
+      escoteiroExtra: 90,
+      chefeExceedsTotal: false
+    });
+    // Chefe acima do total: escoteiro/extra nunca fica negativo e sinaliza excesso
+    expect(computeBurgerPlan({ normal: 10, vegan: 0, chefe: 15 })).toEqual({
+      total: 10,
+      chefe: 15,
+      escoteiroExtra: 0,
+      chefeExceedsTotal: true
+    });
+    // Valores não-finitos são tratados como 0
+    expect(computeBurgerPlan({ normal: NaN, vegan: 5, chefe: NaN })).toEqual({
+      total: 5,
+      chefe: 0,
+      escoteiroExtra: 5,
+      chefeExceedsTotal: false
+    });
   });
 
   it('monta os lanches fixos do caixa com preços derivados da abertura', () => {

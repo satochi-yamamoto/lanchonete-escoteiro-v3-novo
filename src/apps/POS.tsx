@@ -3,14 +3,15 @@ import { useStore } from '../store';
 import { OrderType, Product, PaymentMethod, Order, ShiftTransaction } from '../types';
 import { Button, formatCurrency } from '../components/ui';
 import { ProductGrid, CartPanel, CashPaymentModal, ShiftPanel, SuccessModal, ZReportModal, CashClosingReportModal } from '../components/pos/PosComponents';
-import { Settings, LogOut, User, Lock, Monitor, Power, ShoppingCart, X, BarChart2, FileText, ChevronRight, Banknote, QrCode, Hash } from 'lucide-react';
+import { Settings, LogOut, User, Lock, Monitor, Power, ShoppingCart, X, BarChart2, FileText, ChevronRight, Banknote, QrCode, Hash, Plus, Trash2 } from 'lucide-react';
 import { printReceipt } from '../utils';
-import { buildShiftFixedProducts } from '../constants/fixedProducts';
+import { buildShiftFixedProducts, computeBurgerPlan } from '../constants/fixedProducts';
 
-export const calculateOpeningUnitCost = (totalCost: number, normalBurgers: number, veganBurgers: number) => {
-    const totalBurgers = normalBurgers + veganBurgers;
-    if (totalBurgers <= 0) return 0;
-    return totalCost / totalBurgers;
+// O valor unitário sugerido rateia o custo apenas entre os lanches pagantes
+// (Escoteiros/Extra), já que os lanches de Chefes têm preço R$ 0,00.
+export const calculateOpeningUnitCost = (totalCost: number, payableBurgers: number) => {
+    if (!Number.isFinite(payableBurgers) || payableBurgers <= 0) return 0;
+    return totalCost / payableBurgers;
 };
 
 export const isOpeningShiftInputValid = ({
@@ -34,7 +35,7 @@ export const isOpeningShiftInputValid = ({
     finalUnitCost: number;
     chefeQty?: number;
 }) => {
-    const totalPlanned = normalQty + veganQty;
+    const plan = computeBurgerPlan({ normal: normalQty, vegan: veganQty, chefe: chefeQty });
     return (
         startCash >= 0 &&
         Boolean(operatorName.trim()) &&
@@ -46,12 +47,128 @@ export const isOpeningShiftInputValid = ({
         normalQty >= 0 &&
         Number.isFinite(veganQty) &&
         veganQty >= 0 &&
-        totalPlanned > 0 &&
+        plan.total > 0 &&
         Number.isFinite(finalUnitCost) &&
         finalUnitCost >= 0 &&
         Number.isFinite(chefeQty) &&
         chefeQty >= 0 &&
-        chefeQty <= totalPlanned
+        !plan.chefeExceedsTotal
+    );
+};
+
+type OpeningCostDetail = {
+    id: string;
+    reimbursedName: string;
+    amount: string;
+};
+
+const createOpeningCostDetail = (): OpeningCostDetail => ({
+    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    reimbursedName: '',
+    amount: ''
+});
+
+const getOpeningCostDetailsTotal = (details: OpeningCostDetail[]) => (
+    details.reduce((total, detail) => {
+        const amount = parseFloat(detail.amount || '0');
+        return total + (Number.isFinite(amount) ? amount : 0);
+    }, 0)
+);
+
+const OpeningCostDetailsModal = ({
+    details,
+    onChange,
+    onClose,
+    onApply
+}: {
+    details: OpeningCostDetail[];
+    onChange: (details: OpeningCostDetail[]) => void;
+    onClose: () => void;
+    onApply: () => void;
+}) => {
+    const total = getOpeningCostDetailsTotal(details);
+
+    const updateDetail = (id: string, field: keyof Omit<OpeningCostDetail, 'id'>, value: string) => {
+        onChange(details.map((detail) => (
+            detail.id === id ? { ...detail, [field]: value } : detail
+        )));
+    };
+
+    const addDetail = () => {
+        onChange([...details, createOpeningCostDetail()]);
+    };
+
+    const removeDetail = (id: string) => {
+        const nextDetails = details.filter((detail) => detail.id !== id);
+        onChange(nextDetails.length > 0 ? nextDetails : [createOpeningCostDetail()]);
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-cooper-surface rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col border border-cooper-line">
+                <div className="p-5 border-b flex items-center justify-between gap-4">
+                    <div>
+                        <h2 className="text-xl font-bold text-cooper-ink">Detalhar Reembolsos</h2>
+                        <p className="text-sm text-gray-500">Informe o nome do reembolsado e o valor de cada item.</p>
+                    </div>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-2">
+                        <X size={22} />
+                    </button>
+                </div>
+
+                <div className="p-5 overflow-y-auto space-y-3">
+                    <div className="hidden sm:grid sm:grid-cols-[1fr_150px_44px] gap-3 text-xs font-bold uppercase text-gray-500 px-1">
+                        <span>Nome do reembolsado</span>
+                        <span>Valor</span>
+                        <span className="sr-only">Remover</span>
+                    </div>
+                    {details.map((detail) => (
+                        <div key={detail.id} className="grid grid-cols-[1fr_44px] sm:grid-cols-[1fr_150px_44px] gap-3 items-center">
+                            <input
+                                type="text"
+                                value={detail.reimbursedName}
+                                onChange={e => updateDetail(detail.id, 'reimbursedName', e.target.value)}
+                                className="col-span-2 sm:col-span-1 w-full border p-3 rounded-lg bg-gray-50 focus:bg-white transition-colors"
+                                placeholder="Ex: Maria Silva"
+                            />
+                            <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={detail.amount}
+                                onChange={e => updateDetail(detail.id, 'amount', e.target.value)}
+                                className="w-full border p-3 rounded-lg text-right font-bold"
+                                placeholder="0.00"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => removeDetail(detail.id)}
+                                className="h-11 w-11 rounded-lg border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 flex items-center justify-center"
+                                title="Remover linha"
+                                aria-label="Remover linha"
+                            >
+                                <Trash2 size={16} />
+                            </button>
+                        </div>
+                    ))}
+
+                    <Button variant="secondary" onClick={addDetail} className="w-full">
+                        <Plus size={16} /> Inserir novo
+                    </Button>
+                </div>
+
+                <div className="p-5 border-t bg-cooper-panel flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <p className="text-xs font-bold uppercase text-gray-500">Total calculado</p>
+                        <p className="text-2xl font-black text-cooper-leaf">{formatCurrency(total)}</p>
+                    </div>
+                    <div className="flex gap-3">
+                        <Button variant="secondary" onClick={onClose}>Cancelar</Button>
+                        <Button onClick={onApply}>Aplicar total</Button>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 };
 
@@ -88,6 +205,8 @@ export const POS = ({
     const [terminalId, setTerminalId] = useState('');
     const [dailyMenuName, setDailyMenuName] = useState('');
     const [openingProductCostTotal, setOpeningProductCostTotal] = useState('');
+    const [openingCostDetails, setOpeningCostDetails] = useState<OpeningCostDetail[]>([createOpeningCostDetail()]);
+    const [showOpeningCostDetails, setShowOpeningCostDetails] = useState(false);
     const [plannedNormalBurgers, setPlannedNormalBurgers] = useState('');
     const [plannedVeganBurgers, setPlannedVeganBurgers] = useState('');
     const [plannedChefeBurgers, setPlannedChefeBurgers] = useState('0');
@@ -119,21 +238,25 @@ export const POS = ({
     const parsedOpeningCost = parseFloat(openingProductCostTotal || '0');
     const parsedNormalBurgers = parseInt(plannedNormalBurgers || '0', 10);
     const parsedVeganBurgers = parseInt(plannedVeganBurgers || '0', 10);
-    const openingUnitCostSuggested = calculateOpeningUnitCost(
-        Number.isFinite(parsedOpeningCost) ? parsedOpeningCost : 0,
-        Number.isFinite(parsedNormalBurgers) ? parsedNormalBurgers : 0,
-        Number.isFinite(parsedVeganBurgers) ? parsedVeganBurgers : 0
-    );
 
     // Total de lanches = Normal + Vegano. Chefes é um recorte desse total;
     // o restante é destinado a Escoteiros/Extra (calculado, somente leitura).
-    const totalPlannedBurgers =
-        (Number.isFinite(parsedNormalBurgers) ? parsedNormalBurgers : 0) +
-        (Number.isFinite(parsedVeganBurgers) ? parsedVeganBurgers : 0);
+    // Regras centralizadas em computeBurgerPlan para não divergir da validação.
     const parsedChefeBurgers = parseInt(plannedChefeBurgers || '0', 10);
-    const safeChefeBurgers = Number.isFinite(parsedChefeBurgers) ? parsedChefeBurgers : 0;
-    const escoteiroExtraBurgers = Math.max(0, totalPlannedBurgers - safeChefeBurgers);
-    const chefeExceedsTotal = safeChefeBurgers > totalPlannedBurgers;
+    const burgerPlan = computeBurgerPlan({
+        normal: parsedNormalBurgers,
+        vegan: parsedVeganBurgers,
+        chefe: parsedChefeBurgers
+    });
+    const totalPlannedBurgers = burgerPlan.total;
+    const escoteiroExtraBurgers = burgerPlan.escoteiroExtra;
+    const chefeExceedsTotal = burgerPlan.chefeExceedsTotal;
+
+    // Sugestão baseada nos lanches pagantes (Escoteiros/Extra), pois Chefes = R$ 0,00.
+    const openingUnitCostSuggested = calculateOpeningUnitCost(
+        Number.isFinite(parsedOpeningCost) ? parsedOpeningCost : 0,
+        escoteiroExtraBurgers
+    );
 
     useEffect(() => {
         if (!openingUnitCostEdited) {
@@ -167,13 +290,13 @@ export const POS = ({
             finalUnitCost,
             chefeQty
         })) {
-            const totalQty = normalQty + veganQty;
+            const plan = computeBurgerPlan({ normal: normalQty, vegan: veganQty, chefe: chefeQty });
             openShift(operatorName.trim(), amount, terminalId, {
                 opening_product_cost_total: totalCost,
                 planned_normal_burgers: normalQty,
                 planned_vegan_burgers: veganQty,
                 planned_chefe_burgers: chefeQty,
-                planned_escoteiro_extra_burgers: Math.max(0, totalQty - chefeQty),
+                planned_escoteiro_extra_burgers: plan.escoteiroExtra,
                 opening_unit_cost_suggested: openingUnitCostSuggested,
                 opening_unit_cost: finalUnitCost,
                 daily_menu_name: dailyMenuName.trim()
@@ -181,6 +304,13 @@ export const POS = ({
         } else {
             alert("Preencha todos os campos corretamente.");
         }
+    };
+
+    const handleApplyOpeningCostDetails = () => {
+        const total = getOpeningCostDetailsTotal(openingCostDetails);
+        setOpeningProductCostTotal(total.toFixed(2));
+        setOpeningUnitCostEdited(false);
+        setShowOpeningCostDetails(false);
     };
 
     const handleCloseShift = () => {
@@ -269,100 +399,112 @@ export const POS = ({
     // 1. Shift Closed Screen
     if (!currentShift || currentShift.status === 'CLOSED') {
         return (
-            <div className="h-screen bg-cooper-canvas flex items-center justify-center p-4 cooper-subtle-grid">
-                <div className="bg-cooper-surface p-8 rounded-lg shadow-soft border border-cooper-line max-w-3xl w-full relative max-h-[92vh] overflow-y-auto">
-                    <button onClick={onExit} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-                        <LogOut size={20} />
-                    </button>
-                    <div className="flex justify-center mb-6">
-                        <div className="bg-cooper-leaf/10 p-4 rounded-lg text-cooper-leaf"><Lock size={32} /></div>
-                    </div>
-                    <h1 className="text-2xl font-bold text-center mb-2">Caixa Fechado</h1>
-
-                    {!currentSession ? (
-                        <div className="text-center">
-                            <p className="text-cooper-leaf font-bold mb-4">A LOJA ESTÁ FECHADA</p>
-                            <p className="text-gray-500 mb-6">Abra o expediente da loja no painel administrativo para liberar a abertura de caixa.</p>
-                            <Button variant="secondary" className="w-full" onClick={onExit}>VOLTAR AO MENU</Button>
+            <>
+                <div className="h-screen bg-cooper-canvas flex items-center justify-center p-4 cooper-subtle-grid">
+                    <div className="bg-cooper-surface p-8 rounded-lg shadow-soft border border-cooper-line max-w-3xl w-full relative max-h-[92vh] overflow-y-auto">
+                        <button onClick={onExit} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                            <LogOut size={20} />
+                        </button>
+                        <div className="flex justify-center mb-6">
+                            <div className="bg-cooper-leaf/10 p-4 rounded-lg text-cooper-leaf"><Lock size={32} /></div>
                         </div>
-                    ) : (
-                        <>
-                            <p className="text-gray-500 text-center mb-6">Inicie o turno para começar a vender.</p>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                                <div className="md:col-span-2">
-                                    <label className="block text-sm font-bold mb-1 text-gray-600">Operador</label>
-                                    <input
-                                        type="text"
-                                        value={operatorName}
-                                        onChange={e => setOperatorName(e.target.value)}
-                                        className="w-full border p-3 rounded-lg bg-gray-50 focus:bg-white transition-colors"
-                                        placeholder="Nome do Operador"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold mb-1 text-gray-600">Grupo Responsável pelo Caixa</label>
-                                    {activeTerminals.length > 0 ? (
-                                        <select
-                                            value={terminalId}
-                                            onChange={e => setTerminalId(e.target.value)}
+                        <h1 className="text-2xl font-bold text-center mb-2">Caixa Fechado</h1>
+
+                        {!currentSession ? (
+                            <div className="text-center">
+                                <p className="text-cooper-leaf font-bold mb-4">A LOJA ESTÁ FECHADA</p>
+                                <p className="text-gray-500 mb-6">Abra o expediente da loja no painel administrativo para liberar a abertura de caixa.</p>
+                                <Button variant="secondary" className="w-full" onClick={onExit}>VOLTAR AO MENU</Button>
+                            </div>
+                        ) : (
+                            <>
+                                <p className="text-gray-500 text-center mb-6">Inicie o turno para começar a vender.</p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-bold mb-1 text-gray-600">Operador</label>
+                                        <input
+                                            type="text"
+                                            value={operatorName}
+                                            onChange={e => setOperatorName(e.target.value)}
                                             className="w-full border p-3 rounded-lg bg-gray-50 focus:bg-white transition-colors"
-                                        >
-                                            {activeTerminals.map((terminal) => (
-                                                <option key={terminal.id} value={terminal.name}>
-                                                    {terminal.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    ) : (
-                                        <>
+                                            placeholder="Nome do Operador"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold mb-1 text-gray-600">Grupo Responsável pelo Caixa</label>
+                                        {activeTerminals.length > 0 ? (
+                                            <select
+                                                value={terminalId}
+                                                onChange={e => setTerminalId(e.target.value)}
+                                                className="w-full border p-3 rounded-lg bg-gray-50 focus:bg-white transition-colors"
+                                            >
+                                                {activeTerminals.map((terminal) => (
+                                                    <option key={terminal.id} value={terminal.name}>
+                                                        {terminal.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <>
+                                                <input
+                                                    type="text"
+                                                    value=""
+                                                    disabled
+                                                    className="w-full border p-3 rounded-lg bg-gray-100 text-gray-400"
+                                                    placeholder="Nenhum terminal ativo cadastrado"
+                                                />
+                                                <p className="text-xs text-amber-700 mt-1">
+                                                    Cadastre e ative um terminal no Admin para abrir o caixa.
+                                                </p>
+                                            </>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold mb-1 text-gray-600">Fundo de Caixa (R$)</label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            value={shiftStartAmount}
+                                            onChange={e => setShiftStartAmount(e.target.value)}
+                                            className="w-full border p-3 rounded-lg text-lg font-bold text-green-700"
+                                        />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-bold mb-1 text-gray-600">Nome do Lanche do Dia</label>
+                                        <input
+                                            type="text"
+                                            value={dailyMenuName}
+                                            onChange={e => setDailyMenuName(e.target.value)}
+                                            className="w-full border p-3 rounded-lg bg-gray-50 focus:bg-white transition-colors"
+                                            placeholder="Ex: Lanche Escoteiro"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold mb-1 text-gray-600">Custo dos Produtos/Ingredientes (R$)</label>
+                                        <div className="flex gap-2">
                                             <input
-                                                type="text"
-                                                value=""
-                                                disabled
-                                                className="w-full border p-3 rounded-lg bg-gray-100 text-gray-400"
-                                                placeholder="Nenhum terminal ativo cadastrado"
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                value={openingProductCostTotal}
+                                                onChange={e => {
+                                                    setOpeningProductCostTotal(e.target.value);
+                                                    setOpeningUnitCostEdited(false);
+                                                }}
+                                                className="w-full border p-3 rounded-lg"
+                                                placeholder="Ex: 450.00"
                                             />
-                                            <p className="text-xs text-amber-700 mt-1">
-                                                Cadastre e ative um terminal no Admin para abrir o caixa.
-                                            </p>
-                                        </>
-                                    )}
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold mb-1 text-gray-600">Fundo de Caixa (R$)</label>
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        value={shiftStartAmount}
-                                        onChange={e => setShiftStartAmount(e.target.value)}
-                                        className="w-full border p-3 rounded-lg text-lg font-bold text-green-700"
-                                    />
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label className="block text-sm font-bold mb-1 text-gray-600">Nome do Lanche do Dia</label>
-                                    <input
-                                        type="text"
-                                        value={dailyMenuName}
-                                        onChange={e => setDailyMenuName(e.target.value)}
-                                        className="w-full border p-3 rounded-lg bg-gray-50 focus:bg-white transition-colors"
-                                        placeholder="Ex: Lanche Escoteiro"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold mb-1 text-gray-600">Custo dos Produtos/Ingredientes (R$)</label>
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        value={openingProductCostTotal}
-                                        onChange={e => {
-                                            setOpeningProductCostTotal(e.target.value);
-                                            setOpeningUnitCostEdited(false);
-                                        }}
-                                        className="w-full border p-3 rounded-lg"
-                                        placeholder="Ex: 450.00"
-                                    />
-                                </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowOpeningCostDetails(true)}
+                                                className="h-[50px] w-[50px] shrink-0 rounded-lg bg-cooper-leaf text-white hover:bg-cooper-leafDark shadow-lift flex items-center justify-center"
+                                                title="Detalhar reembolsos"
+                                                aria-label="Detalhar reembolsos"
+                                            >
+                                                <Plus size={22} />
+                                            </button>
+                                        </div>
+                                    </div>
                                 <div>
                                     <label className="block text-sm font-bold mb-1 text-gray-600">Valor Unitário Sugerido/Editável (R$)</label>
                                     <input
@@ -445,8 +587,17 @@ export const POS = ({
                             <Button onClick={handleOpenShift} className="w-full py-4 text-lg shadow-xl">ABRIR CAIXA</Button>
                         </>
                     )}
+                    </div>
                 </div>
-            </div>
+                {showOpeningCostDetails && (
+                    <OpeningCostDetailsModal
+                        details={openingCostDetails}
+                        onChange={setOpeningCostDetails}
+                        onClose={() => setShowOpeningCostDetails(false)}
+                        onApply={handleApplyOpeningCostDetails}
+                    />
+                )}
+            </>
         );
     }
 

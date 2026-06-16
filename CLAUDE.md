@@ -102,6 +102,8 @@ When using Supabase, the app subscribes to PostgreSQL changes:
 
 Currently supported: **PIX** and **CASH** only. Payment method settings are persisted to localStorage under `omni_payment_settings`.
 
+In `CashPaymentModal`, when the "Valor recebido" (amount received) field is left empty and the operator confirms, the system assumes the full total to pay (exact payment, no change). Amounts typed below the total still block confirmation.
+
 ## Environment Configuration
 
 Create `.env.local` with:
@@ -128,6 +130,7 @@ Deployed on **Vercel**. Configuration in `vercel.json` and `.vercel/` directory.
 - `src/components/ui.tsx`: Shared UI components (Button, Card, Modal, etc.)
 - `src/components/LoginScreen.tsx`: PIN-based authentication screen
 - `src/constants/messages.ts`: Centralized system messages (errors, success, info)
+- `src/constants/fixedProducts.ts`: Fixed shift products (Chefe/Escoteiro/Extra) and `computeBurgerPlan` (shared opening burger-plan rules)
 - `vite.config.ts`: Vite config with path aliases (`@/` → `src/`), port 3000
 
 ## Component Organization
@@ -175,10 +178,12 @@ Test environment: jsdom (currently commented out in vite.config.ts for troublesh
 1. **Cart items** extend Product with `cartId` (unique instance ID), `selectedModifiers`, and `note`
 2. **Orders** contain a snapshot of cart items and calculated totals (subtotal, discount, total)
 3. **Shift transactions** track cash movements (OPENING, SALE, DROP, ADD, REIMBURSEMENT, CLOSING)
-4. **Shift opening** requires operational planning data (`ShiftOpeningData`): product costs, planned burger quantities, unit cost, daily menu name
-5. **Inventory**: Products can have a recipe (ingredient BOM) for automatic stock deduction on sale
-6. **Scouts**: Scout profiles with branch (ramo) and patrol (patrulha) for association tracking
-7. **Menu catalogs**: Named menus with active/inactive toggle for event-based operation
-8. **Terminal configs**: Named terminal configurations with operation date
-9. **Store sessions**: Business day open/close with user tracking
-10. **Path alias**: Use `@/` to reference `src/` directory
+4. **Shift opening** requires operational planning data (`ShiftOpeningData`): product cost total, planned normal/vegan quantities, planned **Chefes** count, derived **Escoteiros/Extra** count (= normal + vegan − chefes), unit cost, daily menu name. The shared helper `computeBurgerPlan({ normal, vegan, chefe })` in `src/constants/fixedProducts.ts` is the single source for total/derived quantities and validation. The suggested unit cost (`calculateOpeningUnitCost`) divides the product cost by the **payable** burgers (Escoteiros/Extra only), since Chefes are free.
+5. **Fixed shift products**: the POS pins three virtual products at the top of the catalog — `00 - Chefe` (always R$ 0,00), `01 - Escoteiro` and `02 - Extra` (priced at the shift's `opening_unit_cost`). Built by `buildShiftFixedProducts()`; not stored in the catalog.
+6. **Shift closing** (`ZReportModal`) pre-fills the closing form from the opening data (menu, unit cost, produced total). Any change vs. the opening is recorded as an audit entry in `shift.adjustments` (`ShiftAdjustment[]`), persisted to the `shifts.adjustments` JSONB column.
+7. **Inventory**: Products can have a recipe (ingredient BOM) for automatic stock deduction on sale
+8. **Scouts**: Scout profiles with branch (ramo) and patrol (patrulha) for association tracking
+9. **Menu catalogs**: Named menus with active/inactive toggle for event-based operation
+10. **Terminal configs**: Named terminal configurations with operation date
+11. **Store sessions**: Business day open/close with user tracking
+12. **Path alias**: Use `@/` to reference `src/` directory
