@@ -82,8 +82,8 @@ interface AppState {
   // Shift Management
   currentShift: Shift | null;
   reportShifts: Shift[];
-  openShift: (staffName: string, startCash: number, terminalId: string, openingData: ShiftOpeningData) => void;
-  closeShift: (metrics?: { drinks_liters?: number, burger_cost?: number, burgers_produced?: number, burgers_unsold?: number, menu_name?: string, closer_name?: string, feedback?: string }) => void;
+  openShift: (staffName: string, startCash: number, terminalId: string, openingData: ShiftOpeningData) => Promise<Shift | null>;
+  closeShift: (metrics?: { drinks_liters?: number, burger_cost?: number, burgers_produced?: number, burgers_unsold?: number, menu_name?: string, closer_name?: string, feedback?: string }) => Promise<Shift | null>;
   addShiftTransaction: (type: ShiftTransaction['type'], amount: number, reason: string, extras?: ShiftTransactionExtras) => void;
   updateShiftFixedProductPrice: (productId: string, price: number) => void;
 
@@ -297,7 +297,34 @@ export const useStore = create<AppState>((set, get) => ({
             }
           }
         },
-        // 3. Status Handler
+        // 3. Shifts Handler
+        (payload) => {
+          const { eventType, new: newRecord, old: oldRecord } = payload;
+          set((state) => {
+            if (eventType === 'DELETE') {
+              return {
+                currentShift: state.currentShift?.id === oldRecord.id ? null : state.currentShift,
+                reportShifts: state.reportShifts.filter((shift) => shift.id !== oldRecord.id)
+              };
+            }
+
+            const shift = newRecord as Shift;
+            const nextReportShifts = [
+              shift,
+              ...state.reportShifts.filter((reportShift) => reportShift.id !== shift.id)
+            ];
+
+            if (shift.status === 'OPEN') {
+              return { currentShift: shift, reportShifts: nextReportShifts };
+            }
+
+            return {
+              currentShift: state.currentShift?.id === shift.id ? shift : state.currentShift,
+              reportShifts: nextReportShifts
+            };
+          });
+        },
+        // 4. Status Handler
         (status) => set({ realtimeStatus: status })
       );
 
@@ -735,12 +762,12 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   // --- Shift Actions ---
-  openShift: (staffName, startCash, terminalId, openingData) => {
+  openShift: async (staffName, startCash, terminalId, openingData) => {
     const { currentSession } = get();
     // Validate: Cannot open shift if store is closed
     if (!currentSession || currentSession.status !== 'OPEN') {
       alert("A Loja está FECHADA. Abra o expediente da loja antes de abrir o caixa.");
-      return;
+      return null;
     }
 
     const newShift: Shift = {
@@ -757,77 +784,87 @@ export const useStore = create<AppState>((set, get) => ({
         id: 'init', time: new Date().toISOString(), type: 'OPENING', amount: startCash, user_id: staffName
       }]
     };
+
+    if (backend.kind === 'supabase') {
+      await backend.upsertShift(newShift);
+    }
+
     set((state) => ({
       currentShift: newShift,
       reportShifts: [newShift, ...state.reportShifts.filter((shift) => shift.id !== newShift.id)]
     }));
-    void backend.upsertShift(newShift).catch(() => { });
+    if (backend.kind !== 'supabase') {
+      void backend.upsertShift(newShift).catch((e) => console.error("Failed to open shift:", e));
+    }
+    return newShift;
   },
 
-  closeShift: (metrics?: { drinks_liters?: number, burger_cost?: number, burgers_produced?: number, burgers_unsold?: number, menu_name?: string, closer_name?: string, feedback?: string }) => {
-    set((state) => {
-      if (!state.currentShift) return {};
-      const shift = state.currentShift;
-      const now = new Date().toISOString();
-      const changedBy = metrics?.closer_name || shift.staff_name;
+  closeShift: async (metrics?: { drinks_liters?: number, burger_cost?: number, burgers_produced?: number, burgers_unsold?: number, menu_name?: string, closer_name?: string, feedback?: string }) => {
+    const shift = get().currentShift;
+    if (!shift) return null;
 
-      // Baseline planejado na abertura para comparar com o que foi informado no fechamento
-      const openingMenu = shift.daily_menu_name ?? null;
-      const openingCost = shift.opening_unit_cost ?? null;
-      const hasPlanned = shift.planned_normal_burgers != null || shift.planned_vegan_burgers != null;
-      const openingProduced = hasPlanned
-        ? (shift.planned_normal_burgers ?? 0) + (shift.planned_vegan_burgers ?? 0)
-        : null;
+    const now = new Date().toISOString();
+    const changedBy = metrics?.closer_name || shift.staff_name;
 
-      const adjustments: ShiftAdjustment[] = [...(shift.adjustments ?? [])];
-      const recordAdjustment = (
-        field: ShiftAdjustment['field'],
-        label: string,
-        previous: string | number | null,
-        next: string | number | null | undefined
-      ) => {
-        // Só registra quando havia um valor de abertura e ele de fato mudou
-        if (next === undefined || next === null || next === '') return;
-        if (previous === null || previous === undefined || previous === '') return;
-        // Tolerância numérica para evitar falsos ajustes por arredondamento (2 casas)
-        const unchanged = typeof previous === 'number' && typeof next === 'number'
-          ? Math.abs(previous - next) < 0.005
-          : previous === next;
-        if (unchanged) return;
-        adjustments.push({
-          id: newId(),
-          field,
-          label,
-          previous_value: previous,
-          new_value: next,
-          changed_at: now,
-          changed_by: changedBy
-        });
-      };
+    // Baseline planejado na abertura para comparar com o que foi informado no fechamento
+    const openingMenu = shift.daily_menu_name ?? null;
+    const openingCost = shift.opening_unit_cost ?? null;
+    const hasPlanned = shift.planned_normal_burgers != null || shift.planned_vegan_burgers != null;
+    const openingProduced = hasPlanned
+      ? (shift.planned_normal_burgers ?? 0) + (shift.planned_vegan_burgers ?? 0)
+      : null;
 
-      recordAdjustment('menu_name', 'Cardápio do Lanche', openingMenu, metrics?.menu_name);
-      recordAdjustment('burger_cost', 'Custo do Lanche', openingCost, metrics?.burger_cost);
-      recordAdjustment('burgers_produced', 'Total de Lanches Produzidos', openingProduced, metrics?.burgers_produced);
+    const adjustments: ShiftAdjustment[] = [...(shift.adjustments ?? [])];
+    const recordAdjustment = (
+      field: ShiftAdjustment['field'],
+      label: string,
+      previous: string | number | null,
+      next: string | number | null | undefined
+    ) => {
+      // Só registra quando havia um valor de abertura e ele de fato mudou
+      if (next === undefined || next === null || next === '') return;
+      if (previous === null || previous === undefined || previous === '') return;
+      // Tolerância numérica para evitar falsos ajustes por arredondamento (2 casas)
+      const unchanged = typeof previous === 'number' && typeof next === 'number'
+        ? Math.abs(previous - next) < 0.005
+        : previous === next;
+      if (unchanged) return;
+      adjustments.push({
+        id: newId(),
+        field,
+        label,
+        previous_value: previous,
+        new_value: next,
+        changed_at: now,
+        changed_by: changedBy
+      });
+    };
 
-      const updatedShift: Shift = {
-        ...shift,
-        ...metrics,
-        adjustments,
-        status: 'CLOSED',
-        closed_at: now
-      };
-      // Use a persistent action to update backend, but here we just trigger it
-      void backend.upsertShift(updatedShift).catch(() => { });
+    recordAdjustment('menu_name', 'Cardápio do Lanche', openingMenu, metrics?.menu_name);
+    recordAdjustment('burger_cost', 'Custo do Lanche', openingCost, metrics?.burger_cost);
+    recordAdjustment('burgers_produced', 'Total de Lanches Produzidos', openingProduced, metrics?.burgers_produced);
 
-      // IMPORTANT: We must set currentShift to null or update it to be closed
-      // But for the UI to know there is no *active* shift, null is better, 
-      // or we keep the closed shift in view until a new one starts.
-      // Let's keep it as closed in state, but StoreControl checks status === 'OPEN'
-      return {
-        currentShift: updatedShift,
-        reportShifts: state.reportShifts.map((reportShift) => reportShift.id === updatedShift.id ? updatedShift : reportShift)
-      };
-    });
+    const updatedShift: Shift = {
+      ...shift,
+      ...metrics,
+      adjustments,
+      status: 'CLOSED',
+      closed_at: now
+    };
+
+    if (backend.kind === 'supabase') {
+      await backend.upsertShift(updatedShift);
+    }
+
+    set((state) => ({
+      currentShift: updatedShift,
+      reportShifts: state.reportShifts.map((reportShift) => reportShift.id === updatedShift.id ? updatedShift : reportShift)
+    }));
+
+    if (backend.kind !== 'supabase') {
+      void backend.upsertShift(updatedShift).catch((e) => console.error("Failed to close shift:", e));
+    }
+    return updatedShift;
   },
 
   addShiftTransaction: (type, amount, reason, extras) => {

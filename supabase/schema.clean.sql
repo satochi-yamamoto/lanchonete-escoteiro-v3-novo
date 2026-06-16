@@ -84,6 +84,7 @@ create table if not exists public.orders (
   payment_method text,
   payment_info jsonb,
   shift_id text,
+  session_id text,
   terminal_id text,
   updated_at timestamptz not null default now()
 );
@@ -94,6 +95,7 @@ create table if not exists public.shifts (
   id text primary key,
   staff_name text not null,
   terminal_id text not null,
+  session_id text,
   opened_at timestamptz not null,
   closed_at timestamptz,
   start_cash numeric(10, 2) not null,
