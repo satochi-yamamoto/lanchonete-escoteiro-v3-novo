@@ -199,6 +199,63 @@ describe('Reestruturação inicial do POS', () => {
     expect(byField.burgers_produced).toBeUndefined();
   });
 
+  it('mantém caixas abertos e fechados no histórico local para relatórios', () => {
+    useStore.setState({
+      currentSession: {
+        id: 'session-1',
+        opened_at: new Date().toISOString(),
+        status: 'OPEN',
+        opened_by: 'Admin'
+      }
+    });
+
+    useStore.getState().openShift('Operador', 150, 'Grupo A', {
+      opening_product_cost_total: 500,
+      planned_normal_burgers: 80,
+      planned_vegan_burgers: 20,
+      planned_chefe_burgers: 10,
+      planned_escoteiro_extra_burgers: 90,
+      opening_unit_cost_suggested: 5,
+      opening_unit_cost: 6,
+      daily_menu_name: 'Lanche Escoteiro'
+    });
+
+    const firstShiftId = useStore.getState().currentShift?.id;
+
+    expect(useStore.getState().reportShifts).toHaveLength(1);
+    expect(useStore.getState().reportShifts[0]).toMatchObject({
+      id: firstShiftId,
+      status: 'OPEN',
+      staff_name: 'Operador'
+    });
+
+    useStore.getState().closeShift({
+      menu_name: 'Lanche Escoteiro',
+      burger_cost: 6,
+      burgers_produced: 100
+    });
+
+    expect(useStore.getState().reportShifts[0]).toMatchObject({
+      id: firstShiftId,
+      status: 'CLOSED'
+    });
+    expect(useStore.getState().reportShifts[0].closed_at).toBeDefined();
+
+    useStore.getState().openShift('Operador 2', 200, 'Grupo B', {
+      opening_product_cost_total: 300,
+      planned_normal_burgers: 40,
+      planned_vegan_burgers: 10,
+      planned_chefe_burgers: 5,
+      planned_escoteiro_extra_burgers: 45,
+      opening_unit_cost_suggested: 6,
+      opening_unit_cost: 7,
+      daily_menu_name: 'Lanche Especial'
+    });
+
+    expect(useStore.getState().reportShifts).toHaveLength(2);
+    expect(useStore.getState().reportShifts.map((shift) => shift.id)).toContain(firstShiftId);
+  });
+
   it('não registra ajuste quando o fechamento repete os dados da abertura', () => {
     useStore.setState({
       currentSession: {
