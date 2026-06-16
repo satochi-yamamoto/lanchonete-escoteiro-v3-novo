@@ -52,7 +52,7 @@ export const calculateCartTotals = (items: CartItem[], promotions: Promotion[]) 
 
           // Calcular o desconto deste bundle
           const originalBundlePrice = itemsInBundle.reduce((sum, item) => sum + item.price, 0);
-          discountAmount += (originalBundlePrice - promo.value);
+          discountAmount += Math.max(0, originalBundlePrice - promo.value);
         }
       }
     }

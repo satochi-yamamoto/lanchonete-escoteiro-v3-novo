@@ -1425,9 +1425,12 @@ export const ZReportModal = ({ shift, orders, onClose, onConfirmClose }: any) =>
     const hasOpeningProduced = shift.planned_normal_burgers != null || shift.planned_vegan_burgers != null;
     const openingCost = shift.opening_unit_cost;
     const openingMenu = shift.daily_menu_name;
+    const openingDrinksLiters = shift.opening_drinks_liters;
 
     const [metrics, setMetrics] = useState({
-        drinks_liters: shift.drinks_liters != null ? String(shift.drinks_liters) : '',
+        drinks_liters: shift.drinks_liters != null
+            ? String(shift.drinks_liters)
+            : (openingDrinksLiters != null ? String(openingDrinksLiters) : ''),
         burger_cost: shift.burger_cost != null
             ? String(shift.burger_cost)
             : (openingCost != null ? Number(openingCost).toFixed(2) : ''),
@@ -1490,6 +1493,7 @@ export const ZReportModal = ({ shift, orders, onClose, onConfirmClose }: any) =>
             shift.opening_product_cost_total !== undefined ? `CUSTO INSUMOS:   ${formatCurrency(shift.opening_product_cost_total)}` : null,
             shift.planned_normal_burgers !== undefined ? `LANCHE NORMAL:   ${shift.planned_normal_burgers} un` : null,
             shift.planned_vegan_burgers !== undefined ? `LANCHE VEGANO:   ${shift.planned_vegan_burgers} un` : null,
+            shift.opening_drinks_liters !== undefined ? `BEBIDA PLANEJ.:  ${shift.opening_drinks_liters} L` : null,
             shift.opening_unit_cost_suggested !== undefined ? `UNIT. SUGERIDO:  ${formatCurrency(shift.opening_unit_cost_suggested)}` : null,
             shift.opening_unit_cost !== undefined ? `UNIT. FINAL:     ${formatCurrency(shift.opening_unit_cost)}` : null,
             "--------------------------------",
@@ -1664,6 +1668,11 @@ export const ZReportModal = ({ shift, orders, onClose, onConfirmClose }: any) =>
                                     onChange={e => setMetrics({...metrics, drinks_liters: e.target.value})}
                                     placeholder="Ex: 15.5"
                                 />
+                                {openingDrinksLiters != null && (
+                                    <p className="text-xs text-blue-700 mt-1">
+                                        Abertura: <strong>{openingDrinksLiters} L</strong>
+                                    </p>
+                                )}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-blue-800 mb-1">Preço de custo do lanche (R$)?</label>

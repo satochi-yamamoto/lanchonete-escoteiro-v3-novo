@@ -110,6 +110,7 @@ create table if not exists public.shifts (
   opening_unit_cost_suggested numeric(10, 2),
   opening_unit_cost numeric(10, 2),
   daily_menu_name text,
+  opening_drinks_liters numeric(10, 2),
   drinks_liters numeric(10, 2),
   burger_cost numeric(10, 2),
   burgers_produced integer,
