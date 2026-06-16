@@ -85,6 +85,7 @@ interface AppState {
   openShift: (staffName: string, startCash: number, terminalId: string, openingData: ShiftOpeningData) => Promise<Shift | null>;
   closeShift: (metrics?: { drinks_liters?: number, burger_cost?: number, burgers_produced?: number, burgers_unsold?: number, menu_name?: string, closer_name?: string, feedback?: string }) => Promise<Shift | null>;
   addShiftTransaction: (type: ShiftTransaction['type'], amount: number, reason: string, extras?: ShiftTransactionExtras) => void;
+  addShiftTransactions: (transactions: Array<{ type: ShiftTransaction['type']; amount: number; reason: string; extras?: ShiftTransactionExtras }>) => Promise<Shift | null>;
   updateShiftFixedProductPrice: (productId: string, price: number) => void;
 
   // Store Session (Business Day)
@@ -893,6 +894,48 @@ export const useStore = create<AppState>((set, get) => ({
         reportShifts: state.reportShifts.map((reportShift) => reportShift.id === updatedShift.id ? updatedShift : reportShift)
       };
     });
+  },
+
+  addShiftTransactions: async (transactions) => {
+    const currentShift = get().currentShift;
+    if (!currentShift || transactions.length === 0) return currentShift;
+
+    const newTransactions: ShiftTransaction[] = transactions.map(({ type, amount, reason, extras }) => ({
+      id: newId(),
+      time: new Date().toISOString(),
+      type,
+      amount,
+      reason,
+      user_id: currentShift.staff_name,
+      ...extras
+    }));
+
+    const cashDelta = newTransactions.reduce((total, transaction) => {
+      if (transaction.type === 'ADD' || transaction.type === 'SALE') return total + transaction.amount;
+      if (transaction.type === 'DROP' || transaction.type === 'REIMBURSEMENT') return total - transaction.amount;
+      return total;
+    }, 0);
+
+    const updatedShift: Shift = {
+      ...currentShift,
+      current_cash: currentShift.current_cash + cashDelta,
+      transactions: [...currentShift.transactions, ...newTransactions]
+    };
+
+    if (backend.kind === 'supabase') {
+      await backend.upsertShift(updatedShift);
+    }
+
+    set((state) => ({
+      currentShift: updatedShift,
+      reportShifts: state.reportShifts.map((reportShift) => reportShift.id === updatedShift.id ? updatedShift : reportShift)
+    }));
+
+    if (backend.kind !== 'supabase') {
+      void backend.upsertShift(updatedShift).catch((e) => console.error("Failed to add shift transactions:", e));
+    }
+
+    return updatedShift;
   },
 
   updateShiftFixedProductPrice: (productId, price) => {

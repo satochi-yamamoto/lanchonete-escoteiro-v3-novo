@@ -76,6 +76,44 @@ describe('Reestruturação inicial do POS', () => {
     ]);
   });
 
+  it('registra reembolsos de abertura em lote sem perder o ultimo lancamento', async () => {
+    useStore.setState({
+      currentSession: {
+        id: 'session-1',
+        opened_at: new Date().toISOString(),
+        status: 'OPEN',
+        opened_by: 'Admin'
+      }
+    });
+
+    await useStore.getState().openShift('Operador', 360, 'Grupo A', {
+      opening_product_cost_total: 1185,
+      planned_normal_burgers: 250,
+      planned_vegan_burgers: 35,
+      planned_chefe_burgers: 0,
+      planned_escoteiro_extra_burgers: 285,
+      opening_unit_cost_suggested: 4.16,
+      opening_unit_cost: 5,
+      daily_menu_name: 'Lanche Escoteiro'
+    });
+
+    await useStore.getState().addShiftTransactions([
+      { type: 'REIMBURSEMENT', amount: 250, reason: 'Reembolso Abertura', extras: { payee: 'aaaa' } },
+      { type: 'REIMBURSEMENT', amount: 300, reason: 'Reembolso Abertura', extras: { payee: 'dadadas' } },
+      { type: 'REIMBURSEMENT', amount: 500, reason: 'Reembolso Abertura', extras: { payee: 'dasdsad' } },
+      { type: 'REIMBURSEMENT', amount: 85, reason: 'Reembolso Abertura', extras: { payee: 'daddddda' } },
+      { type: 'REIMBURSEMENT', amount: 20, reason: 'Reembolso Abertura', extras: { payee: 'aas' } },
+      { type: 'REIMBURSEMENT', amount: 30, reason: 'Reembolso Abertura', extras: { payee: 'ultimo' } }
+    ]);
+
+    const reimbursements = useStore.getState().currentShift?.transactions.filter((transaction) => transaction.type === 'REIMBURSEMENT') ?? [];
+
+    expect(reimbursements).toHaveLength(6);
+    expect(reimbursements.reduce((total, transaction) => total + transaction.amount, 0)).toBe(1185);
+    expect(reimbursements.at(-1)).toMatchObject({ amount: 30, payee: 'ultimo' });
+    expect(useStore.getState().currentShift?.current_cash).toBe(-825);
+  });
+
   it('bloqueia abertura quando os lanches de Chefes excedem o total planejado', () => {
     const base = {
       startCash: 150,
