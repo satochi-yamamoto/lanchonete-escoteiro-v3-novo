@@ -49,9 +49,11 @@ const App = () => {
                 </button>
 
                 <div className="mb-10 text-center max-w-2xl">
-                    <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-cooper-leaf text-white shadow-lift">
-                        C
-                    </div>
+                    <img
+                        src="/images/cooper-cotia-logo.jpg"
+                        alt="Grupo Escoteiro Cooper Cotia"
+                        className="mx-auto mb-5 h-24 w-24 object-contain mix-blend-multiply"
+                    />
                     <p className="text-xs font-bold uppercase tracking-[0.22em] text-cooper-muted mb-3">
                         Grupo Escoteiro Cooper Cotia
                     </p>

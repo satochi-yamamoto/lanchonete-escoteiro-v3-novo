@@ -4,6 +4,7 @@ import { Ingredient, Product, PromotionType, User, Station, Promotion, MenuCatal
 import { generateUUID } from '../../utils';
 import { Button, Card, formatCurrency } from '../ui';
 import { Edit2, Trash2, Plus, AlertTriangle, Package, Check, X, Calendar, Clock, Target, Layers, Save, ArrowLeft, Zap, TrendingDown, TrendingUp, History, Upload, Image as ImageIcon, FileText, Wallet, Users, Printer } from 'lucide-react';
+import { buildShiftFixedProducts, FIXED_BURGER_CATEGORY, FIXED_PRODUCT_IDS } from '../../constants/fixedProducts';
 
 // --- Inventory Manager ---
 export const InventoryManager = () => {
@@ -352,7 +353,7 @@ export const InventoryManager = () => {
 
 // --- Product Manager ---
 export const ProductManager = () => {
-    const { products, deleteProduct, addProduct, updateProduct } = useStore();
+    const { products, currentShift, deleteProduct, addProduct, updateProduct, updateShiftFixedProductPrice } = useStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     
@@ -364,8 +365,13 @@ export const ProductManager = () => {
     const [newProdImage, setNewProdImage] = useState('');
     const [newProdAvailable, setNewProdAvailable] = useState(true);
 
+    const isShiftOpen = currentShift?.status === 'OPEN';
+    const shiftFixedProducts = buildShiftFixedProducts(isShiftOpen ? currentShift.opening_unit_cost : undefined);
+    const isEditingFixedProduct = editingId ? shiftFixedProducts.some((p) => p.id === editingId) : false;
+    const isEditingFixedChefe = editingId === FIXED_PRODUCT_IDS.CHEFE;
+
     // Derived Categories from existing products
-    const categories = Array.from(new Set(['Lanches', 'Bebidas', 'Acomp.', 'Sobremesas', ...products.map(p => p.category)]));
+    const categories = Array.from(new Set(['Lanches', 'Bebidas', 'Acomp.', 'Sobremesas', FIXED_BURGER_CATEGORY, ...products.map(p => p.category)]));
 
     const handleOpenAddModal = () => {
         setEditingId(null);
@@ -395,9 +401,26 @@ export const ProductManager = () => {
             return;
         }
 
+        const parsedPrice = parseFloat(newProdPrice);
+
+        if (Number.isNaN(parsedPrice) || parsedPrice < 0) {
+            alert("Preço inválido");
+            return;
+        }
+
+        if (isEditingFixedProduct && editingId) {
+            if (isEditingFixedChefe && parsedPrice !== 0) {
+                alert("O lanche 00 - Chefe é fixo em R$ 0,00.");
+                return;
+            }
+            updateShiftFixedProductPrice(editingId, parsedPrice);
+            setIsModalOpen(false);
+            return;
+        }
+
         const productData = {
             name: newProdName,
-            price: parseFloat(newProdPrice),
+            price: parsedPrice,
             category: newProdCategory,
             station: newProdStation,
             image: newProdImage || `https://picsum.photos/200/200?random=${Math.floor(Math.random() * 1000)}`,
@@ -428,6 +451,49 @@ export const ProductManager = () => {
                 <Button onClick={handleOpenAddModal}>
                     <Plus size={16} className="mr-2"/> Novo Produto
                 </Button>
+            </div>
+
+            <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500">Lanches fixos do caixa</h3>
+                    {!isShiftOpen ? (
+                        <span className="text-xs text-gray-500">Abra um caixa para ajustar os valores operacionais.</span>
+                    ) : (
+                        <span className="text-xs text-green-700 bg-green-50 border border-green-200 px-2 py-1 rounded">
+                            Caixa aberto: {currentShift.terminal_id}
+                        </span>
+                    )}
+                </div>
+                {shiftFixedProducts.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {shiftFixedProducts.map((p) => (
+                            <Card key={p.id} className="flex gap-4 group border-l-4 border-l-cooper-leaf">
+                                <div className="w-20 h-20 bg-cooper-leaf/10 rounded-lg overflow-hidden shrink-0 flex items-center justify-center text-cooper-leaf">
+                                    <Package size={28} />
+                                </div>
+                                <div className="flex-1">
+                                    <div className="flex justify-between items-start">
+                                        <h3 className="font-bold">{p.name}</h3>
+                                        <span className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-700 border border-blue-100">
+                                            Fixo do caixa
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-gray-500">{p.category} • {p.station}</p>
+                                    <p className="font-bold text-red-600 mt-1">{formatCurrency(p.price)}</p>
+                                    <div className="mt-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            onClick={() => handleOpenEditModal(p)}
+                                            disabled={!isShiftOpen}
+                                            className="text-xs flex items-center gap-1 text-blue-600 hover:underline disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed"
+                                        >
+                                            <Edit2 size={12}/> Ajustar valor
+                                        </button>
+                                    </div>
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
+                )}
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -470,7 +536,9 @@ export const ProductManager = () => {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
                         <div className="p-6 border-b bg-gray-50 flex justify-between items-center">
-                            <h3 className="text-lg font-bold text-gray-800">{editingId ? 'Editar Produto' : 'Novo Produto'}</h3>
+                            <h3 className="text-lg font-bold text-gray-800">
+                                {isEditingFixedProduct ? 'Ajustar Produto Fixo' : editingId ? 'Editar Produto' : 'Novo Produto'}
+                            </h3>
                             <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
                                 <X size={24} />
                             </button>
@@ -483,6 +551,7 @@ export const ProductManager = () => {
                                     value={newProdName}
                                     onChange={e => setNewProdName(e.target.value)}
                                     placeholder="Ex: Mega Burger"
+                                    disabled={isEditingFixedProduct}
                                     autoFocus
                                 />
                             </div>
@@ -495,7 +564,18 @@ export const ProductManager = () => {
                                         value={newProdPrice}
                                         onChange={e => setNewProdPrice(e.target.value)}
                                         placeholder="0.00"
+                                        disabled={isEditingFixedChefe}
                                     />
+                                    {isEditingFixedProduct && !isEditingFixedChefe && (
+                                        <p className="text-xs text-blue-700 mt-1">
+                                            Atualiza Escoteiro e Extra neste caixa.
+                                        </p>
+                                    )}
+                                    {isEditingFixedChefe && (
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Chefe permanece gratuito.
+                                        </p>
+                                    )}
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium mb-1">Categoria</label>
@@ -504,6 +584,7 @@ export const ProductManager = () => {
                                         className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none"
                                         value={newProdCategory}
                                         onChange={e => setNewProdCategory(e.target.value)}
+                                        disabled={isEditingFixedProduct}
                                     />
                                     <datalist id="admin-categories">
                                         {categories.map(c => <option key={c} value={c} />)}
@@ -516,6 +597,7 @@ export const ProductManager = () => {
                                     className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white"
                                     value={newProdStation}
                                     onChange={e => setNewProdStation(e.target.value as Station)}
+                                    disabled={isEditingFixedProduct}
                                 >
                                     <option value="GRILL">GRILL (Chapa)</option>
                                     <option value="FRYER">FRYER (Fritadeira)</option>
@@ -531,6 +613,7 @@ export const ProductManager = () => {
                                         value={newProdImage}
                                         onChange={e => setNewProdImage(e.target.value)}
                                         placeholder="https://..."
+                                        disabled={isEditingFixedProduct}
                                     />
                                     <div className="w-10 h-10 bg-gray-100 rounded border flex items-center justify-center shrink-0">
                                         {newProdImage ? <img src={newProdImage} className="w-full h-full object-cover rounded" /> : <ImageIcon size={16} className="text-gray-400"/>}
@@ -545,6 +628,7 @@ export const ProductManager = () => {
                                         className="sr-only peer"
                                         checked={newProdAvailable}
                                         onChange={e => setNewProdAvailable(e.target.checked)}
+                                        disabled={isEditingFixedProduct}
                                     />
                                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
                                 </label>
@@ -717,7 +801,11 @@ const PromotionBuilder = ({
                                     }}
                                 >
                                     <option value="">-- Qualquer / Nenhum --</option>
-                                    {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                    {products.map(p => (
+                                        <option key={p.id} value={p.id}>
+                                            {p.name}{p.category === FIXED_BURGER_CATEGORY ? ' (Fixo do caixa)' : ''}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
                             <div>
@@ -1235,12 +1323,19 @@ export const TerminalManager = () => {
 
 // --- Promotion Manager (Main Switcher) ---
 export const PromotionManager = () => {
-    const { promotions, products, addPromotion, updatePromotion, deletePromotion } = useStore();
+    const { promotions, products, currentShift, addPromotion, updatePromotion, deletePromotion } = useStore();
     const [view, setView] = useState<'LIST' | 'CREATE' | 'EDIT'>('LIST');
     const [editingPromo, setEditingPromo] = useState<Promotion | undefined>(undefined);
 
+    const shiftFixedProducts = buildShiftFixedProducts(currentShift?.status === 'OPEN' ? currentShift.opening_unit_cost : undefined);
+    const promotionProducts = [...shiftFixedProducts, ...products];
+    const productNameById = new Map(promotionProducts.map((p) => [
+        p.id,
+        `${p.name}${p.category === FIXED_BURGER_CATEGORY ? ' (Fixo do caixa)' : ''}`
+    ]));
+
     // Derived Categories
-    const categories: string[] = Array.from(new Set(products.map(p => p.category)));
+    const categories: string[] = Array.from(new Set(promotionProducts.map(p => p.category)));
 
     const handleEdit = (p: Promotion, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -1271,7 +1366,7 @@ export const PromotionManager = () => {
     if (view === 'CREATE' || view === 'EDIT') {
         return (
             <PromotionBuilder 
-                products={products}
+                products={promotionProducts}
                 categories={categories}
                 initialData={editingPromo}
                 onSave={(p) => {
@@ -1321,6 +1416,7 @@ export const PromotionManager = () => {
                                     <p className="flex items-center gap-1"><Layers size={14}/> {promo.type}</p>
                                     <p className="flex items-center gap-1"><Zap size={14} className="text-yellow-500"/> Prioridade: {promo.priority}</p>
                                     {promo.rules.category_id && <p className="bg-gray-100 inline-block px-1 rounded">Categoria: {promo.rules.category_id}</p>}
+                                    {promo.rules.product_id && <p className="bg-blue-50 text-blue-700 inline-block px-1 rounded">Produto: {productNameById.get(promo.rules.product_id) || promo.rules.product_id}</p>}
                                     {promo.rules.min_quantity > 0 && <p className="bg-gray-100 inline-block px-1 rounded ml-2">Qtd Mín: {promo.rules.min_quantity}</p>}
                                 </div>
                             </div>
