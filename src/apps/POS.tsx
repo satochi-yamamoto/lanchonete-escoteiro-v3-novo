@@ -194,7 +194,7 @@ export const POS = ({
         products, cart, cartTotals, currentShift, orders, maxItemsPerOrder,
         printReceiptEnabled,
         addToCart, removeFromCart, updateCartItem, clearCart, createOrder,
-        openShift, closeShift, addShiftTransaction, addProduct
+        openShift, closeShift, addShiftTransaction, addShiftTransactions, addProduct
     } = useStore();
 
     const [uiState, setUiState] = useState<{
@@ -317,11 +317,14 @@ export const POS = ({
                     daily_menu_name: dailyMenuName.trim()
                 });
                 if (!openedShift) return;
-                openingReimbursements.forEach((reimbursement) => {
-                    addShiftTransaction('REIMBURSEMENT', reimbursement.amount, 'Reembolso Abertura', {
+                await addShiftTransactions(openingReimbursements.map((reimbursement) => ({
+                    type: 'REIMBURSEMENT',
+                    amount: reimbursement.amount,
+                    reason: 'Reembolso Abertura',
+                    extras: {
                         payee: reimbursement.payee || 'Reembolso de abertura'
-                    });
-                });
+                    }
+                })));
             } catch (error) {
                 console.error('Falha ao abrir caixa:', error);
                 alert('Não foi possível abrir o caixa no banco de dados. Verifique a conexão/Supabase e tente novamente.');
