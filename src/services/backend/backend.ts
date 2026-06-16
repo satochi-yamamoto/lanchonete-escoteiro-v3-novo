@@ -311,6 +311,7 @@ export interface BackendInterface {
   subscribeToChanges: (
     onOrdersChange: (payload: any) => void,
     onSessionsChange: (payload: any) => void,
+    onShiftsChange: (payload: any) => void,
     onStatusChange?: (status: string) => void
   ) => () => void;
   fetchReports: (startDate?: string, endDate?: string) => Promise<{ shifts: Shift[], orders: Order[] }>;
@@ -467,8 +468,7 @@ export const backend: BackendInterface = {
       sb.from('promotions').select('*').order('priority', { ascending: false }),
       sb.from('users').select('*').order('name', { ascending: true }),
       sb.from('orders').select('*').order('created_at', { ascending: false }),
-      // Fetch the MOST RECENT shift, regardless of status, to determine initial state correctly
-      sb.from('shifts').select('*').order('opened_at', { ascending: false }).limit(1),
+      sb.from('shifts').select('*').eq('status', 'OPEN').order('opened_at', { ascending: false }).limit(1),
       sb.from('store_sessions').select('*').eq('status', 'OPEN').order('opened_at', { ascending: false }).limit(1),
       loadTaxSettings(),
       sb.from('stock_logs').select('*').order('date', { ascending: false }).limit(50),
@@ -589,9 +589,32 @@ export const backend: BackendInterface = {
     const sb = requireSupabase();
     // Converter arrays (como transactions) para JSON para o Supabase
     const payload = {
-        ...shift,
-        transactions: shift.transactions ? JSON.parse(JSON.stringify(shift.transactions)) : [],
-        adjustments: shift.adjustments ? JSON.parse(JSON.stringify(shift.adjustments)) : []
+      id: shift.id,
+      staff_name: shift.staff_name,
+      terminal_id: shift.terminal_id,
+      session_id: shift.session_id,
+      opened_at: shift.opened_at,
+      closed_at: shift.closed_at,
+      start_cash: shift.start_cash,
+      current_cash: shift.current_cash,
+      status: shift.status,
+      transactions: shift.transactions ? JSON.parse(JSON.stringify(shift.transactions)) : [],
+      opening_product_cost_total: shift.opening_product_cost_total,
+      planned_normal_burgers: shift.planned_normal_burgers,
+      planned_vegan_burgers: shift.planned_vegan_burgers,
+      planned_chefe_burgers: shift.planned_chefe_burgers,
+      planned_escoteiro_extra_burgers: shift.planned_escoteiro_extra_burgers,
+      opening_unit_cost_suggested: shift.opening_unit_cost_suggested,
+      opening_unit_cost: shift.opening_unit_cost,
+      daily_menu_name: shift.daily_menu_name,
+      drinks_liters: shift.drinks_liters,
+      burger_cost: shift.burger_cost,
+      burgers_produced: shift.burgers_produced,
+      burgers_unsold: shift.burgers_unsold,
+      menu_name: shift.menu_name,
+      closer_name: shift.closer_name,
+      feedback: shift.feedback,
+      adjustments: shift.adjustments ? JSON.parse(JSON.stringify(shift.adjustments)) : []
     };
     const { error } = await sb.from('shifts').upsert([payload], { onConflict: 'id' });
     if (error) {
@@ -625,6 +648,7 @@ export const backend: BackendInterface = {
   subscribeToChanges: (
     onOrdersChange: (payload: any) => void,
     onSessionsChange: (payload: any) => void,
+    onShiftsChange: (payload: any) => void,
     onStatusChange?: (status: string) => void
   ) => {
     if (!isSupabaseConfigured()) return () => { };
@@ -634,6 +658,7 @@ export const backend: BackendInterface = {
       .channel('app-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, onOrdersChange)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'store_sessions' }, onSessionsChange)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'shifts' }, onShiftsChange)
       .subscribe((status) => {
         if (onStatusChange) onStatusChange(status);
         console.log(`[Realtime] Status: ${status}`);

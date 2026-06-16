@@ -221,6 +221,8 @@ export const POS = ({
     const [plannedChefeBurgers, setPlannedChefeBurgers] = useState('0');
     const [openingUnitCost, setOpeningUnitCost] = useState('');
     const [openingUnitCostEdited, setOpeningUnitCostEdited] = useState(false);
+    const [isOpeningShift, setIsOpeningShift] = useState(false);
+    const [isClosingShift, setIsClosingShift] = useState(false);
 
     const activeTerminals = useMemo(
         () =>
@@ -280,7 +282,8 @@ export const POS = ({
 
     // --- Handlers ---
 
-    const handleOpenShift = () => {
+    const handleOpenShift = async () => {
+        if (isOpeningShift) return;
         const amount = parseFloat(shiftStartAmount);
         const totalCost = parseFloat(openingProductCostTotal);
         const normalQty = parseInt(plannedNormalBurgers, 10);
@@ -301,21 +304,30 @@ export const POS = ({
         })) {
             const plan = computeBurgerPlan({ normal: normalQty, vegan: veganQty, chefe: chefeQty });
             const openingReimbursements = getOpeningCostReimbursements(openingCostDetails);
-            openShift(operatorName.trim(), amount, terminalId, {
-                opening_product_cost_total: totalCost,
-                planned_normal_burgers: normalQty,
-                planned_vegan_burgers: veganQty,
-                planned_chefe_burgers: chefeQty,
-                planned_escoteiro_extra_burgers: plan.escoteiroExtra,
-                opening_unit_cost_suggested: openingUnitCostSuggested,
-                opening_unit_cost: finalUnitCost,
-                daily_menu_name: dailyMenuName.trim()
-            });
-            openingReimbursements.forEach((reimbursement) => {
-                addShiftTransaction('REIMBURSEMENT', reimbursement.amount, 'Reembolso Abertura', {
-                    payee: reimbursement.payee || 'Reembolso de abertura'
+            try {
+                setIsOpeningShift(true);
+                const openedShift = await openShift(operatorName.trim(), amount, terminalId, {
+                    opening_product_cost_total: totalCost,
+                    planned_normal_burgers: normalQty,
+                    planned_vegan_burgers: veganQty,
+                    planned_chefe_burgers: chefeQty,
+                    planned_escoteiro_extra_burgers: plan.escoteiroExtra,
+                    opening_unit_cost_suggested: openingUnitCostSuggested,
+                    opening_unit_cost: finalUnitCost,
+                    daily_menu_name: dailyMenuName.trim()
                 });
-            });
+                if (!openedShift) return;
+                openingReimbursements.forEach((reimbursement) => {
+                    addShiftTransaction('REIMBURSEMENT', reimbursement.amount, 'Reembolso Abertura', {
+                        payee: reimbursement.payee || 'Reembolso de abertura'
+                    });
+                });
+            } catch (error) {
+                console.error('Falha ao abrir caixa:', error);
+                alert('Não foi possível abrir o caixa no banco de dados. Verifique a conexão/Supabase e tente novamente.');
+            } finally {
+                setIsOpeningShift(false);
+            }
         } else {
             alert("Preencha todos os campos corretamente.");
         }
@@ -599,7 +611,9 @@ export const POS = ({
                                     </p>
                                 </div>
                             </div>
-                            <Button onClick={handleOpenShift} className="w-full py-4 text-lg shadow-xl">ABRIR CAIXA</Button>
+                            <Button onClick={handleOpenShift} disabled={isOpeningShift} className="w-full py-4 text-lg shadow-xl">
+                                {isOpeningShift ? 'SALVANDO...' : 'ABRIR CAIXA'}
+                            </Button>
                         </>
                     )}
                     </div>
@@ -878,9 +892,18 @@ export const POS = ({
                     shift={currentShift}
                     orders={orders}
                     onClose={() => setUiState({ modal: 'NONE' })}
-                    onConfirmClose={(payload: any) => {
-                        closeShift(payload);
-                        setUiState({ modal: 'NONE' });
+                    onConfirmClose={async (payload: any) => {
+                        if (isClosingShift) return;
+                        try {
+                            setIsClosingShift(true);
+                            await closeShift(payload);
+                            setUiState({ modal: 'NONE' });
+                        } catch (error) {
+                            console.error('Falha ao fechar caixa:', error);
+                            alert('Não foi possível fechar o caixa no banco de dados. O caixa permanece aberto para nova tentativa.');
+                        } finally {
+                            setIsClosingShift(false);
+                        }
                     }}
                 />
             )}
