@@ -75,6 +75,15 @@ const getOpeningCostDetailsTotal = (details: OpeningCostDetail[]) => (
     }, 0)
 );
 
+export const getOpeningCostReimbursements = (details: OpeningCostDetail[]) => (
+    details
+        .map((detail) => ({
+            payee: detail.reimbursedName.trim(),
+            amount: parseFloat(detail.amount || '0')
+        }))
+        .filter((detail) => Number.isFinite(detail.amount) && detail.amount > 0)
+);
+
 const OpeningCostDetailsModal = ({
     details,
     onChange,
@@ -291,6 +300,7 @@ export const POS = ({
             chefeQty
         })) {
             const plan = computeBurgerPlan({ normal: normalQty, vegan: veganQty, chefe: chefeQty });
+            const openingReimbursements = getOpeningCostReimbursements(openingCostDetails);
             openShift(operatorName.trim(), amount, terminalId, {
                 opening_product_cost_total: totalCost,
                 planned_normal_burgers: normalQty,
@@ -300,6 +310,11 @@ export const POS = ({
                 opening_unit_cost_suggested: openingUnitCostSuggested,
                 opening_unit_cost: finalUnitCost,
                 daily_menu_name: dailyMenuName.trim()
+            });
+            openingReimbursements.forEach((reimbursement) => {
+                addShiftTransaction('REIMBURSEMENT', reimbursement.amount, 'Reembolso Abertura', {
+                    payee: reimbursement.payee || 'Reembolso de abertura'
+                });
             });
         } else {
             alert("Preencha todos os campos corretamente.");

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { calculateOpeningUnitCost, isOpeningShiftInputValid } from './apps/POS';
+import { calculateOpeningUnitCost, getOpeningCostReimbursements, isOpeningShiftInputValid } from './apps/POS';
 import { buildShiftFixedProducts, computeBurgerPlan } from './constants/fixedProducts';
 import { useStore } from './store';
 import { OrderStatus, OrderType, PaymentMethod } from './types';
@@ -62,6 +62,18 @@ describe('Reestruturação inicial do POS', () => {
       opening_unit_cost: 6,
       daily_menu_name: 'Lanche Escoteiro'
     });
+  });
+
+  it('prepara somente valores válidos do detalhamento para registrar reembolsos', () => {
+    expect(getOpeningCostReimbursements([
+      { id: '1', reimbursedName: ' Ana Souza ', amount: '120.50' },
+      { id: '2', reimbursedName: 'Linha vazia', amount: '' },
+      { id: '3', reimbursedName: 'Valor zero', amount: '0' },
+      { id: '4', reimbursedName: '', amount: '79.50' }
+    ])).toEqual([
+      { payee: 'Ana Souza', amount: 120.50 },
+      { payee: '', amount: 79.50 }
+    ]);
   });
 
   it('bloqueia abertura quando os lanches de Chefes excedem o total planejado', () => {
