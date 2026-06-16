@@ -269,6 +269,8 @@ export const ProductGrid = ({
 
     return (
         <div className="flex flex-col h-full bg-cooper-surface rounded-lg shadow-soft border border-cooper-line">
+            {/* Station Filter + Category Filter + Novo/Esgotados buttons — HIDDEN */}
+            {false && (
             <div className="flex flex-col border-b">
                 {/* Station Filter */}
                 <div className="px-3 py-2 bg-cooper-panel border-b border-cooper-line flex flex-col md:flex-row gap-2 items-start md:items-center justify-between">
@@ -334,6 +336,7 @@ export const ProductGrid = ({
                     ))}
                 </div>
             </div>
+            )}
 
             <div className="flex-1 overflow-y-auto p-2 md:p-4">
                 {/* Pinned shift products (Chefe / Escoteiro / Extra / Vegano) — always visible */}
