@@ -607,6 +607,8 @@ export const backend: BackendInterface = {
       planned_escoteiro_extra_burgers: shift.planned_escoteiro_extra_burgers,
       opening_unit_cost_suggested: shift.opening_unit_cost_suggested,
       opening_unit_cost: shift.opening_unit_cost,
+      opening_promotion_quantity: shift.opening_promotion_quantity,
+      opening_promotion_value: shift.opening_promotion_value,
       daily_menu_name: shift.daily_menu_name,
       drinks_liters: shift.drinks_liters,
       burger_cost: shift.burger_cost,

@@ -2084,6 +2084,14 @@ export const ReportsManager = () => {
                                                 </span>
                                             </div>
                                             <div className="flex justify-between items-center">
+                                                <span className="text-gray-600">Promoção Planejada</span>
+                                                <span className="font-bold">
+                                                    {selectedShift.shift.opening_promotion_quantity !== undefined && selectedShift.shift.opening_promotion_value !== undefined
+                                                        ? `${selectedShift.shift.opening_promotion_quantity} un por ${formatCurrency(selectedShift.shift.opening_promotion_value)}`
+                                                        : '-'}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
                                                 <span className="text-gray-600">Valor Unitário Sugerido</span>
                                                 <span className="font-bold">
                                                     {selectedShift.shift.opening_unit_cost_suggested !== undefined ? formatCurrency(selectedShift.shift.opening_unit_cost_suggested) : '-'}
@@ -2198,6 +2206,7 @@ export const ReportsManager = () => {
                                         selectedShift.shift.planned_normal_burgers !== undefined ? `LANCHE NORMAL:   ${selectedShift.shift.planned_normal_burgers} un` : null,
                                         selectedShift.shift.planned_vegan_burgers !== undefined ? `LANCHE VEGANO:   ${selectedShift.shift.planned_vegan_burgers} un` : null,
                                         selectedShift.shift.opening_drinks_liters !== undefined ? `BEBIDA PLANEJ.:  ${selectedShift.shift.opening_drinks_liters} L` : null,
+                                        selectedShift.shift.opening_promotion_quantity !== undefined && selectedShift.shift.opening_promotion_value !== undefined ? `PROMOCAO:        ${selectedShift.shift.opening_promotion_quantity} un por ${formatCurrency(selectedShift.shift.opening_promotion_value)}` : null,
                                         selectedShift.shift.opening_unit_cost_suggested !== undefined ? `UNIT. SUGERIDO:  ${formatCurrency(selectedShift.shift.opening_unit_cost_suggested)}` : null,
                                         selectedShift.shift.opening_unit_cost !== undefined ? `UNIT. FINAL:     ${formatCurrency(selectedShift.shift.opening_unit_cost)}` : null,
                                         "--------------------------------",

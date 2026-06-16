@@ -21,6 +21,7 @@ export const calculateCartTotals = (items: CartItem[], promotions: Promotion[]) 
       // Filter items matching the rule (e.g., Category = Burgers)
       const eligibleItems = availableItems.filter(item => 
         !usedItemIds.has(item.cartId) && 
+        item.price > 0 &&
         (promo.rules.category_id ? item.category === promo.rules.category_id : true) &&
         (promo.rules.product_id ? item.id === promo.rules.product_id : true)
       );

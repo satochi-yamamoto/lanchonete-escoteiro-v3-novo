@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { calculateOpeningUnitCost, getOpeningCostReimbursements, isOpeningShiftInputValid } from './apps/POS';
+import { buildOpeningPromotion, calculateOpeningUnitCost, getOpeningCostReimbursements, isOpeningShiftInputValid, OPENING_PROMOTION_ID } from './apps/POS';
 import { buildShiftFixedProducts, computeBurgerPlan, FIXED_PRODUCT_IDS } from './constants/fixedProducts';
 import { useStore } from './store';
-import { OrderStatus, OrderType, PaymentMethod } from './types';
+import { OrderStatus, OrderType, PaymentMethod, PromotionType } from './types';
 
 describe('Reestruturação inicial do POS', () => {
   beforeEach(() => {
@@ -24,6 +24,8 @@ describe('Reestruturação inicial do POS', () => {
       dailyMenuName: 'Lanche do Dia',
       totalCost: 500,
       drinksLiters: 20,
+      promotionQuantity: 2,
+      promotionValue: 10,
       normalQty: 0,
       veganQty: 0,
       finalUnitCost: 5
@@ -43,6 +45,8 @@ describe('Reestruturação inicial do POS', () => {
     useStore.getState().openShift('Operador', 150, 'Grupo A', {
       opening_product_cost_total: 500,
       opening_drinks_liters: 20,
+      opening_promotion_quantity: 2,
+      opening_promotion_value: 10,
       planned_normal_burgers: 80,
       planned_vegan_burgers: 20,
       planned_chefe_burgers: 10,
@@ -57,6 +61,8 @@ describe('Reestruturação inicial do POS', () => {
       terminal_id: 'Grupo A',
       opening_product_cost_total: 500,
       opening_drinks_liters: 20,
+      opening_promotion_quantity: 2,
+      opening_promotion_value: 10,
       planned_normal_burgers: 80,
       planned_vegan_burgers: 20,
       planned_chefe_burgers: 10,
@@ -64,6 +70,25 @@ describe('Reestruturação inicial do POS', () => {
       opening_unit_cost_suggested: 5,
       opening_unit_cost: 6,
       daily_menu_name: 'Lanche Escoteiro'
+    });
+  });
+
+  it('monta a promoção parametrizada da abertura para os lanches do dia', () => {
+    expect(buildOpeningPromotion({
+      quantity: 2,
+      value: 10,
+      dailyMenuName: 'Lanche Escoteiro'
+    })).toMatchObject({
+      id: OPENING_PROMOTION_ID,
+      name: 'Promoção - Lanche Escoteiro',
+      type: PromotionType.FIXED_PRICE_BUNDLE,
+      rules: {
+        category_id: 'Lanches do Dia',
+        min_quantity: 2,
+        active: true
+      },
+      value: 10,
+      priority: 100
     });
   });
 
@@ -92,6 +117,8 @@ describe('Reestruturação inicial do POS', () => {
     await useStore.getState().openShift('Operador', 360, 'Grupo A', {
       opening_product_cost_total: 1185,
       opening_drinks_liters: 30,
+      opening_promotion_quantity: 2,
+      opening_promotion_value: 10,
       planned_normal_burgers: 250,
       planned_vegan_burgers: 35,
       planned_chefe_burgers: 0,
@@ -126,6 +153,8 @@ describe('Reestruturação inicial do POS', () => {
       dailyMenuName: 'Lanche do Dia',
       totalCost: 500,
       drinksLiters: 20,
+      promotionQuantity: 2,
+      promotionValue: 10,
       normalQty: 80,
       veganQty: 20,
       finalUnitCost: 5
@@ -186,6 +215,8 @@ describe('Reestruturação inicial do POS', () => {
     useStore.getState().openShift('Operador', 150, 'Grupo A', {
       opening_product_cost_total: 500,
       opening_drinks_liters: 20,
+      opening_promotion_quantity: 2,
+      opening_promotion_value: 10,
       planned_normal_burgers: 80,
       planned_vegan_burgers: 20,
       planned_chefe_burgers: 10,
@@ -222,6 +253,8 @@ describe('Reestruturação inicial do POS', () => {
     await useStore.getState().openShift('Operador', 150, 'Grupo A', {
       opening_product_cost_total: 500,
       opening_drinks_liters: 20,
+      opening_promotion_quantity: 2,
+      opening_promotion_value: 10,
       planned_normal_burgers: 80,
       planned_vegan_burgers: 20,
       planned_chefe_burgers: 10,
@@ -239,6 +272,8 @@ describe('Reestruturação inicial do POS', () => {
       start_cash: 200,
       opening_product_cost_total: 600,
       opening_drinks_liters: 25,
+      opening_promotion_quantity: 3,
+      opening_promotion_value: 15,
       planned_normal_burgers: 90,
       planned_vegan_burgers: 10,
       planned_chefe_burgers: 5,
@@ -255,6 +290,8 @@ describe('Reestruturação inicial do POS', () => {
       current_cash: 225,
       opening_product_cost_total: 600,
       opening_drinks_liters: 25,
+      opening_promotion_quantity: 3,
+      opening_promotion_value: 15,
       planned_normal_burgers: 90,
       planned_vegan_burgers: 10,
       planned_chefe_burgers: 5,
@@ -283,6 +320,8 @@ describe('Reestruturação inicial do POS', () => {
     useStore.getState().openShift('Operador', 150, 'Grupo A', {
       opening_product_cost_total: 500,
       opening_drinks_liters: 20,
+      opening_promotion_quantity: 2,
+      opening_promotion_value: 10,
       planned_normal_burgers: 80,
       planned_vegan_burgers: 20,
       planned_chefe_burgers: 10,
@@ -328,6 +367,8 @@ describe('Reestruturação inicial do POS', () => {
     useStore.getState().openShift('Operador', 150, 'Grupo A', {
       opening_product_cost_total: 500,
       opening_drinks_liters: 20,
+      opening_promotion_quantity: 2,
+      opening_promotion_value: 10,
       planned_normal_burgers: 80,
       planned_vegan_burgers: 20,
       planned_chefe_burgers: 10,
@@ -361,6 +402,8 @@ describe('Reestruturação inicial do POS', () => {
     useStore.getState().openShift('Operador 2', 200, 'Grupo B', {
       opening_product_cost_total: 300,
       opening_drinks_liters: 15,
+      opening_promotion_quantity: 2,
+      opening_promotion_value: 10,
       planned_normal_burgers: 40,
       planned_vegan_burgers: 10,
       planned_chefe_burgers: 5,
@@ -387,6 +430,8 @@ describe('Reestruturação inicial do POS', () => {
     useStore.getState().openShift('Operador', 150, 'Grupo A', {
       opening_product_cost_total: 500,
       opening_drinks_liters: 20,
+      opening_promotion_quantity: 2,
+      opening_promotion_value: 10,
       planned_normal_burgers: 80,
       planned_vegan_burgers: 20,
       planned_chefe_burgers: 10,
