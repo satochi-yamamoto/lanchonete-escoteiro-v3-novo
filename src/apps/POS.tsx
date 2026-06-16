@@ -1094,23 +1094,18 @@ export const POS = ({
                                         <label className="block text-sm font-bold mb-1 text-gray-600">Custo dos Produtos/Ingredientes (R$)</label>
                                         <div className="flex gap-2">
                                             <input
-                                                type="number"
-                                                step="0.01"
-                                                min="0"
-                                                value={openingProductCostTotal}
-                                                onChange={e => {
-                                                    setOpeningProductCostTotal(e.target.value);
-                                                    setOpeningUnitCostEdited(false);
-                                                }}
-                                                className="w-full border p-3 rounded-lg"
-                                                placeholder="Ex: 450.00"
+                                                type="text"
+                                                readOnly
+                                                value={openingProductCostTotal ? `R$ ${parseFloat(openingProductCostTotal).toFixed(2)}` : ''}
+                                                className="w-full border p-3 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
+                                                placeholder="Use o botão + para incluir itens"
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => setShowOpeningCostDetails(true)}
                                                 className="h-[50px] w-[50px] shrink-0 rounded-lg bg-cooper-leaf text-white hover:bg-cooper-leafDark shadow-lift flex items-center justify-center"
-                                                title="Detalhar reembolsos"
-                                                aria-label="Detalhar reembolsos"
+                                                title="Detalhar itens de custo"
+                                                aria-label="Detalhar itens de custo"
                                             >
                                                 <Plus size={22} />
                                             </button>
