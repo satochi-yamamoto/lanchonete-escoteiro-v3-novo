@@ -203,6 +203,64 @@ describe('Reestruturação inicial do POS', () => {
     expect(useStore.getState().currentShift?.opening_unit_cost).toBe(9);
   });
 
+  it('permite ajustar dados da abertura mantendo o caixa teorico consistente', async () => {
+    useStore.setState({
+      currentSession: {
+        id: 'session-1',
+        opened_at: new Date().toISOString(),
+        status: 'OPEN',
+        opened_by: 'Admin'
+      }
+    });
+
+    await useStore.getState().openShift('Operador', 150, 'Grupo A', {
+      opening_product_cost_total: 500,
+      planned_normal_burgers: 80,
+      planned_vegan_burgers: 20,
+      planned_chefe_burgers: 10,
+      planned_escoteiro_extra_burgers: 90,
+      opening_unit_cost_suggested: 5,
+      opening_unit_cost: 5,
+      daily_menu_name: 'Lanche Escoteiro'
+    });
+
+    useStore.getState().addShiftTransaction('SALE', 25, 'Venda teste');
+
+    await useStore.getState().updateShiftOpeningData({
+      staff_name: 'Operador Ajustado',
+      terminal_id: 'Grupo B',
+      start_cash: 200,
+      opening_product_cost_total: 600,
+      planned_normal_burgers: 90,
+      planned_vegan_burgers: 10,
+      planned_chefe_burgers: 5,
+      planned_escoteiro_extra_burgers: 95,
+      opening_unit_cost_suggested: 6.32,
+      opening_unit_cost: 6.5,
+      daily_menu_name: 'Lanche Ajustado'
+    });
+
+    expect(useStore.getState().currentShift).toMatchObject({
+      staff_name: 'Operador Ajustado',
+      terminal_id: 'Grupo B',
+      start_cash: 200,
+      current_cash: 225,
+      opening_product_cost_total: 600,
+      planned_normal_burgers: 90,
+      planned_vegan_burgers: 10,
+      planned_chefe_burgers: 5,
+      planned_escoteiro_extra_burgers: 95,
+      opening_unit_cost_suggested: 6.32,
+      opening_unit_cost: 6.5,
+      daily_menu_name: 'Lanche Ajustado'
+    });
+    expect(useStore.getState().currentShift?.transactions[0]).toMatchObject({
+      type: 'OPENING',
+      amount: 200,
+      user_id: 'Operador Ajustado'
+    });
+  });
+
   it('registra histórico de ajustes quando o fechamento difere da abertura', () => {
     useStore.setState({
       currentSession: {

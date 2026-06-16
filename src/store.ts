@@ -83,6 +83,7 @@ interface AppState {
   currentShift: Shift | null;
   reportShifts: Shift[];
   openShift: (staffName: string, startCash: number, terminalId: string, openingData: ShiftOpeningData) => Promise<Shift | null>;
+  updateShiftOpeningData: (updates: Partial<Pick<Shift, 'staff_name' | 'terminal_id' | 'start_cash' | 'opening_product_cost_total' | 'planned_normal_burgers' | 'planned_vegan_burgers' | 'planned_chefe_burgers' | 'planned_escoteiro_extra_burgers' | 'opening_unit_cost_suggested' | 'opening_unit_cost' | 'daily_menu_name'>>) => Promise<Shift | null>;
   closeShift: (metrics?: { drinks_liters?: number, burger_cost?: number, burgers_produced?: number, burgers_unsold?: number, menu_name?: string, closer_name?: string, feedback?: string }) => Promise<Shift | null>;
   addShiftTransaction: (type: ShiftTransaction['type'], amount: number, reason: string, extras?: ShiftTransactionExtras) => void;
   addShiftTransactions: (transactions: Array<{ type: ShiftTransaction['type']; amount: number; reason: string; extras?: ShiftTransactionExtras }>) => Promise<Shift | null>;
@@ -798,6 +799,45 @@ export const useStore = create<AppState>((set, get) => ({
       void backend.upsertShift(newShift).catch((e) => console.error("Failed to open shift:", e));
     }
     return newShift;
+  },
+
+  updateShiftOpeningData: async (updates) => {
+    const shift = get().currentShift;
+    if (!shift || shift.status !== 'OPEN') return null;
+
+    const nextStartCash = updates.start_cash ?? shift.start_cash;
+    const cashDelta = nextStartCash - shift.start_cash;
+    const nextStaffName = updates.staff_name ?? shift.staff_name;
+    const nextTransactions = shift.transactions.map((transaction) => {
+      if (transaction.type !== 'OPENING') return transaction;
+      return {
+        ...transaction,
+        amount: nextStartCash,
+        user_id: nextStaffName
+      };
+    });
+
+    const updatedShift: Shift = {
+      ...shift,
+      ...updates,
+      current_cash: shift.current_cash + cashDelta,
+      transactions: nextTransactions
+    };
+
+    if (backend.kind === 'supabase') {
+      await backend.upsertShift(updatedShift);
+    }
+
+    set((state) => ({
+      currentShift: updatedShift,
+      reportShifts: state.reportShifts.map((reportShift) => reportShift.id === updatedShift.id ? updatedShift : reportShift)
+    }));
+
+    if (backend.kind !== 'supabase') {
+      void backend.upsertShift(updatedShift).catch((e) => console.error("Failed to update shift opening data:", e));
+    }
+
+    return updatedShift;
   },
 
   closeShift: async (metrics?: { drinks_liters?: number, burger_cost?: number, burgers_produced?: number, burgers_unsold?: number, menu_name?: string, closer_name?: string, feedback?: string }) => {

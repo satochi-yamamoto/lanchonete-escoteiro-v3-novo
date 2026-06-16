@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../store';
-import { OrderType, Product, PaymentMethod, Order, ShiftTransaction, OrderStatus } from '../types';
+import { OrderType, Product, PaymentMethod, Order, ShiftTransaction, OrderStatus, Shift, TerminalConfig } from '../types';
 import { Button, formatCurrency } from '../components/ui';
 import { ProductGrid, CartPanel, CashPaymentModal, ShiftPanel, SuccessModal, ZReportModal, CashClosingReportModal } from '../components/pos/PosComponents';
-import { Settings, LogOut, User, Lock, Monitor, Power, ShoppingCart, X, BarChart2, FileText, ChevronRight, Banknote, QrCode, Hash, Plus, Trash2 } from 'lucide-react';
+import { Settings, LogOut, User, Lock, Monitor, Power, ShoppingCart, X, BarChart2, FileText, ChevronRight, Banknote, QrCode, Hash, Plus, Trash2, ArrowLeft, Save } from 'lucide-react';
 import { printReceipt } from '../utils';
 import { buildShiftFixedProducts, computeBurgerPlan, FIXED_PRODUCT_IDS } from '../constants/fixedProducts';
 
@@ -181,6 +181,283 @@ const OpeningCostDetailsModal = ({
     );
 };
 
+const OpeningAdjustmentsScreen = ({
+    shift,
+    activeTerminals,
+    onBack,
+    onSave
+}: {
+    shift: Shift;
+    activeTerminals: TerminalConfig[];
+    onBack: () => void;
+    onSave: (updates: Partial<Pick<Shift, 'staff_name' | 'terminal_id' | 'start_cash' | 'opening_product_cost_total' | 'planned_normal_burgers' | 'planned_vegan_burgers' | 'planned_chefe_burgers' | 'planned_escoteiro_extra_burgers' | 'opening_unit_cost_suggested' | 'opening_unit_cost' | 'daily_menu_name'>>) => Promise<void>;
+}) => {
+    const [operatorName, setOperatorName] = useState(shift.staff_name);
+    const [terminalId, setTerminalId] = useState(shift.terminal_id);
+    const [startCash, setStartCash] = useState(shift.start_cash.toFixed(2));
+    const [dailyMenuName, setDailyMenuName] = useState(shift.daily_menu_name ?? '');
+    const [openingProductCostTotal, setOpeningProductCostTotal] = useState((shift.opening_product_cost_total ?? 0).toString());
+    const [plannedNormalBurgers, setPlannedNormalBurgers] = useState((shift.planned_normal_burgers ?? 0).toString());
+    const [plannedVeganBurgers, setPlannedVeganBurgers] = useState((shift.planned_vegan_burgers ?? 0).toString());
+    const [plannedChefeBurgers, setPlannedChefeBurgers] = useState((shift.planned_chefe_burgers ?? 0).toString());
+    const [openingUnitCost, setOpeningUnitCost] = useState((shift.opening_unit_cost ?? 0).toString());
+    const [openingUnitCostEdited, setOpeningUnitCostEdited] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        setOperatorName(shift.staff_name);
+        setTerminalId(shift.terminal_id);
+        setStartCash(shift.start_cash.toFixed(2));
+        setDailyMenuName(shift.daily_menu_name ?? '');
+        setOpeningProductCostTotal((shift.opening_product_cost_total ?? 0).toString());
+        setPlannedNormalBurgers((shift.planned_normal_burgers ?? 0).toString());
+        setPlannedVeganBurgers((shift.planned_vegan_burgers ?? 0).toString());
+        setPlannedChefeBurgers((shift.planned_chefe_burgers ?? 0).toString());
+        setOpeningUnitCost((shift.opening_unit_cost ?? 0).toString());
+        setOpeningUnitCostEdited(false);
+    }, [shift.id]);
+
+    const parsedStartCash = parseFloat(startCash || '0');
+    const parsedOpeningCost = parseFloat(openingProductCostTotal || '0');
+    const parsedNormalBurgers = parseInt(plannedNormalBurgers || '0', 10);
+    const parsedVeganBurgers = parseInt(plannedVeganBurgers || '0', 10);
+    const parsedChefeBurgers = parseInt(plannedChefeBurgers || '0', 10);
+    const parsedUnitCost = parseFloat(openingUnitCost || '0');
+    const burgerPlan = computeBurgerPlan({
+        normal: parsedNormalBurgers,
+        vegan: parsedVeganBurgers,
+        chefe: parsedChefeBurgers
+    });
+    const openingUnitCostSuggested = calculateOpeningUnitCost(
+        Number.isFinite(parsedOpeningCost) ? parsedOpeningCost : 0,
+        burgerPlan.escoteiroExtra
+    );
+    const isValid = isOpeningShiftInputValid({
+        startCash: parsedStartCash,
+        operatorName,
+        terminalId,
+        dailyMenuName,
+        totalCost: parsedOpeningCost,
+        normalQty: parsedNormalBurgers,
+        veganQty: parsedVeganBurgers,
+        finalUnitCost: parsedUnitCost,
+        chefeQty: parsedChefeBurgers
+    });
+
+    useEffect(() => {
+        if (!openingUnitCostEdited) {
+            setOpeningUnitCost(openingUnitCostSuggested > 0 ? openingUnitCostSuggested.toFixed(2) : '0');
+        }
+    }, [openingUnitCostEdited, openingUnitCostSuggested]);
+
+    const handleSave = async () => {
+        if (!isValid || isSaving) {
+            alert('Preencha todos os campos corretamente.');
+            return;
+        }
+
+        try {
+            setIsSaving(true);
+            await onSave({
+                staff_name: operatorName.trim(),
+                terminal_id: terminalId,
+                start_cash: parsedStartCash,
+                opening_product_cost_total: parsedOpeningCost,
+                planned_normal_burgers: parsedNormalBurgers,
+                planned_vegan_burgers: parsedVeganBurgers,
+                planned_chefe_burgers: parsedChefeBurgers,
+                planned_escoteiro_extra_burgers: burgerPlan.escoteiroExtra,
+                opening_unit_cost_suggested: openingUnitCostSuggested,
+                opening_unit_cost: parsedUnitCost,
+                daily_menu_name: dailyMenuName.trim()
+            });
+            alert('Dados da abertura atualizados.');
+        } catch (error) {
+            console.error('Falha ao atualizar dados da abertura:', error);
+            alert('Não foi possível atualizar os dados da abertura. Verifique a conexão e tente novamente.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <div className="h-full overflow-y-auto bg-cooper-surface rounded-lg border border-cooper-line shadow-soft">
+            <div className="sticky top-0 z-10 bg-cooper-surface border-b border-cooper-line p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={onBack}
+                        className="h-10 w-10 rounded-lg border border-cooper-line bg-white hover:bg-cooper-panel flex items-center justify-center text-cooper-ink"
+                        title="Voltar ao PDV"
+                        aria-label="Voltar ao PDV"
+                    >
+                        <ArrowLeft size={18} />
+                    </button>
+                    <div>
+                        <h2 className="text-lg font-black text-cooper-ink">Ajustar Abertura do Caixa</h2>
+                        <p className="text-xs text-cooper-muted">Dados carregados da abertura do turno atual.</p>
+                    </div>
+                </div>
+                <Button onClick={handleSave} disabled={!isValid || isSaving}>
+                    <Save size={16} /> {isSaving ? 'Salvando...' : 'Salvar Ajustes'}
+                </Button>
+            </div>
+
+            <div className="p-4 md:p-6 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <div className="xl:col-span-2">
+                        <label className="block text-sm font-bold mb-1 text-gray-600">Operador</label>
+                        <input
+                            type="text"
+                            value={operatorName}
+                            onChange={e => setOperatorName(e.target.value)}
+                            className="w-full border p-3 rounded-lg bg-gray-50 focus:bg-white transition-colors"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold mb-1 text-gray-600">Fundo de Caixa (R$)</label>
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={startCash}
+                            onChange={e => setStartCash(e.target.value)}
+                            className="w-full border p-3 rounded-lg text-lg font-bold text-green-700"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold mb-1 text-gray-600">Grupo Responsável pelo Caixa</label>
+                        {activeTerminals.length > 0 ? (
+                            <select
+                                value={terminalId}
+                                onChange={e => setTerminalId(e.target.value)}
+                                className="w-full border p-3 rounded-lg bg-gray-50 focus:bg-white transition-colors"
+                            >
+                                {activeTerminals.map((terminal) => (
+                                    <option key={terminal.id} value={terminal.name}>
+                                        {terminal.name}
+                                    </option>
+                                ))}
+                            </select>
+                        ) : (
+                            <input
+                                type="text"
+                                value={terminalId}
+                                onChange={e => setTerminalId(e.target.value)}
+                                className="w-full border p-3 rounded-lg bg-gray-50 focus:bg-white transition-colors"
+                            />
+                        )}
+                    </div>
+                    <div className="md:col-span-2">
+                        <label className="block text-sm font-bold mb-1 text-gray-600">Nome do Lanche do Dia</label>
+                        <input
+                            type="text"
+                            value={dailyMenuName}
+                            onChange={e => setDailyMenuName(e.target.value)}
+                            className="w-full border p-3 rounded-lg bg-gray-50 focus:bg-white transition-colors"
+                            placeholder="Ex: Lanche Escoteiro"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold mb-1 text-gray-600">Custo dos Produtos/Ingredientes (R$)</label>
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={openingProductCostTotal}
+                            onChange={e => {
+                                setOpeningProductCostTotal(e.target.value);
+                                setOpeningUnitCostEdited(false);
+                            }}
+                            className="w-full border p-3 rounded-lg"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold mb-1 text-gray-600">Valor Unitário Sugerido/Editável (R$)</label>
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={openingUnitCost}
+                            onChange={e => {
+                                setOpeningUnitCost(e.target.value);
+                                setOpeningUnitCostEdited(true);
+                            }}
+                            className="w-full border p-3 rounded-lg text-lg font-bold text-blue-700"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                            Referência calculada: {formatCurrency(openingUnitCostSuggested)}
+                        </p>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold mb-1 text-gray-600">Quantidade de Lanche Normal</label>
+                        <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={plannedNormalBurgers}
+                            onChange={e => {
+                                setPlannedNormalBurgers(e.target.value);
+                                setOpeningUnitCostEdited(false);
+                            }}
+                            className="w-full border p-3 rounded-lg"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold mb-1 text-gray-600">Quantidade de Lanche Vegano</label>
+                        <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={plannedVeganBurgers}
+                            onChange={e => {
+                                setPlannedVeganBurgers(e.target.value);
+                                setOpeningUnitCostEdited(false);
+                            }}
+                            className="w-full border p-3 rounded-lg"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold mb-1 text-gray-600">Quantidade de Lanche para Chefes</label>
+                        <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={plannedChefeBurgers}
+                            onChange={e => {
+                                setPlannedChefeBurgers(e.target.value);
+                                setOpeningUnitCostEdited(false);
+                            }}
+                            className={`w-full border p-3 rounded-lg ${burgerPlan.chefeExceedsTotal ? 'border-red-400 bg-red-50' : ''}`}
+                        />
+                        {burgerPlan.chefeExceedsTotal && (
+                            <p className="text-xs text-red-600 mt-1">
+                                Não pode exceder o total de lanches ({burgerPlan.total}).
+                            </p>
+                        )}
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold mb-1 text-gray-600">Quantidade Lanche Escoteiros/Extra</label>
+                        <input
+                            type="number"
+                            value={burgerPlan.escoteiroExtra}
+                            readOnly
+                            tabIndex={-1}
+                            className="w-full border p-3 rounded-lg bg-gray-100 text-gray-700 font-bold cursor-not-allowed"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                            Calculado: (Normal + Vegano) - Chefes
+                        </p>
+                    </div>
+                </div>
+
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                    Alterações no fundo de caixa ajustam o caixa teórico pela diferença informada.
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export const POS = ({
     onExit,
     currentUserRole
@@ -194,7 +471,7 @@ export const POS = ({
         products, cart, cartTotals, currentShift, orders, maxItemsPerOrder,
         printReceiptEnabled,
         addToCart, removeFromCart, updateCartItem, clearCart, createOrder,
-        openShift, closeShift, addShiftTransaction, addShiftTransactions, addProduct
+        openShift, updateShiftOpeningData, closeShift, addShiftTransaction, addShiftTransactions, addProduct
     } = useStore();
 
     const [uiState, setUiState] = useState<{
@@ -207,6 +484,7 @@ export const POS = ({
 
     // Mobile Cart State
     const [showMobileCart, setShowMobileCart] = useState(false);
+    const [posScreen, setPosScreen] = useState<'CATALOG' | 'OPENING_ADJUSTMENTS'>('CATALOG');
 
     // Open Shift State
     const [shiftStartAmount, setShiftStartAmount] = useState('150.00');
@@ -491,6 +769,13 @@ export const POS = ({
         setOrderIdentifier('');
     };
 
+    const handleSaveOpeningAdjustments = async (updates: Parameters<typeof updateShiftOpeningData>[0]) => {
+        const updatedShift = await updateShiftOpeningData(updates);
+        if (!updatedShift) {
+            throw new Error('Caixa aberto não encontrado para ajuste.');
+        }
+    };
+
     // --- Render Logic ---
 
     // 1. Shift Closed Screen
@@ -724,9 +1009,16 @@ export const POS = ({
 
                 <div className="flex flex-col gap-4 w-full px-2">
                     <button
-                        className="p-3 w-full bg-white/5 rounded-lg hover:bg-white/10 active:bg-cooper-leaf transition-colors flex justify-center text-cooper-moss hover:text-white"
-                        onClick={() => setUiState({ modal: 'SHIFT' })}
-                        title="Ajustes de Turno"
+                        className={`p-3 w-full rounded-lg hover:bg-white/10 active:bg-cooper-leaf transition-colors flex justify-center hover:text-white ${
+                            posScreen === 'OPENING_ADJUSTMENTS'
+                                ? 'bg-cooper-leaf/20 text-cooper-moss ring-1 ring-cooper-moss/40'
+                                : 'bg-white/5 text-cooper-moss'
+                        }`}
+                        onClick={() => {
+                            setUiState({ modal: 'NONE' });
+                            setPosScreen('OPENING_ADJUSTMENTS');
+                        }}
+                        title="Ajustar Abertura"
                     >
                         <Settings size={20} />
                     </button>
@@ -769,27 +1061,40 @@ export const POS = ({
             {/* Product Catalog */}
             <div className="flex-1 p-2 md:p-4 pr-2 overflow-hidden flex flex-col pb-20 md:pb-4 relative">
                 <div className="flex-1 overflow-hidden">
-                    <ProductGrid
-                        products={products}
-                        pinnedProducts={shiftFixedProducts}
-                        pinnedAvailability={fixedProductAvailability}
-                        onAdd={(p) => {
-                            if (cart.length >= maxItemsPerOrder) {
-                                alert(`Limite de ${maxItemsPerOrder} itens por pedido atingido.`);
-                                return;
-                            }
-                            addToCart(p);
-                        }}
-                        onCreateProduct={addProduct}
-                    />
+                    {posScreen === 'OPENING_ADJUSTMENTS' ? (
+                        <OpeningAdjustmentsScreen
+                            shift={currentShift}
+                            activeTerminals={activeTerminals}
+                            onBack={() => setPosScreen('CATALOG')}
+                            onSave={handleSaveOpeningAdjustments}
+                        />
+                    ) : (
+                        <ProductGrid
+                            products={products}
+                            pinnedProducts={shiftFixedProducts}
+                            pinnedAvailability={fixedProductAvailability}
+                            onAdd={(p) => {
+                                if (cart.length >= maxItemsPerOrder) {
+                                    alert(`Limite de ${maxItemsPerOrder} itens por pedido atingido.`);
+                                    return;
+                                }
+                                addToCart(p);
+                            }}
+                            onCreateProduct={addProduct}
+                        />
+                    )}
                 </div>
             </div>
 
             {/* --- MOBILE BOTTOM NAV --- */}
             <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-cooper-surface border-t border-cooper-line flex items-center justify-around z-40 pb-safe">
                 <button
-                    onClick={() => setUiState({ modal: 'SHIFT' })}
-                    className="flex flex-col items-center justify-center w-14 h-full text-gray-500 active:text-blue-600"
+                    onClick={() => {
+                        setUiState({ modal: 'NONE' });
+                        setShowMobileCart(false);
+                        setPosScreen('OPENING_ADJUSTMENTS');
+                    }}
+                    className={`flex flex-col items-center justify-center w-14 h-full active:text-blue-600 ${posScreen === 'OPENING_ADJUSTMENTS' ? 'text-cooper-leaf' : 'text-gray-500'}`}
                 >
                     <Settings size={20} />
                     <span className="text-[10px] mt-1">Ajustes</span>
