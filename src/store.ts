@@ -4,6 +4,7 @@ import { calculateCartTotals, MOCK_PROMOTIONS } from './services/promotionEngine
 import { backend, BackendInterface, BackendStatus } from './services/backend/backend';
 import { MOCK_INGREDIENTS, MOCK_PRODUCTS, MOCK_USERS, MOCK_SCOUTS } from './services/mockData';
 import { generateUUID } from './utils';
+import { FIXED_PRODUCT_IDS } from './constants/fixedProducts';
 
 interface AppState {
   backend: BackendInterface;
@@ -83,6 +84,7 @@ interface AppState {
   openShift: (staffName: string, startCash: number, terminalId: string, openingData: ShiftOpeningData) => void;
   closeShift: (metrics?: { drinks_liters?: number, burger_cost?: number, burgers_produced?: number, burgers_unsold?: number, menu_name?: string, closer_name?: string, feedback?: string }) => void;
   addShiftTransaction: (type: ShiftTransaction['type'], amount: number, reason: string, extras?: ShiftTransactionExtras) => void;
+  updateShiftFixedProductPrice: (productId: string, price: number) => void;
 
   // Store Session (Business Day)
   currentSession: StoreSession | null;
@@ -840,6 +842,22 @@ export const useStore = create<AppState>((set, get) => ({
         current_cash: state.currentShift.current_cash + cashDelta,
         transactions: [...state.currentShift.transactions, newTransaction]
       };
+      void backend.upsertShift(updatedShift).catch(() => { });
+      return { currentShift: updatedShift };
+    });
+  },
+
+  updateShiftFixedProductPrice: (productId, price) => {
+    if (!Number.isFinite(price) || price < 0) return;
+    set((state) => {
+      if (!state.currentShift || state.currentShift.status !== 'OPEN') return {};
+      if (productId !== FIXED_PRODUCT_IDS.ESCOTEIRO && productId !== FIXED_PRODUCT_IDS.EXTRA) return {};
+
+      const updatedShift: Shift = {
+        ...state.currentShift,
+        opening_unit_cost: price
+      };
+
       void backend.upsertShift(updatedShift).catch(() => { });
       return { currentShift: updatedShift };
     });

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { calculateOpeningUnitCost, getOpeningCostReimbursements, isOpeningShiftInputValid } from './apps/POS';
-import { buildShiftFixedProducts, computeBurgerPlan } from './constants/fixedProducts';
+import { buildShiftFixedProducts, computeBurgerPlan, FIXED_PRODUCT_IDS } from './constants/fixedProducts';
 import { useStore } from './store';
 import { OrderStatus, OrderType, PaymentMethod } from './types';
 
@@ -124,6 +124,37 @@ describe('Reestruturação inicial do POS', () => {
     expect(extra).toMatchObject({ name: '02 - Extra', price: 6 });
     // Sem valor de abertura, Escoteiro/Extra ficam zerados (Chefe sempre 0)
     expect(buildShiftFixedProducts(undefined).map((p) => p.price)).toEqual([0, 0, 0]);
+  });
+
+  it('permite corrigir o valor dos lanches fixos pagantes durante o caixa aberto', () => {
+    useStore.setState({
+      currentSession: {
+        id: 'session-1',
+        opened_at: new Date().toISOString(),
+        status: 'OPEN',
+        opened_by: 'Admin'
+      }
+    });
+
+    useStore.getState().openShift('Operador', 150, 'Grupo A', {
+      opening_product_cost_total: 500,
+      planned_normal_burgers: 80,
+      planned_vegan_burgers: 20,
+      planned_chefe_burgers: 10,
+      planned_escoteiro_extra_burgers: 90,
+      opening_unit_cost_suggested: 5,
+      opening_unit_cost: 5,
+      daily_menu_name: 'Lanche Escoteiro'
+    });
+
+    useStore.getState().updateShiftFixedProductPrice(FIXED_PRODUCT_IDS.ESCOTEIRO, 8);
+
+    expect(useStore.getState().currentShift?.opening_unit_cost).toBe(8);
+    expect(buildShiftFixedProducts(useStore.getState().currentShift?.opening_unit_cost).map((p) => p.price)).toEqual([0, 8, 8]);
+
+    useStore.getState().updateShiftFixedProductPrice(FIXED_PRODUCT_IDS.CHEFE, 10);
+
+    expect(useStore.getState().currentShift?.opening_unit_cost).toBe(8);
   });
 
   it('registra histórico de ajustes quando o fechamento difere da abertura', () => {
