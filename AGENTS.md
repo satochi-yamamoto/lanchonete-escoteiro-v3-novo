@@ -65,7 +65,7 @@ Global state is managed via Zustand in `src/store.ts`. Key patterns:
 - **Cart state**: `cart`, `cartTotals`, actions like `addToCart()`, `removeFromCart()`
 - **Order management**: `orders`, `createOrder()`, `updateOrderStatus()`, `recallOrder()`
 - **Catalog**: `products`, `ingredients`, `promotions`, `menuCatalogs`, `terminals`
-- **Shift management**: `currentShift`, `openShift()` (with `ShiftOpeningData` for operational planning), `closeShift()`, `addShiftTransaction()`
+- **Shift management**: `currentShift`, `openShift()` (with `ShiftOpeningData` for operational planning), `updateShiftOpeningData()` (for POS-side opening corrections), `closeShift()`, `addShiftTransaction()`
 - **Store session**: `currentSession` for business day tracking
 - **Users**: Dual user system — `users` (login list without PINs) and `dbUsers` (full management with PINs)
 - **Scouts**: `scouts`, `addScout()`, `importScouts()`, `fetchScouts()`
@@ -130,7 +130,7 @@ Deployed on **Vercel**. Configuration in `vercel.json` and `.vercel/` directory.
 - `src/components/ui.tsx`: Shared UI components (Button, Card, Modal, etc.)
 - `src/components/LoginScreen.tsx`: PIN-based authentication screen
 - `src/constants/messages.ts`: Centralized system messages (errors, success, info)
-- `src/constants/fixedProducts.ts`: Fixed shift products (Chefe/Escoteiro/Extra) and `computeBurgerPlan` (shared opening burger-plan rules)
+- `src/constants/fixedProducts.ts`: Fixed shift products (Chefe/Escoteiro/Extra/Vegano) and `computeBurgerPlan` (shared opening burger-plan rules)
 - `vite.config.ts`: Vite config with path aliases (`@/` → `src/`), port 3000
 
 ## Component Organization
@@ -179,11 +179,13 @@ Test environment: jsdom (currently commented out in vite.config.ts for troublesh
 2. **Orders** contain a snapshot of cart items and calculated totals (subtotal, discount, total)
 3. **Shift transactions** track cash movements (OPENING, SALE, DROP, ADD, REIMBURSEMENT, CLOSING)
 4. **Shift opening** requires operational planning data (`ShiftOpeningData`): product cost total, planned normal/vegan quantities, planned **Chefes** count, derived **Escoteiros/Extra** count (= normal + vegan − chefes), unit cost, daily menu name. The shared helper `computeBurgerPlan({ normal, vegan, chefe })` in `src/constants/fixedProducts.ts` is the single source for total/derived quantities and validation. The suggested unit cost (`calculateOpeningUnitCost`) divides the product cost by the **payable** burgers (Escoteiros/Extra only), since Chefes are free.
-5. **Fixed shift products**: the POS pins three virtual products at the top of the catalog — `00 - Chefe` (always R$ 0,00), `01 - Escoteiro` and `02 - Extra` (priced at the shift's `opening_unit_cost`). Built by `buildShiftFixedProducts()`; not stored in the catalog.
-6. **Shift closing** (`ZReportModal`) pre-fills the closing form from the opening data (menu, unit cost, produced total). Any change vs. the opening is recorded as an audit entry in `shift.adjustments` (`ShiftAdjustment[]`), persisted to the `shifts.adjustments` JSONB column.
-7. **Inventory**: Products can have a recipe (ingredient BOM) for automatic stock deduction on sale
-8. **Scouts**: Scout profiles with branch (ramo) and patrol (patrulha) for association tracking
-9. **Menu catalogs**: Named menus with active/inactive toggle for event-based operation
-10. **Terminal configs**: Named terminal configurations with operation date
-11. **Store sessions**: Business day open/close with user tracking
-12. **Path alias**: Use `@/` to reference `src/` directory
+5. **Fixed shift products**: the POS pins virtual products at the top of the catalog — `00 - Chefe` (always R$ 0,00), `01 - Escoteiro`, `02 - Extra`, and `03 - Vegano` when `planned_vegan_burgers > 0` (priced at the shift's `opening_unit_cost`). Built by `buildShiftFixedProducts()`; not stored in the catalog.
+6. **Daily burger dashboards in POS**: below the fixed products, POS shows a quantity table with `Planejado`, `Vendido`, and `Disponível` for Chefe, Lanche Vegano (only when planned > 0), and Lanche Escoteiros/Extra. It also shows a second table comparing total sold in the current shift against `opening_product_cost_total` and the remaining amount needed to cover that cost. Cancelled orders are ignored.
+7. **Opening adjustment screen**: the POS gear icon opens an internal "Ajustar Abertura do Caixa" screen, not the old shift modal. It loads the current shift opening data and saves corrections through `updateShiftOpeningData()`. If `start_cash` changes, `current_cash` is adjusted by the delta while preserving existing transactions.
+8. **Shift closing** (`ZReportModal`) pre-fills the closing form from the opening data (menu, unit cost, produced total). Any change vs. the opening is recorded as an audit entry in `shift.adjustments` (`ShiftAdjustment[]`), persisted to the `shifts.adjustments` JSONB column.
+9. **Inventory**: Products can have a recipe (ingredient BOM) for automatic stock deduction on sale
+10. **Scouts**: Scout profiles with branch (ramo) and patrol (patrulha) for association tracking
+11. **Menu catalogs**: Named menus with active/inactive toggle for event-based operation
+12. **Terminal configs**: Named terminal configurations with operation date
+13. **Store sessions**: Business day open/close with user tracking
+14. **Path alias**: Use `@/` to reference `src/` directory
