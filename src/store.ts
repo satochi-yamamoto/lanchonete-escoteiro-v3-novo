@@ -6,6 +6,10 @@ import { MOCK_INGREDIENTS, MOCK_PRODUCTS, MOCK_USERS, MOCK_SCOUTS } from './serv
 import { generateUUID } from './utils';
 import { FIXED_PRODUCT_IDS } from './constants/fixedProducts';
 
+// Guards against duplicate realtime subscriptions if initializeBackend ever
+// runs more than once (dev double-mount, HMR).
+let realtimeUnsubscribe: (() => void) | null = null;
+
 interface AppState {
   backend: BackendInterface;
   backendStatus: BackendStatus;
@@ -267,7 +271,8 @@ export const useStore = create<AppState>((set, get) => ({
       }
 
       // Subscribe to Realtime Updates
-      backend.subscribeToChanges(
+      realtimeUnsubscribe?.();
+      realtimeUnsubscribe = backend.subscribeToChanges(
         // 1. Orders Handler
         (payload) => {
           const { eventType, new: newRecord, old: oldRecord } = payload;
@@ -437,24 +442,26 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   addDbUser: async (u) => {
-    set(s => ({ dbUsers: [...s.dbUsers, u] }));
     try {
       await backend.upsertUser(u);
     } catch (e) {
       console.error("Falha ao adicionar usuário no banco:", e);
+      throw e;
     }
+    set(s => ({ dbUsers: [...s.dbUsers, u] }));
   },
   updateDbUser: async (id, u) => {
     const currentUser = get().dbUsers.find(x => x.id === id);
     if (!currentUser) return;
 
     const updatedUser = { ...currentUser, ...u };
-    set(s => ({ dbUsers: s.dbUsers.map(user => user.id === id ? updatedUser : user) }));
     try {
       await backend.upsertUser(updatedUser);
     } catch (e) {
       console.error("Falha ao atualizar usuário no banco:", e);
+      throw e;
     }
+    set(s => ({ dbUsers: s.dbUsers.map(user => user.id === id ? updatedUser : user) }));
   },
   deleteDbUser: async (id) => {
     set(s => ({ dbUsers: s.dbUsers.filter(x => x.id !== id) }));

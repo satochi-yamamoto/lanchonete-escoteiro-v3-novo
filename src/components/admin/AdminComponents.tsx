@@ -1535,27 +1535,38 @@ export const UserManager = () => {
         setEditingId(u.id);
         setName(u.name);
         setRole(u.role);
-        setPin(u.pin || '');
+        setPin(''); // PIN never round-trips from the backend; blank = keep current PIN
         setIsModalOpen(true);
     };
 
-    const handleSave = () => {
-        if (!name || !pin || pin.length !== 4) {
-            alert("Nome obrigatório e PIN deve ter 4 dígitos");
+    const handleSave = async () => {
+        // Required-field checks only; PIN format (4 digits) and role are
+        // validated server-side (upsert_user RPC) so there's a single source
+        // of truth. The 4-digit input mask above is just a UI hint.
+        if (!name) {
+            alert("Nome é obrigatório");
+            return;
+        }
+        if (!editingId && !pin) {
+            alert("PIN é obrigatório para novo usuário");
             return;
         }
 
-        if (editingId) {
-            updateDbUser(editingId, { name, role, pin });
-        } else {
-            addDbUser({
-                id: generateUUID(),
-                name,
-                role,
-                pin
-            });
+        try {
+            if (editingId) {
+                await updateDbUser(editingId, { name, role, pin });
+            } else {
+                await addDbUser({
+                    id: generateUUID(),
+                    name,
+                    role,
+                    pin
+                });
+            }
+            setIsModalOpen(false);
+        } catch (e) {
+            alert(e instanceof Error ? e.message : "Erro ao salvar usuário");
         }
-        setIsModalOpen(false);
     };
 
     const handleDelete = (u: User) => {
@@ -1602,7 +1613,7 @@ export const UserManager = () => {
                                     {u.role === 'KITCHEN' && 'Apenas KDS'}
                                 </td>
                                 <td className="p-4 font-mono text-gray-400 group-hover:text-gray-800 transition-colors">
-                                    {u.role === 'ADMIN' ? '****' : (u.pin || '----')}
+                                    ****
                                 </td>
                                 <td className="p-4 text-right">
                                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -1665,14 +1676,16 @@ export const UserManager = () => {
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium mb-1">PIN de Acesso (4 dígitos)</label>
-                                <input 
+                                <label className="block text-sm font-medium mb-1">
+                                    PIN de Acesso (4 dígitos){editingId && ' — deixe em branco para manter o atual'}
+                                </label>
+                                <input
                                     type="text"
                                     maxLength={4}
                                     className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none font-mono text-center tracking-widest text-lg"
                                     value={pin}
                                     onChange={e => setPin(e.target.value.replace(/\D/g,''))}
-                                    placeholder="0000"
+                                    placeholder={editingId ? '••••' : '0000'}
                                 />
                             </div>
                         </div>
