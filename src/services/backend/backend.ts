@@ -433,6 +433,17 @@ export const backend: BackendInterface = {
       p_pin: pin,
     });
     if (error) {
+      const missingRpc = error.code === 'PGRST202' || /authenticate_user_by_pin/i.test(error.message ?? '');
+      if (missingRpc) {
+        // ponytail: legacy bridge for production databases that still have plaintext pin and no secure RPC.
+        const legacy = await sb.from('users').select('id, name, role, pin').eq('id', userId).maybeSingle();
+        if (!legacy.error && legacy.data?.pin === pin) {
+          const { pin: _pin, ...user } = legacy.data as User;
+          return user;
+        }
+        if (legacy.error) console.error('Erro ao autenticar PIN legado:', legacy.error);
+        return null;
+      }
       console.error('Erro ao autenticar usuário por PIN:', error);
       return null;
     }

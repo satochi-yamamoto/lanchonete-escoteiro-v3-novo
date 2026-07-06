@@ -23,8 +23,8 @@ revoke select on public.users from anon, authenticated;
 grant select (id, name, role, failed_pin_attempts, pin_locked_until) on public.users to anon, authenticated;
 revoke insert (pin_hash), update (pin_hash) on public.users from anon, authenticated;
 
-create or replace function public.authenticate_user_by_pin(p_user_id uuid, p_pin text)
-returns table(id uuid, name text, role text)
+create or replace function public.authenticate_user_by_pin(p_user_id text, p_pin text)
+returns table(id text, name text, role text)
 language plpgsql
 security definer
 set search_path = public
@@ -60,7 +60,7 @@ begin
 end;
 $$;
 
-grant execute on function public.authenticate_user_by_pin(uuid, text) to anon, authenticated;
+grant execute on function public.authenticate_user_by_pin(text, text) to anon, authenticated;
 
 -- Admin "create/update user" flow: writes the base fields and (optionally) a
 -- new PIN in a single transaction, so a client crash/network drop between two
@@ -69,7 +69,7 @@ grant execute on function public.authenticate_user_by_pin(uuid, text) to anon, a
 -- rejected on insert. This is also the single place PIN format/role are
 -- validated — the frontend check is a UI hint only, not a second source of
 -- truth.
-create or replace function public.upsert_user(p_id uuid, p_name text, p_role text, p_pin text default null)
+create or replace function public.upsert_user(p_id text, p_name text, p_role text, p_pin text default null)
 returns void
 language plpgsql
 security definer
@@ -103,4 +103,4 @@ begin
 end;
 $$;
 
-grant execute on function public.upsert_user(uuid, text, text, text) to anon, authenticated;
+grant execute on function public.upsert_user(text, text, text, text) to anon, authenticated;
