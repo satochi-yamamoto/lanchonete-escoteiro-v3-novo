@@ -62,24 +62,45 @@ $$;
 
 grant execute on function public.authenticate_user_by_pin(uuid, text) to anon, authenticated;
 
--- Admin "set/reset PIN" flow. Never returns or exposes the hash.
-create or replace function public.set_user_pin(p_user_id uuid, p_pin text)
+-- Admin "create/update user" flow: writes the base fields and (optionally) a
+-- new PIN in a single transaction, so a client crash/network drop between two
+-- separate calls can never leave the row updated but the PIN unchanged (or
+-- vice versa). p_pin = null means "keep the current PIN" on update, and is
+-- rejected on insert. This is also the single place PIN format/role are
+-- validated — the frontend check is a UI hint only, not a second source of
+-- truth.
+create or replace function public.upsert_user(p_id uuid, p_name text, p_role text, p_pin text default null)
 returns void
 language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  already_exists boolean;
 begin
-  if p_pin !~ '^\d{4}$' then
+  if p_role not in ('ADMIN', 'MANAGER', 'CASHIER', 'KITCHEN') then
+    raise exception 'Papel inválido: %', p_role;
+  end if;
+
+  if p_pin is not null and p_pin !~ '^\d{4}$' then
     raise exception 'PIN inválido: deve ter 4 dígitos';
   end if;
 
-  update public.users
-    set pin_hash = crypt(p_pin, gen_salt('bf')),
-        failed_pin_attempts = 0,
-        pin_locked_until = null
-    where id = p_user_id;
+  select exists(select 1 from public.users where id = p_id) into already_exists;
+
+  if not already_exists and p_pin is null then
+    raise exception 'PIN obrigatório para novo usuário';
+  end if;
+
+  insert into public.users (id, name, role, pin_hash)
+  values (p_id, p_name, p_role, case when p_pin is not null then crypt(p_pin, gen_salt('bf')) else null end)
+  on conflict (id) do update
+    set name = excluded.name,
+        role = excluded.role,
+        pin_hash = case when p_pin is not null then excluded.pin_hash else public.users.pin_hash end,
+        failed_pin_attempts = case when p_pin is not null then 0 else public.users.failed_pin_attempts end,
+        pin_locked_until = case when p_pin is not null then null else public.users.pin_locked_until end;
 end;
 $$;
 
-grant execute on function public.set_user_pin(uuid, text) to anon, authenticated;
+grant execute on function public.upsert_user(uuid, text, text, text) to anon, authenticated;

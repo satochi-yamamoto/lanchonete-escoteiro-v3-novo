@@ -1539,24 +1539,34 @@ export const UserManager = () => {
         setIsModalOpen(true);
     };
 
-    const handleSave = () => {
-        const pinRequired = !editingId; // new users must set a PIN; editing can leave it blank to keep the current one
-        if (!name || (pinRequired && (!pin || pin.length !== 4)) || (pin && pin.length !== 4)) {
-            alert("Nome obrigatório e PIN deve ter 4 dígitos");
+    const handleSave = async () => {
+        // Required-field checks only; PIN format (4 digits) and role are
+        // validated server-side (upsert_user RPC) so there's a single source
+        // of truth. The 4-digit input mask above is just a UI hint.
+        if (!name) {
+            alert("Nome é obrigatório");
+            return;
+        }
+        if (!editingId && !pin) {
+            alert("PIN é obrigatório para novo usuário");
             return;
         }
 
-        if (editingId) {
-            updateDbUser(editingId, { name, role, pin });
-        } else {
-            addDbUser({
-                id: generateUUID(),
-                name,
-                role,
-                pin
-            });
+        try {
+            if (editingId) {
+                await updateDbUser(editingId, { name, role, pin });
+            } else {
+                await addDbUser({
+                    id: generateUUID(),
+                    name,
+                    role,
+                    pin
+                });
+            }
+            setIsModalOpen(false);
+        } catch (e) {
+            alert(e instanceof Error ? e.message : "Erro ao salvar usuário");
         }
-        setIsModalOpen(false);
     };
 
     const handleDelete = (u: User) => {

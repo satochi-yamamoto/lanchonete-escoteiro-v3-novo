@@ -575,14 +575,16 @@ export const backend: BackendInterface = {
   upsertUser: async (u: User) => {
     if (!isSupabaseConfigured()) return;
     const sb = requireSupabase();
-    const { pin, ...userWithoutPin } = u;
-    const { error } = await sb.from('users').upsert([userWithoutPin], { onConflict: 'id' });
-    if (error) throw error;
+    // Base fields and PIN hash are written atomically in one RPC call so a
+    // dropped connection can't leave the user updated but the PIN unchanged.
     // A blank pin means "keep the existing PIN" (edit form pre-fills blank, never the real value).
-    if (pin) {
-      const { error: pinError } = await sb.rpc('set_user_pin', { p_user_id: u.id, p_pin: pin });
-      if (pinError) throw pinError;
-    }
+    const { error } = await sb.rpc('upsert_user', {
+      p_id: u.id,
+      p_name: u.name,
+      p_role: u.role,
+      p_pin: u.pin || null,
+    });
+    if (error) throw error;
   },
 
   upsertScout: async (s: Scout) => {

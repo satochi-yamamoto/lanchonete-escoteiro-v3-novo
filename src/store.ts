@@ -442,24 +442,26 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   addDbUser: async (u) => {
-    set(s => ({ dbUsers: [...s.dbUsers, u] }));
     try {
       await backend.upsertUser(u);
     } catch (e) {
       console.error("Falha ao adicionar usuário no banco:", e);
+      throw e;
     }
+    set(s => ({ dbUsers: [...s.dbUsers, u] }));
   },
   updateDbUser: async (id, u) => {
     const currentUser = get().dbUsers.find(x => x.id === id);
     if (!currentUser) return;
 
     const updatedUser = { ...currentUser, ...u };
-    set(s => ({ dbUsers: s.dbUsers.map(user => user.id === id ? updatedUser : user) }));
     try {
       await backend.upsertUser(updatedUser);
     } catch (e) {
       console.error("Falha ao atualizar usuário no banco:", e);
+      throw e;
     }
+    set(s => ({ dbUsers: s.dbUsers.map(user => user.id === id ? updatedUser : user) }));
   },
   deleteDbUser: async (id) => {
     set(s => ({ dbUsers: s.dbUsers.filter(x => x.id !== id) }));
