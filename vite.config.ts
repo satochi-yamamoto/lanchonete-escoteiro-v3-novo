@@ -13,8 +13,8 @@ export default defineConfig(({ mode }) => {
       plugins: [react()],
       test: {
           globals: true,
-          // environment: 'jsdom', // Temporarily disabled for troubleshooting
-          // setupFiles: './src/setupTests.ts',
+          environment: 'jsdom',
+          setupFiles: './src/setupTests.ts',
           include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
         },
       define: {

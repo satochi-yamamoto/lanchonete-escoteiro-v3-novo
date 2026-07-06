@@ -1,7 +1,10 @@
 // Script de Backup do Banco de Dados Supabase
 // Gera um arquivo SQL com schema + todos os dados (INSERT statements)
 // Uso: node backup-db.cjs
-// Requer: VITE_SUPABASE_URL e VITE_SUPABASE_SERVICE_ROLE_KEY no .env.local
+// Requer: VITE_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY no .env.local
+// (SUPABASE_SERVICE_ROLE_KEY não usa o prefixo VITE_ de propósito: qualquer
+// variável VITE_* é embutida no bundle do cliente pelo Vite, e essa chave dá
+// acesso total ao banco — nunca pode ir para o front-end.)
 
 const https = require('https');
 const fs = require('fs');
@@ -25,10 +28,10 @@ function loadEnv() {
 
 const env = loadEnv();
 const SUPABASE_URL = env.VITE_SUPABASE_URL;
-const SERVICE_ROLE_KEY = env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+const SERVICE_ROLE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-  console.error('❌ Defina VITE_SUPABASE_URL e VITE_SUPABASE_SERVICE_ROLE_KEY no .env.local');
+  console.error('❌ Defina VITE_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY no .env.local');
   process.exit(1);
 }
 

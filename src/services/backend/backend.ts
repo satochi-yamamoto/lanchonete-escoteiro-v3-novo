@@ -60,7 +60,10 @@ const defaultMenuCatalogs: MenuCatalog[] = [];
 const defaultTerminals: TerminalConfig[] = [];
 
 const requireSupabase = () => {
-  if (!supabase) throw new Error('Supabase não configurado (VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY).');
+  if (!supabase) {
+    console.error('Supabase não configurado (VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY).');
+    throw new Error('Backend indisponível.');
+  }
   return supabase;
 };
 
@@ -425,17 +428,16 @@ export const backend: BackendInterface = {
       return found as User;
     }
     const sb = requireSupabase();
-    const { data, error } = await sb
-      .from('users')
-      .select('id, name, role')
-      .eq('id', userId)
-      .eq('pin', pin)
-      .maybeSingle();
+    const { data, error } = await sb.rpc('authenticate_user_by_pin', {
+      p_user_id: userId,
+      p_pin: pin,
+    });
     if (error) {
       console.error('Erro ao autenticar usuário por PIN:', error);
       return null;
     }
-    return (data as User | null) ?? null;
+    const row = Array.isArray(data) ? data[0] : data;
+    return (row as User | null) ?? null;
   },
 
   loadInitialState: async (): Promise<BackendInitialState | null> => {
@@ -466,7 +468,7 @@ export const backend: BackendInterface = {
       sb.from('products').select('*').order('name', { ascending: true }),
       sb.from('ingredients').select('*').order('name', { ascending: true }),
       sb.from('promotions').select('*').order('priority', { ascending: false }),
-      sb.from('users').select('*').order('name', { ascending: true }),
+      sb.from('users').select('id, name, role').order('name', { ascending: true }),
       sb.from('orders').select('*').order('created_at', { ascending: false }),
       sb.from('shifts').select('*').eq('status', 'OPEN').order('opened_at', { ascending: false }).limit(1),
       sb.from('store_sessions').select('*').eq('status', 'OPEN').order('opened_at', { ascending: false }).limit(1),
@@ -573,8 +575,14 @@ export const backend: BackendInterface = {
   upsertUser: async (u: User) => {
     if (!isSupabaseConfigured()) return;
     const sb = requireSupabase();
-    const { error } = await sb.from('users').upsert([u], { onConflict: 'id' });
+    const { pin, ...userWithoutPin } = u;
+    const { error } = await sb.from('users').upsert([userWithoutPin], { onConflict: 'id' });
     if (error) throw error;
+    // A blank pin means "keep the existing PIN" (edit form pre-fills blank, never the real value).
+    if (pin) {
+      const { error: pinError } = await sb.rpc('set_user_pin', { p_user_id: u.id, p_pin: pin });
+      if (pinError) throw pinError;
+    }
   },
 
   upsertScout: async (s: Scout) => {
