@@ -1,6 +1,7 @@
 import { Ingredient, Order, Product, Promotion, Shift, StockLog, StoreSession, TaxSettings, User, Scout, PaymentMethod, MenuCatalog, TerminalConfig } from '../../types';
 import { MOCK_INGREDIENTS, MOCK_PRODUCTS, MOCK_USERS, MOCK_SCOUTS } from '../mockData';
 import { MOCK_PROMOTIONS } from '../promotionEngine';
+import { acknowledgeLocalOperation, enqueueLocalOperation, isDesktopRuntime, localRecords, markLocalOperationFailure, pendingLocalOperations, removeLocalRecord, replaceLocalRecords, saveLocalRecord } from './desktopSqlite';
 
 export type BackendKind = 'api' | 'local';
 export interface BackendStatus { kind: BackendKind; status: 'idle' | 'loading' | 'ready' | 'error'; error?: string; }
@@ -52,9 +53,83 @@ const localState = (): BackendInitialState => ({
   menuCatalogs: defaultMenuCatalogs, terminals: defaultTerminals, scouts: MOCK_SCOUTS, orders: [], currentShift: null,
   currentSession: null, taxSettings: defaultTaxSettings, paymentSettings: defaultPaymentSettings, printSettings: { enabled: true }, businessRules: { maxItemsPerOrder: 3 }
 });
-const putResource = <T>(table: string, value: { id: string }) => request<T>(`/api/resources/${table}/${encodeURIComponent(value.id)}`, { method: 'PUT', body: JSON.stringify(value) });
-const deleteResource = (table: string, id: string) => request<void>(`/api/resources/${table}/${encodeURIComponent(id)}`, { method: 'DELETE' });
-const putSetting = (id: string, value: unknown) => request<void>(`/api/settings/${id}`, { method: 'PUT', body: JSON.stringify(value) });
+const operationId = () => globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+const flushDesktopOutbox = async () => {
+  if (!isDesktopRuntime() || !getToken() || !navigator.onLine) return;
+  for (const operation of await pendingLocalOperations()) {
+    try {
+      const path = operation.resource === 'settings' ? `/api/settings/${encodeURIComponent(operation.recordId)}`
+        : operation.resource === 'users' ? `/api/users/${encodeURIComponent(operation.recordId)}`
+          : operation.resource === 'stock-logs' ? '/api/stock-logs'
+            : `/api/resources/${operation.resource}/${encodeURIComponent(operation.recordId)}`;
+      await request(path, operation.method === 'DELETE' ? { method: 'DELETE' } : { method: operation.method, body: JSON.stringify(operation.payload) });
+      await acknowledgeLocalOperation(operation.id);
+    } catch (error) { await markLocalOperationFailure(operation.id, error); break; }
+  }
+};
+const putResource = async <T>(table: string, value: { id: string }) => {
+  if (!isDesktopRuntime()) return request<T>(`/api/resources/${table}/${encodeURIComponent(value.id)}`, { method: 'PUT', body: JSON.stringify(value) });
+  await saveLocalRecord(table, value.id, value);
+  await enqueueLocalOperation({ id: operationId(), method: 'PUT', resource: table, recordId: value.id, payload: value });
+  void flushDesktopOutbox();
+};
+const deleteResource = async (table: string, id: string) => {
+  if (!isDesktopRuntime()) return request<void>(`/api/resources/${table}/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  await removeLocalRecord(table, id);
+  await enqueueLocalOperation({ id: operationId(), method: 'DELETE', resource: table, recordId: id });
+  void flushDesktopOutbox();
+};
+const putSetting = async (id: string, value: unknown) => {
+  if (!isDesktopRuntime()) return request<void>(`/api/settings/${id}`, { method: 'PUT', body: JSON.stringify(value) });
+  await saveLocalRecord('settings', id, { id, value });
+  await enqueueLocalOperation({ id: operationId(), method: 'PUT', resource: 'settings', recordId: id, payload: value });
+  void flushDesktopOutbox();
+};
+const putUser = async (user: User) => {
+  if (!isDesktopRuntime()) return request(`/api/users/${encodeURIComponent(user.id)}`, { method: 'PUT', body: JSON.stringify(user) });
+  await saveLocalRecord('users', user.id, user);
+  await enqueueLocalOperation({ id: operationId(), method: 'PUT', resource: 'users', recordId: user.id, payload: user });
+  void flushDesktopOutbox();
+};
+const putStockLog = async (log: StockLog) => {
+  if (!isDesktopRuntime()) return request('/api/stock-logs', { method: 'POST', body: JSON.stringify(log) });
+  await saveLocalRecord('stock_logs', log.id, log);
+  await enqueueLocalOperation({ id: operationId(), method: 'POST', resource: 'stock-logs', recordId: log.id, payload: log });
+  void flushDesktopOutbox();
+};
+
+const localDesktopState = async (): Promise<BackendInitialState> => {
+  const fallback = localState();
+  const [products, ingredients, stockLogs, promotions, users, orders, shifts, sessions, scouts, settings] = await Promise.all([
+    localRecords<Product>('products'), localRecords<Ingredient>('ingredients'), localRecords<StockLog>('stock_logs'), localRecords<Promotion>('promotions'),
+    localRecords<User>('users'), localRecords<Order>('orders'), localRecords<Shift>('shifts'), localRecords<StoreSession>('store_sessions'), localRecords<Scout>('scouts'),
+    localRecords<{ id: string; value: any }>('settings'),
+  ]);
+  const setting = (id: string, defaultValue: any) => settings.find((entry) => entry.id === id)?.value ?? defaultValue;
+  return {
+    ...fallback, products: products.length ? products : fallback.products, ingredients: ingredients.length ? ingredients : fallback.ingredients,
+    stockLogs, promotions: promotions.length ? promotions : fallback.promotions, users: users.length ? users : fallback.users, orders,
+    currentShift: shifts.find((shift) => shift.status === 'OPEN') ?? null, currentSession: sessions.find((session) => session.status === 'OPEN') ?? null,
+    scouts, taxSettings: setting('tax_settings', fallback.taxSettings), paymentSettings: setting('payment_settings', fallback.paymentSettings),
+    printSettings: setting('print_settings', fallback.printSettings), businessRules: setting('business_rules', fallback.businessRules),
+    menuCatalogs: setting('menu_catalogs', fallback.menuCatalogs), terminals: setting('terminals', fallback.terminals),
+  };
+};
+
+const persistDesktopState = async (state: BackendInitialState) => {
+  await Promise.all([
+    replaceLocalRecords('products', state.products), replaceLocalRecords('ingredients', state.ingredients), replaceLocalRecords('stock_logs', state.stockLogs),
+    replaceLocalRecords('promotions', state.promotions), replaceLocalRecords('users', state.users), replaceLocalRecords('orders', state.orders),
+    replaceLocalRecords('shifts', state.currentShift ? [state.currentShift] : []), replaceLocalRecords('store_sessions', state.currentSession ? [state.currentSession] : []),
+    replaceLocalRecords('scouts', state.scouts),
+    saveLocalRecord('settings', 'tax_settings', { id: 'tax_settings', value: state.taxSettings }),
+    saveLocalRecord('settings', 'payment_settings', { id: 'payment_settings', value: state.paymentSettings }),
+    saveLocalRecord('settings', 'print_settings', { id: 'print_settings', value: state.printSettings }),
+    saveLocalRecord('settings', 'business_rules', { id: 'business_rules', value: state.businessRules }),
+    saveLocalRecord('settings', 'menu_catalogs', { id: 'menu_catalogs', value: state.menuCatalogs }),
+    saveLocalRecord('settings', 'terminals', { id: 'terminals', value: state.terminals }),
+  ]);
+};
 
 export interface BackendInterface {
   kind: BackendKind; loadInitialState: () => Promise<BackendInitialState | null>; checkSchema: () => Promise<string[]>;
@@ -79,6 +154,18 @@ export const backend: BackendInterface = {
   kind: isApiConfigured() ? 'api' : 'local',
   checkSchema: async () => { if (!isApiConfigured()) return []; await request('/api/health', {}, false); return []; },
   loadInitialState: async () => {
+    if (isDesktopRuntime()) {
+      if (!getToken()) {
+        try { await replaceLocalRecords('users', await request<User[]>('/api/login-users', {}, false)); } catch { /* Offline login uses cached users. */ }
+        return localDesktopState();
+      }
+      try {
+        await flushDesktopOutbox();
+        const remote = await request<BackendInitialState>('/api/initial-state');
+        await persistDesktopState(remote);
+        return remote;
+      } catch { return localDesktopState(); }
+    }
     if (!isApiConfigured()) return localState();
     if (!getToken()) {
       const users = await request<User[]>('/api/login-users', {}, false);
@@ -86,15 +173,15 @@ export const backend: BackendInterface = {
     }
     return request<BackendInitialState>('/api/initial-state');
   },
-  fetchScouts: async () => isApiConfigured() ? request<Scout[]>('/api/scouts') : MOCK_SCOUTS,
-  fetchOrders: async () => isApiConfigured() ? request<Order[]>('/api/orders') : [],
+  fetchScouts: async () => isDesktopRuntime() ? localRecords<Scout>('scouts') : isApiConfigured() ? request<Scout[]>('/api/scouts') : MOCK_SCOUTS,
+  fetchOrders: async () => isDesktopRuntime() ? localRecords<Order>('orders') : isApiConfigured() ? request<Order[]>('/api/orders') : [],
   upsertProduct: async (product) => { if (isApiConfigured()) await putResource('products', product); },
   deleteProduct: async (id) => { if (isApiConfigured()) await deleteResource('products', id); },
   upsertIngredient: async (ingredient) => { if (isApiConfigured()) await putResource('ingredients', ingredient); },
-  insertStockLog: async (log) => { if (isApiConfigured()) await request('/api/stock-logs', { method: 'POST', body: JSON.stringify(log) }); },
+  insertStockLog: async (log) => { if (isApiConfigured()) await putStockLog(log); },
   upsertPromotion: async (promotion) => { if (isApiConfigured()) await putResource('promotions', promotion); },
   deletePromotion: async (id) => { if (isApiConfigured()) await deleteResource('promotions', id); },
-  upsertUser: async (user) => { if (isApiConfigured()) await request(`/api/users/${encodeURIComponent(user.id)}`, { method: 'PUT', body: JSON.stringify(user) }); },
+  upsertUser: async (user) => { if (isApiConfigured()) await putUser(user); },
   deleteUser: async (id) => { if (isApiConfigured()) await deleteResource('users', id); },
   upsertScout: async (scout) => { if (isApiConfigured()) await putResource('scouts', scout); },
   deleteScout: async (id) => { if (isApiConfigured()) await deleteResource('scouts', id); },

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Lanchonete Escoteiros",
+  "version": "0.1.0",
+  "identifier": "br.com.asydev.lanchoneteescoteiros",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:3000",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [{ "title": "Lanchonete Escoteiros", "width": 1280, "height": 800, "minWidth": 1024, "minHeight": 650 }],
+    "security": { "csp": null }
+  },
+  "bundle": { "active": true, "targets": ["nsis"] },
+  "plugins": { "sql": { "preload": ["sqlite:lanchonete-offline.db"] } }
+}

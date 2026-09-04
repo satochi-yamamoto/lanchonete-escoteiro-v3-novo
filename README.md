@@ -75,4 +75,12 @@ npm run import:postgres -- /backups/supabase-export.json
 
 ## Operação sem internet
 
-A versão web permanece online. Para operar um caixa Windows sem internet e manter dados após reinício, a arquitetura aprovada é **Tauri 2 + SQLite local + outbox de comandos idempotentes**, com o PostgreSQL da VPS como fonte de verdade quando a conexão voltar. O contrato de sincronização, conflitos e o plano de piloto estão em [ADR-001](docs/adr/001-offline-first-windows.md). Não use SQLite/IndexedDB como réplica genérica de tabelas para pedidos, estoque ou caixa.
+A versão web permanece online. A variante Windows usa **Tauri 2 + SQLite local + outbox persistida**: toda gravação é armazenada primeiro em `lanchonete-offline.db`; com conexão, a fila é transmitida à API e o estado remoto é recarregado na abertura, reconexão e a cada minuto. Sem rede, o caixa continua com o catálogo, usuários, turno e pedidos do último estado sincronizado.
+
+```powershell
+npm install
+npm run desktop:dev
+npm run desktop:build
+```
+
+O instalador NSIS é produzido em `src-tauri/target/release/bundle/nsis/`. Para gerar o executável, instale Rust MSVC e Microsoft C++ Build Tools/WebView2 no Windows; detalhes e o contrato de conflitos estão em [ADR-001](docs/adr/001-offline-first-windows.md). Não use SQLite/IndexedDB como réplica genérica de tabelas para pedidos, estoque ou caixa.

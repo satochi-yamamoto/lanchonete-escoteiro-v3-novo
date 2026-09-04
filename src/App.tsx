@@ -6,6 +6,7 @@ import { useStore } from './store';
 import { LoginScreen } from './components/LoginScreen';
 import { User } from './types';
 import { LogOut, Monitor, Settings2 } from 'lucide-react';
+import { isDesktopRuntime } from './services/backend/desktopSqlite';
 
 // Simple router to switch between apps for the demo
 const App = () => {
@@ -21,6 +22,18 @@ const App = () => {
         if (didInit.current) return;
         didInit.current = true;
         void initializeBackend();
+    }, [initializeBackend]);
+
+    useEffect(() => {
+        const synchronizeAfterReconnect = () => { void initializeBackend(); };
+        window.addEventListener('online', synchronizeAfterReconnect);
+        return () => window.removeEventListener('online', synchronizeAfterReconnect);
+    }, [initializeBackend]);
+
+    useEffect(() => {
+        if (!isDesktopRuntime()) return;
+        const timer = window.setInterval(() => { if (navigator.onLine) void initializeBackend(); }, 60_000);
+        return () => window.clearInterval(timer);
     }, [initializeBackend]);
 
     const handleLogin = (user: User) => {

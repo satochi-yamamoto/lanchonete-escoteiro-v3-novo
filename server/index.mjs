@@ -240,8 +240,9 @@ app.post('/api/stock-logs', requireAuth, requireRoles(stockRoles), async (reques
   try {
     const log = request.body ?? {};
     const columns = ['id', 'date', 'ingredient_id', 'change', 'type', 'notes'].filter((column) => log[column] !== undefined);
-    const { rows } = await pool.query(`insert into stock_logs (${columns.map((column) => `"${column}"`).join(', ')}) values (${columns.map((_, index) => `$${index + 1}`).join(', ')}) returning *`, columns.map((column) => log[column]));
-    response.status(201).json(rows[0]);
+    const { rows } = await pool.query(`insert into stock_logs (${columns.map((column) => `"${column}"`).join(', ')}) values (${columns.map((_, index) => `$${index + 1}`).join(', ')}) on conflict (id) do nothing returning *`, columns.map((column) => log[column]));
+    const record = rows[0] ?? (await pool.query('select * from stock_logs where id = $1', [log.id])).rows[0];
+    response.status(rows[0] ? 201 : 200).json(record);
   } catch (error) { next(error); }
 });
 

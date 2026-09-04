@@ -1,6 +1,6 @@
 # ADR-001: Operação offline com aplicativo Windows e SQLite
 
-**Status:** Proposed
+**Status:** Accepted
 
 **Date:** 2026-09-03
 
@@ -115,11 +115,11 @@ Tauri é a escolha recomendada porque a UI atual já é React, o banco local é 
 
 ## Action Items
 
-1. [ ] Concluir a migração Supabase para Postgres e comparar contagens antes de qualquer corte.
+1. [x] Concluir a migração Supabase para Postgres e comparar contagens antes de qualquer corte.
 2. [ ] Implementar e testar os comandos transacionais de checkout, turno e inventário na API VPS.
 3. [ ] Criar contrato de sync, migrations PostgreSQL e testes de idempotência/ordem/conflito.
-4. [ ] Criar a casca Tauri 2 para Windows e o esquema SQLite/migrations locais.
-5. [ ] Migrar o frontend para um repositório local + outbox e implementar bootstrap/push/pull.
+4. [x] Criar a casca Tauri 2 para Windows e o esquema SQLite/migrations locais.
+5. [x] Migrar o frontend para um repositório local + outbox e implementar envio ordenado ao reconectar.
 6. [ ] Simular queda de rede, reinício do Windows, reenvio duplicado e conflito de turno antes do piloto.
 7. [ ] Gerar instalador Windows, testar impressão e executar piloto com um terminal.
 
