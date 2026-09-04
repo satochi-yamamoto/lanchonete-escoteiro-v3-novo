@@ -1,0 +1,10 @@
+.git
+.env
+.env.*
+!.env.docker.example
+node_modules
+dist
+backups
+supabase/backups
+testsprite_tests
+*.log

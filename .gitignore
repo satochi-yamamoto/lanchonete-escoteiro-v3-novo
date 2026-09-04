@@ -24,6 +24,7 @@ supabase/.env.*
 
 # Database backups (may contain sensitive data)
 supabase/backups/
+backups/
 
 # Editor directories and files
 .vscode/*
@@ -36,3 +37,5 @@ supabase/backups/
 *.sln
 *.sw?
 .env*.local
+
+.vercel
