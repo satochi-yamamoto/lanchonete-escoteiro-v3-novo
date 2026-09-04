@@ -38,15 +38,28 @@ const jsonColumns = {
   products: new Set(['modifiers', 'recipe']), promotions: new Set(['rules']), orders: new Set(['items', 'payment_info']),
   shifts: new Set(['transactions', 'adjustments']),
 };
+const resourceRoles = {
+  products: ['ADMIN'],
+  ingredients: ['ADMIN', 'MANAGER', 'CASHIER'],
+  promotions: ['ADMIN'],
+  users: ['ADMIN'],
+  scouts: ['ADMIN'],
+  orders: ['ADMIN', 'MANAGER', 'CASHIER', 'KITCHEN'],
+  shifts: ['ADMIN', 'MANAGER', 'CASHIER'],
+  store_sessions: ['ADMIN'],
+};
+const stockRoles = ['ADMIN', 'MANAGER', 'CASHIER'];
 
-const readToken = (request) => {
+const readAccessToken = (request) => {
   const header = request.get('authorization');
-  return header?.startsWith('Bearer ') ? header.slice(7) : request.query.access_token;
+  return header?.startsWith('Bearer ') ? header.slice(7) : undefined;
 };
 
 const requireAuth = (request, response, next) => {
   try {
-    request.user = jwt.verify(readToken(request), jwtSecret);
+    const user = jwt.verify(readAccessToken(request), jwtSecret);
+    if (user.token_use === 'sse') throw new Error('SSE ticket is not an access token');
+    request.user = user;
     next();
   } catch {
     response.status(401).json({ error: 'Não autenticado.' });
@@ -56,6 +69,28 @@ const requireAuth = (request, response, next) => {
 const requireAdmin = (request, response, next) => {
   if (request.user?.role !== 'ADMIN') return response.status(403).json({ error: 'Acesso administrativo necessário.' });
   next();
+};
+
+const requireRoles = (roles) => (request, response, next) => {
+  if (!roles.includes(request.user?.role)) return response.status(403).json({ error: 'Sem permissão para esta operação.' });
+  next();
+};
+
+const requireResourceRole = (request, response, next) => {
+  const roles = resourceRoles[request.params.table];
+  if (!roles) return response.status(404).json({ error: 'Tabela não permitida.' });
+  return requireRoles(roles)(request, response, next);
+};
+
+const requireSseTicket = (request, response, next) => {
+  try {
+    const ticket = jwt.verify(request.query.ticket, jwtSecret, { audience: 'sse' });
+    if (ticket.token_use !== 'sse') throw new Error('Invalid SSE ticket');
+    request.user = ticket;
+    next();
+  } catch {
+    response.status(401).json({ error: 'Ticket SSE inválido.' });
+  }
 };
 
 const publicUser = ({ id, name, role }) => ({ id, name, role });
@@ -161,7 +196,12 @@ app.post('/api/auth/pin', async (request, response, next) => {
   } catch (error) { next(error); }
 });
 
-app.get('/api/events', requireAuth, (request, response) => {
+app.post('/api/events/token', requireAuth, (request, response) => {
+  const ticket = jwt.sign({ ...publicUser(request.user), token_use: 'sse' }, jwtSecret, { expiresIn: '2m', audience: 'sse' });
+  response.json({ ticket });
+});
+
+app.get('/api/events', requireSseTicket, (request, response) => {
   response.set({ 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache, no-transform', Connection: 'keep-alive' });
   response.flushHeaders();
   response.write('event: ready\ndata: {"status":"SUBSCRIBED"}\n\n');
@@ -190,14 +230,13 @@ app.get('/api/orders', requireAuth, async (_request, response, next) => {
   try { response.json((await pool.query('select * from orders order by created_at desc')).rows); } catch (error) { next(error); }
 });
 
-app.put('/api/resources/:table/:id', requireAuth, async (request, response, next) => {
+app.put('/api/resources/:table/:id', requireAuth, requireResourceRole, async (request, response, next) => {
   try {
-    if (request.params.table === 'users') return response.status(400).json({ error: 'Use o endpoint de usuários.' });
     response.json(await upsert(request.params.table, request.params.id, request.body ?? {}));
   } catch (error) { next(error); }
 });
 
-app.post('/api/stock-logs', requireAuth, async (request, response, next) => {
+app.post('/api/stock-logs', requireAuth, requireRoles(stockRoles), async (request, response, next) => {
   try {
     const log = request.body ?? {};
     const columns = ['id', 'date', 'ingredient_id', 'change', 'type', 'notes'].filter((column) => log[column] !== undefined);
@@ -206,7 +245,7 @@ app.post('/api/stock-logs', requireAuth, async (request, response, next) => {
   } catch (error) { next(error); }
 });
 
-app.put('/api/settings/:id', requireAuth, async (request, response, next) => {
+app.put('/api/settings/:id', requireAuth, requireAdmin, async (request, response, next) => {
   try {
     const { rows } = await pool.query('insert into settings (id, value) values ($1, $2::jsonb) on conflict (id) do update set value = excluded.value, updated_at = now() returning value', [request.params.id, JSON.stringify(request.body ?? {})]);
     response.json(rows[0].value);
@@ -227,11 +266,9 @@ app.put('/api/users/:id', requireAuth, requireAdmin, async (request, response, n
   } catch (error) { next(error); }
 });
 
-app.delete('/api/resources/:table/:id', requireAuth, async (request, response, next) => {
+app.delete('/api/resources/:table/:id', requireAuth, requireResourceRole, async (request, response, next) => {
   try {
     const allowed = tables[request.params.table];
-    if (!allowed) return response.status(404).json({ error: 'Tabela não permitida.' });
-    if (request.params.table === 'users' && request.user.role !== 'ADMIN') return response.status(403).json({ error: 'Acesso administrativo necessário.' });
     await pool.query(`delete from "${request.params.table}" where id = $1`, [request.params.id]);
     response.status(204).end();
   } catch (error) { next(error); }
