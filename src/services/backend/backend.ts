@@ -109,17 +109,34 @@ export const backend: BackendInterface = {
   upsertTerminals: async (terminals) => { if (isApiConfigured()) await putSetting('terminals', terminals); },
   subscribeToChanges: (onOrdersChange, onSessionsChange, onShiftsChange, onStatusChange) => {
     if (!isApiConfigured() || !getToken()) return () => {};
-    onStatusChange?.('CONNECTING');
-    const source = new EventSource(`${endpoint('/api/events')}?access_token=${encodeURIComponent(getToken()!)}`);
-    source.addEventListener('ready', () => onStatusChange?.('SUBSCRIBED'));
-    source.onmessage = (message) => {
-      const event = JSON.parse(message.data);
-      if (event.entity === 'orders') onOrdersChange(event);
-      if (event.entity === 'store_sessions') onSessionsChange(event);
-      if (event.entity === 'shifts') onShiftsChange(event);
+    let stopped = false;
+    let source: EventSource | null = null;
+    let reconnectTimer: number | undefined;
+    const connect = async () => {
+      onStatusChange?.('CONNECTING');
+      try {
+        const { ticket } = await request<{ ticket: string }>('/api/events/token', { method: 'POST' });
+        if (stopped) return;
+        source = new EventSource(`${endpoint('/api/events')}?ticket=${encodeURIComponent(ticket)}`);
+        source.addEventListener('ready', () => onStatusChange?.('SUBSCRIBED'));
+        source.onmessage = (message) => {
+          const event = JSON.parse(message.data);
+          if (event.entity === 'orders') onOrdersChange(event);
+          if (event.entity === 'store_sessions') onSessionsChange(event);
+          if (event.entity === 'shifts') onShiftsChange(event);
+        };
+        source.onerror = () => {
+          source?.close();
+          onStatusChange?.('CHANNEL_ERROR');
+          if (!stopped) reconnectTimer = window.setTimeout(() => { void connect(); }, 2_000);
+        };
+      } catch {
+        onStatusChange?.('CHANNEL_ERROR');
+        if (!stopped) reconnectTimer = window.setTimeout(() => { void connect(); }, 2_000);
+      }
     };
-    source.onerror = () => onStatusChange?.('CHANNEL_ERROR');
-    return () => source.close();
+    void connect();
+    return () => { stopped = true; source?.close(); if (reconnectTimer) window.clearTimeout(reconnectTimer); };
   },
   fetchReports: async (startDate, endDate) => {
     if (!isApiConfigured()) return { shifts: [], orders: [] };
