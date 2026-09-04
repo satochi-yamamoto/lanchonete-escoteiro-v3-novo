@@ -1716,7 +1716,7 @@ export const ReportsManager = () => {
     const loadData = async () => {
         setLoading(true);
         try {
-            if (backend.kind !== 'supabase') {
+            if (backend.kind !== 'api') {
                 setReportData({
                     shifts: [...reportShifts].sort((a, b) => new Date(b.opened_at).getTime() - new Date(a.opened_at).getTime()),
                     orders
@@ -1823,7 +1823,7 @@ export const ReportsManager = () => {
                             const totalRevenue = Object.values(paymentStats).reduce((a: any, b: any) => a + b.total, 0) as number;
                             
                             // Calculate Refunds & Drops from Shift Transactions
-                            // Ensure transactions is an array (it might be JSON in Supabase response)
+                            // Ensure transactions is an array after JSON transport from the API.
                             const transactions = Array.isArray(shift.transactions) 
                                 ? shift.transactions 
                                 : typeof shift.transactions === 'string' 

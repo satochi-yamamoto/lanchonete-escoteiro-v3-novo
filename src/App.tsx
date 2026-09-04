@@ -23,11 +23,18 @@ const App = () => {
         void initializeBackend();
     }, [initializeBackend]);
 
+    const handleLogin = (user: User) => {
+        setCurrentUser(user);
+        // A sessão JWT é criada pelo login; refaça a assinatura SSE somente agora.
+        void initializeBackend();
+    };
+
     if (!currentUser) {
-        return <LoginScreen onLogin={setCurrentUser} />;
+        return <LoginScreen onLogin={handleLogin} />;
     }
 
     const handleLogout = () => {
+        void backend.signOut();
         setCurrentUser(null);
         setCurrentApp(null);
     };
@@ -66,7 +73,7 @@ const App = () => {
                 </div>
 
                 {/* Connection Status Box */}
-                {backend.kind === 'supabase' && (
+                {backend.kind === 'api' && (
                     <div className="mb-8 flex flex-col items-center gap-4 w-full max-w-2xl">
                         {backendStatus.status === 'loading' && (
                             <div className="text-sm text-cooper-leaf animate-pulse">Conectando ao banco de dados...</div>
@@ -79,7 +86,7 @@ const App = () => {
                                 }`}>
                                 <div className={`w-2 h-2 rounded-full ${realtimeStatus === 'SUBSCRIBED' ? 'bg-green-500' : 'bg-yellow-500 animate-pulse'}`}></div>
                                 Realtime: {realtimeStatus}
-                                {realtimeStatus === 'CHANNEL_ERROR' && " (Verifique se a tabela 'orders' está na publicação do Supabase)"}
+                                {realtimeStatus === 'CHANNEL_ERROR' && " (Verifique a conexão de tempo real da API)"}
                             </div>
                         )}
 
@@ -88,8 +95,7 @@ const App = () => {
                                 <p className="font-bold text-red-700 mb-2">Falha na conexão com o Banco de Dados</p>
                                 <p className="mb-2">{backendStatus.error}</p>
                                 <p className="text-xs opacity-75">
-                                    Dica: Se este é o primeiro acesso, certifique-se de ter rodado os scripts
-                                    <code>schema.clean.sql</code> e <code>schema.rls.sql</code> no painel do Supabase.
+                                    Dica: verifique a URL da API, o CORS e os containers da VPS.
                                 </p>
                             </div>
                         )}

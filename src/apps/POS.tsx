@@ -825,7 +825,7 @@ export const POS = ({
                 })));
             } catch (error) {
                 console.error('Falha ao abrir caixa:', error);
-                alert('Não foi possível abrir o caixa no banco de dados. Verifique a conexão/Supabase e tente novamente.');
+                alert('Não foi possível abrir o caixa no banco de dados. Verifique a conexão com a API e tente novamente.');
             } finally {
                 setIsOpeningShift(false);
             }

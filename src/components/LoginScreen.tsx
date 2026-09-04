@@ -85,7 +85,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                     <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
                         {users.length === 0 && (
                             <div className="rounded-lg border border-cooper-line bg-cooper-panel p-4 text-sm text-cooper-muted">
-                                Nenhum usuário encontrado no backend. Verifique a tabela <code>users</code> no Supabase.
+                                Nenhum usuário encontrado no backend. Verifique a tabela <code>users</code> no banco de dados.
                             </div>
                         )}
                         {users.map((user) => (

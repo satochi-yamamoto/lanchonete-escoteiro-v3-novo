@@ -1,177 +1,78 @@
 # Lanchonete Escoteiros POS Suite
 
-Sistema de PDV (Ponto de Venda) modular para a lanchonete do Grupo Escoteiro Cooper Cotia, desenvolvido com React, Vite e Supabase.
-
-O projeto apoia a operação de vendas da lanchonete em atividades, eventos e ações do grupo escoteiro. As vendas registradas no sistema não têm como objetivo a lucratividade; elas servem para organizar a operação, controlar insumos, prestar contas e apoiar a sustentabilidade das atividades escoteiras.
+PDV modular do Grupo Escoteiro Cooper Cotia. O frontend React/Vite é servido separadamente e usa uma API Node.js com PostgreSQL em Docker na VPS. O Supabase não faz parte da execução do sistema.
 
 ## Arquitetura
 
-O projeto é uma SPA (Single Page Application) modular com dois apps principais acessíveis via launcher após autenticação por PIN:
+- `src/`: SPA React com POS, Admin, KDS, Kiosk e TV.
+- `server/`: API Express. Valida PINs com hash `pgcrypto`, emite JWT de 12 horas e expõe SSE para pedidos, turnos e sessões em tempo real.
+- `database/init/001_schema.sql`: esquema completo e gatilhos de atualização/realtime do PostgreSQL.
+- `docker-compose.yml`: API e Postgres isolados; apenas a API é publicada em `127.0.0.1` para o proxy reverso da VPS.
+- `scripts/export-supabase.mjs` e `scripts/import-postgres.mjs`: exportação pontual da origem e importação transacional no novo banco.
 
-- **POS (Terminal de Caixa)**: Registro de pedidos, pagamentos e controle de caixa. Acesso: ADMIN, MANAGER, CASHIER.
-- **Admin (Backoffice)**: Gestão de produtos, estoque, relatórios, promoções, escoteiros, cardápios e terminais. Acesso: ADMIN.
-
-Módulos adicionais existem como apps standalone (não carregados pelo launcher principal):
-- **KDS (Kitchen Display System)**: Gestão de fila de produção na cozinha (versão completa 3 colunas ou simplificada mobile).
-- **Kiosk (Autoatendimento)**: Interface touch para clientes realizarem pedidos.
-- **TV (Painel de Senhas)**: Exibição de pedidos prontos para retirada.
-
-### Stack Tecnológica
-
-- **Frontend**: React 19.2, TypeScript 5.8, Vite 6.2
-- **Estado Global**: Zustand 5.0 (persistência local + sincronização remota)
-- **Backend / Banco de Dados**: Supabase (PostgreSQL + Realtime)
-- **Ícones**: Lucide React
-- **Testes**: Vitest 4.0
-- **Deploy**: Vercel
-
-## Instalação e Configuração
-
-### Pré-requisitos
-
-- Node.js (v18+)
-- Conta no Supabase (para persistência em nuvem — opcional)
-
-### 1. Configurar Variáveis de Ambiente
-
-Copie o arquivo de exemplo e preencha com suas credenciais do Supabase:
-
-```bash
-cp .env.example .env.local
-```
-
-Edite `.env.local`:
-
-```env
-VITE_SUPABASE_URL=sua_url_do_supabase
-VITE_SUPABASE_ANON_KEY=sua_chave_anonima_publica
-```
-
-> **Nota**: Se as variáveis não forem configuradas, o sistema rodará em modo **Offline/Mock**, mantendo os dados apenas na memória do navegador.
-
-### 2. Configurar Banco de Dados (Supabase)
-
-Acesse o painel do Supabase, vá em **SQL Editor** e execute os scripts na seguinte ordem:
-
-1. **Criar Tabelas**: `supabase/schema.clean.sql`
-2. **Configurar Permissões (RLS)**: `supabase/schema.rls.sql`
-3. **Habilitar Realtime**: `supabase/schema.realtime.sql`
-
-Isso criará as tabelas: `products`, `ingredients`, `orders`, `users`, `promotions`, `stock_logs`, `shifts`, `store_sessions`, `scouts`.
-
-### 3. Executar o Projeto
+## Desenvolvimento do frontend
 
 ```bash
 npm install
+Copy-Item .env.example .env.local
 npm run dev
 ```
 
-Acesse: http://localhost:3000
+Defina a URL pública da API em `.env.local`:
 
-## Comandos Disponíveis
+```env
+VITE_API_URL=https://api.seu-dominio.com
+```
+
+Sem essa variável, o frontend mantém apenas o modo local/mock para desenvolvimento. Produção exige a API.
+
+## Subir API e Postgres na VPS
+
+1. Copie o projeto para um diretório isolado, por exemplo `/opt/lanchonete-escoteiro`.
+2. Crie `/opt/lanchonete-escoteiro/.env` a partir de `.env.docker.example`, com senha de banco e `JWT_SECRET` únicos e com `CORS_ORIGINS` restrito aos domínios reais do frontend.
+3. Valide e inicie:
 
 ```bash
-npm run dev       # Servidor de desenvolvimento (porta 3000)
-npm run build     # Build de produção
-npm run preview   # Preview do build de produção
-npm run test      # Testes (Vitest)
-npm run backup    # Backup do banco de dados Supabase
+docker compose config -q
+docker compose up -d --build
+curl -fsS http://127.0.0.1:8787/api/health
 ```
 
-## Funcionalidades
+O Postgres não tem porta publicada. Configure o proxy reverso já existente na VPS para encaminhar somente o domínio HTTPS da API a `127.0.0.1:8787`.
 
-### Autenticação
-- Login via PIN de 4 dígitos
-- Seleção de usuário + digitação de PIN no teclado numérico
-- Controle de acesso por role (ADMIN, MANAGER, CASHIER, KITCHEN)
+## Migração de dados do Supabase
 
-### Gestão de Turno (Caixa)
-- **Abertura com Planejamento Operacional**: Ao abrir turno, informar custo dos produtos, quantidade planejada de lanches normais/veganos, **quantidade de lanches para Chefes** (o total de **Escoteiros/Extra** é calculado automaticamente = Normal + Vegano − Chefes), custo unitário e nome do cardápio do dia.
-- **Valor Unitário Sugerido**: Rateado apenas pelos lanches pagantes (Escoteiros/Extra), pois os lanches de **Chefes** custam R$ 0,00.
-- **Lanches Fixos no Caixa**: `00 - Chefe` (R$ 0,00), `01 - Escoteiro`, `02 - Extra` e `03 - Vegano` quando houver quantidade vegana planejada. Todos ficam no topo do catálogo e são derivados da abertura, sem entrar no cadastro normal de produtos.
-- **Ajuste de Abertura pelo PDV**: A engrenagem do PDV abre a tela **Ajustar Abertura do Caixa**, carregando os dados da abertura para correção pelo operador. Alterações no fundo de caixa ajustam o caixa teórico pela diferença.
-- **Painéis de Lanches do Dia**: O PDV mostra a disponibilidade por tipo de lanche (`Planejado`, `Vendido`, `Disponível`) e um resumo financeiro com **Total Vendido**, **Custo dos Produtos/Ingredientes** e **Falta para Atingir o Custo**.
-- **Fechamento pré-preenchido**: O formulário de fechamento traz os dados da abertura (cardápio, custo e total produzido); alterações são gravadas como **histórico de ajustes** para auditoria.
-- **Transações**: OPENING, SALE, DROP (sangria), ADD (suprimento), REIMBURSEMENT, CLOSING.
-- **Relatório Z Térmico**: Impressão nativa formatada para bobinas de impressoras térmicas.
+Faça a exportação enquanto a origem ainda está disponível; o arquivo contém dados operacionais e não deve ser versionado.
 
-### Pagamentos
-- Métodos ativos: **PIX** e **Dinheiro (CASH)**
-- No pagamento em dinheiro, **campo "Valor recebido" vazio assume o total a pagar** (pagamento exato, sem troco)
-- Configurações de métodos persistidas em localStorage
-
-### Escoteiros
-- Cadastro de escoteiros com ramo (branch) e patrulha (patrol)
-- Importação em lote
-- Vinculação a operações e eventos
-
-### Cardápios (Menu Catalogs)
-- Cardápios nomeados com toggle ativo/inativo
-- Operação baseada em eventos
-
-### Terminais
-- Configurações de terminal com data de operação
-- Toggle ativo/inativo
-
-### Motor de Promoções
-- **Combos Flexíveis**: Produtos diferentes da mesma categoria qualificam para bundles (Ex: "2 Lanches por R$ 20").
-- **BOGO e Desconto Percentual**: Suporte completo.
-- **Status Ativo/Inativo**: Promoções pausáveis sem exclusão.
-- **Prioridade**: Descontos aplicados em ordem de prioridade.
-
-### KDS (Kitchen Display System)
-1. **KDS Completo**: Fluxo em 3 colunas (Pendente → Preparando → Pronto).
-2. **KDS Simplificado (Mobile-First)**: Itens individuais como cards grandes para toque rápido em tablets.
-
-### Sessão da Loja (Business Day)
-- Abertura/fechamento de expediente com rastreamento de usuário
-- Sincronização em tempo real entre terminais
-
-### Sincronização em Tempo Real
-- Pedidos sincronizados entre POS, KDS e TV via Supabase Realtime
-- Status de conexão visível no launcher (CONNECTING, SUBSCRIBED, CHANNEL_ERROR)
-
-## Estrutura do Projeto
-
+```powershell
+npm run backup -- backups/supabase-export.json
 ```
-src/
-├── apps/           # Módulos principais (POS, Admin, KDS, Kiosk, TV)
-├── components/     # Componentes UI por módulo
-│   ├── admin/      # Componentes do Admin (~131KB AdminComponents.tsx)
-│   ├── pos/        # Componentes do POS (~95KB PosComponents.tsx)
-│   ├── kds/        # Componentes do KDS
-│   ├── kiosk/      # Componentes do Kiosk
-│   ├── ui.tsx      # Primitivos UI compartilhados
-│   └── LoginScreen.tsx
-├── services/       # Lógica de negócio
-│   ├── backend/    # Abstração backend (Supabase/Mock)
-│   ├── promotionEngine.ts
-│   └── mockData.ts
-├── constants/      # Mensagens centralizadas
-├── store.ts        # Estado global (Zustand)
-├── types.ts        # Interfaces e enums TypeScript
-└── utils.ts        # Utilitários
-supabase/
-├── schema.clean.sql
-├── schema.rls.sql
-├── schema.realtime.sql
-├── migrations/     # Migrações incrementais
-└── backups/        # Backups do banco
+
+Transfira o arquivo para `/opt/lanchonete-escoteiro/backups/supabase-export.json` na VPS e execute:
+
+```bash
+docker compose exec -T api node scripts/import-postgres.mjs /backups/supabase-export.json
+docker compose exec -T postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "select 'products' as table, count(*) from products union all select 'orders', count(*) from orders union all select 'store_sessions', count(*) from store_sessions union all select 'users', count(*) from users;"
+```
+
+A importação é transacional, inclui `store_sessions` (ausente no backup legado) e converte PINs legados em hashes. Não desative a origem antes de comparar as contagens e validar o login, um pedido e a atualização entre dois terminais.
+
+## Comandos
+
+```bash
+npm run build
+npm run test
+npm run backup -- backups/supabase-export.json
+npm run import:postgres -- /backups/supabase-export.json
 ```
 
 ## Segurança
 
-- **RLS (Row Level Security)**: Tabelas com políticas RLS para produção.
-- **Variáveis de Ambiente**: Nunca commite `.env.local` ou chaves `service_role` no repositório.
-- **PINs**: Armazenados apenas no backend, nunca expostos na lista de login.
+- Não publique Postgres na internet.
+- Nunca versione `.env`, exportações ou chaves de serviço antigas.
+- A lista inicial de usuários não contém PINs; operações de escrita e SSE exigem JWT emitido após o PIN.
+- O reset do banco, alterações de usuários e a conclusão forçada de pedidos exigem o papel `ADMIN`.
 
-## Testes
+## Operação sem internet
 
-```bash
-npm run test
-```
-
-Utiliza Vitest com @testing-library/react. Testes em `src/**/*.test.{ts,tsx}`.
-
----
-Desenvolvido para a Lanchonete do Grupo Escoteiro Cooper Cotia
+A versão web permanece online. Para operar um caixa Windows sem internet e manter dados após reinício, a arquitetura aprovada é **Tauri 2 + SQLite local + outbox de comandos idempotentes**, com o PostgreSQL da VPS como fonte de verdade quando a conexão voltar. O contrato de sincronização, conflitos e o plano de piloto estão em [ADR-001](docs/adr/001-offline-first-windows.md). Não use SQLite/IndexedDB como réplica genérica de tabelas para pedidos, estoque ou caixa.

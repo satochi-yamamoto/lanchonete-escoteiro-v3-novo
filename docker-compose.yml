@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-lanchonete}
+      POSTGRES_USER: ${POSTGRES_USER:-lanchonete}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [internal]
+
+  api:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 8787
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: ${POSTGRES_DB:-lanchonete}
+      PGUSER: ${POSTGRES_USER:-lanchonete}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Defina JWT_SECRET no .env}
+      CORS_ORIGINS: ${CORS_ORIGINS:?Defina CORS_ORIGINS no .env}
+    ports:
+      - "127.0.0.1:${API_PORT:-8787}:8787"
+    volumes:
+      - ./backups:/backups:ro
+    networks: [internal, traefik]
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik_default
+      - traefik.http.routers.lanchonete-api.rule=Host(`${API_HOST:?Defina API_HOST no .env}`)
+      - traefik.http.routers.lanchonete-api.entrypoints=websecure
+      - traefik.http.routers.lanchonete-api.tls=true
+      - traefik.http.routers.lanchonete-api.tls.certresolver=letsencrypt
+      - traefik.http.services.lanchonete-api.loadbalancer.server.port=8787
+
+networks:
+  internal:
+    driver: bridge
+  traefik:
+    name: traefik_default
+    external: true
+
+volumes:
+  postgres_data:

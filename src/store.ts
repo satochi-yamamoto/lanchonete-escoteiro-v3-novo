@@ -207,7 +207,7 @@ const writeBusinessRulesToStorage = (rules: { maxItemsPerOrder: number }) => {
 
 export const useStore = create<AppState>((set, get) => ({
   backend: backend,
-  backendStatus: { kind: backend.kind, status: backend.kind === 'supabase' ? 'idle' : 'ready' },
+  backendStatus: { kind: backend.kind, status: backend.kind === 'api' ? 'idle' : 'ready' },
   realtimeStatus: 'IDLE',
 
   initializeBackend: async () => {
@@ -226,14 +226,14 @@ export const useStore = create<AppState>((set, get) => ({
       });
     }
 
-    if (backend.kind !== 'supabase') return;
-    set({ backendStatus: { kind: 'supabase', status: 'loading' }, realtimeStatus: 'CONNECTING' });
+    if (backend.kind !== 'api') return;
+    set({ backendStatus: { kind: 'api', status: 'loading' }, realtimeStatus: 'CONNECTING' });
 
     try {
       const data = await backend.loadInitialState();
       if (!data) {
         // Fallback to local is handled by initial state check in backend
-        set({ backendStatus: { kind: 'supabase', status: 'ready' } });
+        set({ backendStatus: { kind: 'api', status: 'ready' } });
         return;
       }
       // Spread data into store, but keep backend methods intact
@@ -248,7 +248,7 @@ export const useStore = create<AppState>((set, get) => ({
         printReceiptEnabled: (data as any).printSettings?.enabled ?? get().printReceiptEnabled,
         maxItemsPerOrder: (data as any).businessRules?.maxItemsPerOrder ?? get().maxItemsPerOrder
       });
-      set({ backendStatus: { kind: 'supabase', status: 'ready' } });
+      set({ backendStatus: { kind: 'api', status: 'ready' } });
 
       writePaymentSettingsToStorage({
         ...normalizePaymentSettings((data as any).paymentSettings)
@@ -338,17 +338,17 @@ export const useStore = create<AppState>((set, get) => ({
     } catch (e: any) {
       const message = e instanceof Error ? e.message : (e?.message || JSON.stringify(e));
       console.error("Backend init error:", message);
-      set({ backendStatus: { kind: 'supabase', status: 'error', error: message } });
+      set({ backendStatus: { kind: 'api', status: 'error', error: message } });
     }
   },
 
-  products: backend.kind === 'supabase' ? [] : MOCK_PRODUCTS,
-  ingredients: backend.kind === 'supabase' ? [] : MOCK_INGREDIENTS,
+  products: backend.kind === 'api' ? [] : MOCK_PRODUCTS,
+  ingredients: backend.kind === 'api' ? [] : MOCK_INGREDIENTS,
   stockLogs: [],
   users: sanitizeUsersForLogin(MOCK_USERS),
   dbUsers: [],
-  scouts: backend.kind === 'supabase' ? [] : MOCK_SCOUTS,
-  promotions: backend.kind === 'supabase' ? [] : MOCK_PROMOTIONS,
+  scouts: backend.kind === 'api' ? [] : MOCK_SCOUTS,
+  promotions: backend.kind === 'api' ? [] : MOCK_PROMOTIONS,
   menuCatalogs: [],
   terminals: [],
 
@@ -371,7 +371,7 @@ export const useStore = create<AppState>((set, get) => ({
     newScouts.forEach(s => void backend.upsertScout(s).catch(e => console.error("Failed to import scout:", e)));
   },
   fetchScouts: async () => {
-    if (backend.kind !== 'supabase') return;
+    if (backend.kind !== 'api') return;
     try {
       const scouts = await backend.fetchScouts();
       set({ scouts });
@@ -630,7 +630,7 @@ export const useStore = create<AppState>((set, get) => ({
     const { cart, cartTotals, currentShift, currentSession, addShiftTransaction, ingredients } = get();
     if (cart.length === 0) return;
 
-    if (!currentSession && backend.kind === 'supabase') {
+    if (!currentSession && backend.kind === 'api') {
       console.warn("Criando pedido sem sessão de loja aberta!");
     }
 
@@ -812,7 +812,7 @@ export const useStore = create<AppState>((set, get) => ({
       }]
     };
 
-    if (backend.kind === 'supabase') {
+    if (backend.kind === 'api') {
       await backend.upsertShift(newShift);
     }
 
@@ -820,7 +820,7 @@ export const useStore = create<AppState>((set, get) => ({
       currentShift: newShift,
       reportShifts: [newShift, ...state.reportShifts.filter((shift) => shift.id !== newShift.id)]
     }));
-    if (backend.kind !== 'supabase') {
+    if (backend.kind !== 'api') {
       void backend.upsertShift(newShift).catch((e) => console.error("Failed to open shift:", e));
     }
     return newShift;
@@ -849,7 +849,7 @@ export const useStore = create<AppState>((set, get) => ({
       transactions: nextTransactions
     };
 
-    if (backend.kind === 'supabase') {
+    if (backend.kind === 'api') {
       await backend.upsertShift(updatedShift);
     }
 
@@ -858,7 +858,7 @@ export const useStore = create<AppState>((set, get) => ({
       reportShifts: state.reportShifts.map((reportShift) => reportShift.id === updatedShift.id ? updatedShift : reportShift)
     }));
 
-    if (backend.kind !== 'supabase') {
+    if (backend.kind !== 'api') {
       void backend.upsertShift(updatedShift).catch((e) => console.error("Failed to update shift opening data:", e));
     }
 
@@ -920,7 +920,7 @@ export const useStore = create<AppState>((set, get) => ({
       closed_at: now
     };
 
-    if (backend.kind === 'supabase') {
+    if (backend.kind === 'api') {
       await backend.upsertShift(updatedShift);
     }
 
@@ -929,7 +929,7 @@ export const useStore = create<AppState>((set, get) => ({
       reportShifts: state.reportShifts.map((reportShift) => reportShift.id === updatedShift.id ? updatedShift : reportShift)
     }));
 
-    if (backend.kind !== 'supabase') {
+    if (backend.kind !== 'api') {
       void backend.upsertShift(updatedShift).catch((e) => console.error("Failed to close shift:", e));
     }
     return updatedShift;
@@ -989,7 +989,7 @@ export const useStore = create<AppState>((set, get) => ({
       transactions: [...currentShift.transactions, ...newTransactions]
     };
 
-    if (backend.kind === 'supabase') {
+    if (backend.kind === 'api') {
       await backend.upsertShift(updatedShift);
     }
 
@@ -998,7 +998,7 @@ export const useStore = create<AppState>((set, get) => ({
       reportShifts: state.reportShifts.map((reportShift) => reportShift.id === updatedShift.id ? updatedShift : reportShift)
     }));
 
-    if (backend.kind !== 'supabase') {
+    if (backend.kind !== 'api') {
       void backend.upsertShift(updatedShift).catch((e) => console.error("Failed to add shift transactions:", e));
     }
 
