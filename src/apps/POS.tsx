@@ -4,7 +4,7 @@ import { OrderType, Product, PaymentMethod, Order, ShiftTransaction, OrderStatus
 import { Button, formatCurrency } from '../components/ui';
 import { ProductGrid, CartPanel, CashPaymentModal, ShiftPanel, SuccessModal, ZReportModal, CashClosingReportModal } from '../components/pos/PosComponents';
 import { Settings, LogOut, User, Lock, Monitor, Power, ShoppingCart, X, BarChart2, FileText, ChevronRight, Banknote, QrCode, Hash, Plus, Trash2, ArrowLeft, Save } from 'lucide-react';
-import { printReceipt } from '../utils';
+import { printReceipt, toFiniteNumber } from '../utils';
 import { buildShiftFixedProducts, computeBurgerPlan, FIXED_BURGER_CATEGORY, FIXED_PRODUCT_IDS } from '../constants/fixedProducts';
 
 export const OPENING_PROMOTION_ID = 'shift-opening-burger-bundle-promotion';
@@ -713,8 +713,14 @@ export const POS = ({
     );
 
     const openingPromotion = promotions.find((promotion) => promotion.id === OPENING_PROMOTION_ID);
-    const currentOpeningPromotionQuantity = currentShift?.opening_promotion_quantity ?? openingPromotion?.rules.min_quantity;
-    const currentOpeningPromotionValue = currentShift?.opening_promotion_value ?? openingPromotion?.value;
+    const currentOpeningPromotionQuantity = toFiniteNumber(
+        currentShift?.opening_promotion_quantity ?? openingPromotion?.rules.min_quantity,
+        0
+    );
+    const currentOpeningPromotionValue = toFiniteNumber(
+        currentShift?.opening_promotion_value ?? openingPromotion?.value,
+        0
+    );
     const openingPromotionIsConfigured = (
         Number.isInteger(currentOpeningPromotionQuantity) &&
         (currentOpeningPromotionQuantity ?? 0) > 0 &&
@@ -723,8 +729,8 @@ export const POS = ({
     );
     const openingPromotionStatus = openingPromotionIsConfigured
         ? {
-            quantity: currentOpeningPromotionQuantity as number,
-            value: currentOpeningPromotionValue as number,
+            quantity: currentOpeningPromotionQuantity,
+            value: currentOpeningPromotionValue,
             active: openingPromotion?.rules.active !== false
         }
         : undefined;
