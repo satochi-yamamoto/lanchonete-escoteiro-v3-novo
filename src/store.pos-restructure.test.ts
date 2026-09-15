@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { buildOpeningPromotion, calculateOpeningUnitCost, getOpeningCostReimbursements, isOpeningShiftInputValid, OPENING_PROMOTION_ID } from './apps/POS';
+import { buildOpeningPromotion, calculateOpeningUnitCost, formatAmountForInput, getOpeningCostReimbursements, isOpeningShiftInputValid, OPENING_PROMOTION_ID } from './apps/POS';
 import { buildShiftFixedProducts, computeBurgerPlan, FIXED_PRODUCT_IDS } from './constants/fixedProducts';
 import { useStore } from './store';
 import { OrderStatus, OrderType, PaymentMethod, PromotionType } from './types';
@@ -97,6 +97,12 @@ describe('Reestruturação inicial do POS', () => {
       dailyMenuName: 'Lanche Especial',
       active: false
     }).rules.active).toBe(false);
+  });
+
+  it('aceita valores monetários serializados como texto ao abrir o ajuste do caixa', () => {
+    expect(formatAmountForInput('150.5')).toBe('150.50');
+    expect(formatAmountForInput(150)).toBe('150.00');
+    expect(formatAmountForInput('valor inválido')).toBe('0.00');
   });
 
   it('recalcula o carrinho ao ativar ou desativar a promoção da abertura', () => {

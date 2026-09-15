@@ -43,6 +43,13 @@ export const calculateOpeningUnitCost = (totalCost: number, payableBurgers: numb
     return totalCost / payableBurgers;
 };
 
+// Dados antigos em cache ou uma API desatualizada podem representar NUMERIC
+// como texto. A tela de ajuste não pode falhar ao abrir por causa disso.
+export const formatAmountForInput = (value: unknown) => {
+    const amount = Number(value);
+    return Number.isFinite(amount) ? amount.toFixed(2) : '0.00';
+};
+
 export const isOpeningShiftInputValid = ({
     startCash,
     operatorName,
@@ -235,7 +242,7 @@ const OpeningAdjustmentsScreen = ({
 }) => {
     const [operatorName, setOperatorName] = useState(shift.staff_name);
     const [terminalId, setTerminalId] = useState(shift.terminal_id);
-    const [startCash, setStartCash] = useState(shift.start_cash.toFixed(2));
+    const [startCash, setStartCash] = useState(formatAmountForInput(shift.start_cash));
     const [dailyMenuName, setDailyMenuName] = useState(shift.daily_menu_name ?? '');
     const [openingProductCostTotal, setOpeningProductCostTotal] = useState((shift.opening_product_cost_total ?? 0).toString());
     const [openingDrinksLiters, setOpeningDrinksLiters] = useState((shift.opening_drinks_liters ?? 0).toString());
@@ -251,7 +258,7 @@ const OpeningAdjustmentsScreen = ({
     useEffect(() => {
         setOperatorName(shift.staff_name);
         setTerminalId(shift.terminal_id);
-        setStartCash(shift.start_cash.toFixed(2));
+        setStartCash(formatAmountForInput(shift.start_cash));
         setDailyMenuName(shift.daily_menu_name ?? '');
         setOpeningProductCostTotal((shift.opening_product_cost_total ?? 0).toString());
         setOpeningDrinksLiters((shift.opening_drinks_liters ?? 0).toString());
