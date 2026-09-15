@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../../store';
 import { Ingredient, Product, PromotionType, User, Station, Promotion, MenuCatalog } from '../../types';
-import { generateUUID } from '../../utils';
+import { generateUUID, toFiniteNumber } from '../../utils';
 import { Button, Card, formatCurrency } from '../ui';
 import { Edit2, Trash2, Plus, AlertTriangle, Package, Check, X, Calendar, Clock, Target, Layers, Save, ArrowLeft, Zap, TrendingDown, TrendingUp, History, Upload, Image as ImageIcon, FileText, Wallet, Users, Printer } from 'lucide-react';
 import { buildShiftFixedProducts, FIXED_BURGER_CATEGORY, FIXED_PRODUCT_IDS } from '../../constants/fixedProducts';
@@ -1815,7 +1815,7 @@ export const ReportsManager = () => {
                                 }
                                 
                                 acc[o.payment_method].count += 1;
-                                acc[o.payment_method].total += o.total;
+                                acc[o.payment_method].total += toFiniteNumber(o.total);
                                 
                                 return acc;
                             }, {});
@@ -1832,18 +1832,18 @@ export const ReportsManager = () => {
 
                             const refunds = transactions
                                 .filter((t: any) => t.type === 'REIMBURSEMENT')
-                                .reduce((acc: number, t: any) => acc + t.amount, 0);
+                                .reduce((acc: number, t: any) => acc + toFiniteNumber(t.amount), 0);
 
                             const drops = transactions
                                 .filter((t: any) => t.type === 'DROP')
-                                .reduce((acc: number, t: any) => acc + t.amount, 0);
+                                .reduce((acc: number, t: any) => acc + toFiniteNumber(t.amount), 0);
 
                             const entries = transactions
                                 .filter((t: any) => t.type === 'ADD')
-                                .reduce((acc: number, t: any) => acc + t.amount, 0);
+                                .reduce((acc: number, t: any) => acc + toFiniteNumber(t.amount), 0);
                                 
                             // O Saldo Final Real deve ser = Fundo Inicial + Faturamento - Sangrias - Reembolsos + Suprimentos
-                            const calculatedFinalCash = shift.start_cash + totalRevenue - drops - refunds + entries;
+                            const calculatedFinalCash = toFiniteNumber(shift.start_cash) + totalRevenue - drops - refunds + entries;
                             const isLastRows = index >= reportData.shifts.length - 2;
 
                             return (

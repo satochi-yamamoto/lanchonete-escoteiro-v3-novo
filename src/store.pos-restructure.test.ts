@@ -3,6 +3,7 @@ import { buildOpeningPromotion, calculateOpeningUnitCost, formatAmountForInput, 
 import { buildShiftFixedProducts, computeBurgerPlan, FIXED_PRODUCT_IDS } from './constants/fixedProducts';
 import { useStore } from './store';
 import { OrderStatus, OrderType, PaymentMethod, PromotionType } from './types';
+import { toFiniteNumber } from './utils';
 
 describe('Reestruturação inicial do POS', () => {
   beforeEach(() => {
@@ -103,6 +104,12 @@ describe('Reestruturação inicial do POS', () => {
     expect(formatAmountForInput('150.5')).toBe('150.50');
     expect(formatAmountForInput(150)).toBe('150.00');
     expect(formatAmountForInput('valor inválido')).toBe('0.00');
+  });
+
+  it('converte valores inválidos em zero para impedir NaN nos relatórios', () => {
+    expect(toFiniteNumber('120.00')).toBe(120);
+    expect(toFiniteNumber('120,50')).toBe(120.5);
+    expect(toFiniteNumber(undefined)).toBe(0);
   });
 
   it('recalcula o carrinho ao ativar ou desativar a promoção da abertura', () => {
