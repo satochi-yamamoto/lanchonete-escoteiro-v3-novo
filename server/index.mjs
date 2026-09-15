@@ -4,6 +4,10 @@ import jwt from 'jsonwebtoken';
 import pg from 'pg';
 
 const { Pool } = pg;
+// The PostgreSQL driver returns NUMERIC values as strings by default. The POS
+// model uses numbers for amounts and quantities, so normalize at the API
+// boundary instead of letting string values reach calculation/UI code.
+pg.types.setTypeParser(1700, Number);
 const port = Number(process.env.PORT || 8787);
 const databaseUrl = process.env.DATABASE_URL;
 const jwtSecret = process.env.JWT_SECRET;
