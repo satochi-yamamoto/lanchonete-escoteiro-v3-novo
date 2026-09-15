@@ -60,7 +60,11 @@ export const buildShiftFixedProducts = (
   openingUnitCost: number | undefined | null,
   options: BuildShiftFixedProductsOptions = {}
 ): Product[] => {
-  const unit = Number.isFinite(openingUnitCost as number) ? Number(openingUnitCost) : 0;
+  // PostgreSQL NUMERIC values may arrive as strings (for example, "6.00").
+  // Convert before checking finiteness so persisted/API values do not become
+  // zero when the fixed POS products are reconstructed.
+  const parsedUnit = Number(openingUnitCost);
+  const unit = Number.isFinite(parsedUnit) ? parsedUnit : 0;
   const base = (id: FixedProductId) => ({
     category: FIXED_BURGER_CATEGORY,
     station: 'ASSEMBLY' as const,
