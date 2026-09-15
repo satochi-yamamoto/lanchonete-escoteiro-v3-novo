@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Product, CartItem, ModifierGroup, Shift, Order, ShiftTransaction, PaymentMethod, Station } from '../../types';
 import { useStore } from '../../store';
 import { Button, Card, formatCurrency } from '../ui';
+import { toFiniteNumber } from '../../utils';
 import { X, ChevronLeft, Check, Plus, Minus, Trash2, Edit2, Banknote, CreditCard, Tag, Filter, QrCode, Printer, FileText, ArrowRight, Ban, Eye, EyeOff, Paperclip, Upload, Info, AlertTriangle, Calculator, Lock, DollarSign, Wallet, Coins, ArrowLeft, Save, Hash, Ticket, Globe } from 'lucide-react';
 
 // --- Product Details Modal ---
@@ -952,7 +953,7 @@ export const ShiftPanel = ({ shift, orders, onCloseShift, onTransaction, onClose
 
     // Filter orders for this shift
     const shiftOrders = orders.filter((o: Order) => o.shift_id === shift.id);
-    const totalSales = shiftOrders.reduce((sum: number, o: Order) => sum + o.total, 0);
+    const totalSales = shiftOrders.reduce((sum: number, o: Order) => sum + toFiniteNumber(o.total), 0);
 
     // Calculate Total Reimbursement
     const reimbursements = shift.transactions.filter((t: ShiftTransaction) => t.type === 'REIMBURSEMENT');
@@ -1150,20 +1151,20 @@ export const ShiftPanel = ({ shift, orders, onCloseShift, onTransaction, onClose
 // --- Cash Closing Report Modal (Read-Only) ---
 export const CashClosingReportModal = ({ shift, orders, onClose }: any) => {
     const shiftOrders = orders.filter((o: Order) => o.shift_id === shift.id);
-    const totalSales = shiftOrders.reduce((sum: number, o: Order) => sum + o.total, 0);
+    const totalSales = shiftOrders.reduce((sum: number, o: Order) => sum + toFiniteNumber(o.total), 0);
     const orderCount = shiftOrders.length;
     const avgTicket = orderCount > 0 ? totalSales / orderCount : 0;
 
     const paymentBreakdown = Object.values(PaymentMethod).map(method => {
         const amount = shiftOrders
             .filter((o: Order) => o.payment_method === method)
-            .reduce((sum: number, o: Order) => sum + o.total, 0);
+            .reduce((sum: number, o: Order) => sum + toFiniteNumber(o.total), 0);
         return { method, amount };
     }).filter(x => x.amount > 0);
 
-    const drops = shift.transactions.filter((t: ShiftTransaction) => t.type === 'DROP').reduce((s: number, t: ShiftTransaction) => s + t.amount, 0);
-    const supplies = shift.transactions.filter((t: ShiftTransaction) => t.type === 'ADD').reduce((s: number, t: ShiftTransaction) => s + t.amount, 0);
-    const reimbursements = shift.transactions.filter((t: ShiftTransaction) => t.type === 'REIMBURSEMENT').reduce((s: number, t: ShiftTransaction) => s + t.amount, 0);
+    const drops = shift.transactions.filter((t: ShiftTransaction) => t.type === 'DROP').reduce((s: number, t: ShiftTransaction) => s + toFiniteNumber(t.amount), 0);
+    const supplies = shift.transactions.filter((t: ShiftTransaction) => t.type === 'ADD').reduce((s: number, t: ShiftTransaction) => s + toFiniteNumber(t.amount), 0);
+    const reimbursements = shift.transactions.filter((t: ShiftTransaction) => t.type === 'REIMBURSEMENT').reduce((s: number, t: ShiftTransaction) => s + toFiniteNumber(t.amount), 0);
 
     // Items sold breakdown: group all CartItems from shift orders by product name
     const itemsSoldMap: Record<string, { qty: number; revenue: number }> = {};
@@ -1181,11 +1182,11 @@ export const CashClosingReportModal = ({ shift, orders, onClose }: any) => {
     const totalItemsRevenue = itemsSoldList.reduce((s, i) => s + i.revenue, 0);
 
     // Resumo Financeiro
-    const pixSales = shiftOrders.filter((o: Order) => o.payment_method === PaymentMethod.PIX).reduce((s: number, o: Order) => s + o.total, 0);
-    const cashSales = shiftOrders.filter((o: Order) => o.payment_method === PaymentMethod.CASH).reduce((s: number, o: Order) => s + o.total, 0);
+    const pixSales = shiftOrders.filter((o: Order) => o.payment_method === PaymentMethod.PIX).reduce((s: number, o: Order) => s + toFiniteNumber(o.total), 0);
+    const cashSales = shiftOrders.filter((o: Order) => o.payment_method === PaymentMethod.CASH).reduce((s: number, o: Order) => s + toFiniteNumber(o.total), 0);
     const otherSales = totalSales - pixSales - cashSales;
     const netTransactions = supplies - drops - reimbursements;
-    const saldoFinal = shift.start_cash + totalSales + netTransactions;
+    const saldoFinal = toFiniteNumber(shift.start_cash) + totalSales + netTransactions;
     const lucroFinal = totalSales;
 
     const [showPreview, setShowPreview] = useState(false);
@@ -1503,7 +1504,7 @@ export const ZReportModal = ({ shift, orders, onClose, onConfirmClose }: any) =>
     const shiftOrders = orders.filter((o: Order) => o.shift_id === shift.id);
     
     // 2. Calculate KPI
-    const totalSales = shiftOrders.reduce((sum: number, o: Order) => sum + o.total, 0);
+    const totalSales = shiftOrders.reduce((sum: number, o: Order) => sum + toFiniteNumber(o.total), 0);
     const orderCount = shiftOrders.length;
     const avgTicket = orderCount > 0 ? totalSales / orderCount : 0;
     
@@ -1511,14 +1512,14 @@ export const ZReportModal = ({ shift, orders, onClose, onConfirmClose }: any) =>
     const paymentBreakdown = Object.values(PaymentMethod).map(method => {
         const amount = shiftOrders
             .filter((o: Order) => o.payment_method === method)
-            .reduce((sum: number, o: Order) => sum + o.total, 0);
+            .reduce((sum: number, o: Order) => sum + toFiniteNumber(o.total), 0);
         return { method, amount };
     }).filter(x => x.amount > 0);
 
     // 4. Cash Logic
-    const drops = shift.transactions.filter((t: ShiftTransaction) => t.type === 'DROP').reduce((s: number, t: ShiftTransaction) => s + t.amount, 0);
-    const supplies = shift.transactions.filter((t: ShiftTransaction) => t.type === 'ADD').reduce((s: number, t: ShiftTransaction) => s + t.amount, 0);
-    const reimbursements = shift.transactions.filter((t: ShiftTransaction) => t.type === 'REIMBURSEMENT').reduce((s: number, t: ShiftTransaction) => s + t.amount, 0);
+    const drops = shift.transactions.filter((t: ShiftTransaction) => t.type === 'DROP').reduce((s: number, t: ShiftTransaction) => s + toFiniteNumber(t.amount), 0);
+    const supplies = shift.transactions.filter((t: ShiftTransaction) => t.type === 'ADD').reduce((s: number, t: ShiftTransaction) => s + toFiniteNumber(t.amount), 0);
+    const reimbursements = shift.transactions.filter((t: ShiftTransaction) => t.type === 'REIMBURSEMENT').reduce((s: number, t: ShiftTransaction) => s + toFiniteNumber(t.amount), 0);
     // Note: store.current_cash tracks theoretical drawer (Start + Cash Sales + Supplies - Drops)
     
     const [showPreview, setShowPreview] = useState(false);

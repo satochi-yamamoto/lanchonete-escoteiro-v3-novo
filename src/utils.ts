@@ -8,6 +8,13 @@ export function generateUUID(): string {
     });
 }
 
+/** Converts persisted/API numeric values to a safe finite number. */
+export function toFiniteNumber(value: unknown, fallback = 0): number {
+    const normalized = typeof value === 'string' ? value.trim().replace(',', '.') : value;
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 export function printReceipt(order: any) {
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(amount);
