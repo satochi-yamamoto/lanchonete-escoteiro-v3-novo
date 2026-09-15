@@ -248,6 +248,8 @@ describe('Reestruturação inicial do POS', () => {
     expect(extra).toMatchObject({ name: '02 - Extra', price: 6 });
     // Sem valor de abertura, Escoteiro/Extra ficam zerados (Chefe sempre 0)
     expect(buildShiftFixedProducts(undefined).map((p) => p.price)).toEqual([0, 0, 0]);
+    // NUMERIC do PostgreSQL pode ser serializado como texto na resposta da API.
+    expect(buildShiftFixedProducts('6.00' as unknown as number).map((p) => p.price)).toEqual([0, 6, 6]);
 
     const withVegan = buildShiftFixedProducts(6, { includeVegan: true });
     expect(withVegan.map((p) => p.name)).toEqual(['00 - Chefe', '01 - Escoteiro', '02 - Extra', '03 - Vegano']);
